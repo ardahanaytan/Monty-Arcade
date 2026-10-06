@@ -3,16 +3,16 @@ import { useTranslations, type Lang } from '../i18n/ui';
 
 interface Props {
   lang: Lang;
-  slot: number;
+  number: number;
   size?: 'lg' | 'sm';
 }
 
-const { lang, slot, size = 'lg' } = Astro.props;
+const { lang, number, size = 'lg' } = Astro.props;
 const t = useTranslations(lang);
 ---
 
 <li class:list={['soon', `soon--${size}`]} aria-hidden="true" data-soon>
-  <span class="soon__slot">{t('soon.slot')} {String(slot).padStart(2, '0')}</span>
+  <span class="soon__slot">{t('soon.slot')} {String(number).padStart(2, '0')}</span>
   <span class="soon__title display">{t('soon.title')}</span>
   {size === 'lg' && <span class="soon__text">{t('soon.text')}</span>}
 </li>

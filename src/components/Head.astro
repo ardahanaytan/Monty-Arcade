@@ -4,10 +4,13 @@ import '@fontsource-variable/archivo/wdth.css';
 import '@fontsource-variable/archivo/wdth-italic.css';
 import '@fontsource/space-mono/400.css';
 import '@fontsource/space-mono/700.css';
+import '../styles/fonts.css';
 import '../styles/tokens.css';
 import '../styles/global.css';
 import archivoNormal from '@fontsource-variable/archivo/files/archivo-latin-wdth-normal.woff2?url';
 import archivoItalic from '@fontsource-variable/archivo/files/archivo-latin-wdth-italic.woff2?url';
+import archivoTrNormal from '../assets/fonts/archivo-tr-normal.woff2?url';
+import archivoTrItalic from '../assets/fonts/archivo-tr-italic.woff2?url';
 
 import { site } from '../config/site';
 import { languages, useTranslations, type Lang } from '../i18n/ui';
@@ -55,7 +58,7 @@ const ogImageUrl = new URL(ogImage ?? '/og-default.png', base).href;
   ) : (
     <>
       <link rel="canonical" href={canonical} />
-      {alternateLangs.map((l) => (
+      {alternateLangs.map((l: Lang) => (
         <link rel="alternate" hreflang={l} href={new URL(langPaths[l], base).href} />
       ))}
       <link rel="alternate" hreflang="x-default" href={new URL('/', base).href} />
@@ -69,6 +72,15 @@ const ogImageUrl = new URL(ogImage ?? '/og-default.png', base).href;
 
 <link rel="preload" href={archivoNormal} as="font" type="font/woff2" crossorigin />
 <link rel="preload" href={archivoItalic} as="font" type="font/woff2" crossorigin />
+{
+  /* Türkçe harfler (Ğ ğ İ ı Ş ş) için küçük ek font (styles/fonts.css). */
+  lang === 'tr' && (
+    <>
+      <link rel="preload" href={archivoTrNormal} as="font" type="font/woff2" crossorigin />
+      <link rel="preload" href={archivoTrItalic} as="font" type="font/woff2" crossorigin />
+    </>
+  )
+}
 
 <meta property="og:type" content={ogType} />
 <meta property="og:site_name" content={site.name} />

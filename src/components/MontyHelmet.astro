@@ -17,7 +17,7 @@ interface Props {
 const { variant = 'full', size, animated = true, label, expression = 'default', class: className } = Astro.props;
 const width = size ?? (variant === 'full' ? 330 : 50);
 const height = Math.round(width * (variant === 'full' ? 230 / 240 : 220 / 240));
-const a11y = label ? { role: 'img', 'aria-label': label } : { 'aria-hidden': 'true' as const };
+const a11y = label ? { role: 'img' as const, 'aria-label': label } : { 'aria-hidden': 'true' as const };
 ---
 
 {

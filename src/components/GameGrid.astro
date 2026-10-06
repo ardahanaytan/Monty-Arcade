@@ -42,7 +42,7 @@ const soon = placeholderCount(games.length);
 
   <ul class="grid plain">
     {games.map((game, i) => <GameCard lang={lang} game={game} eager={i < 4} />)}
-    {Array.from({ length: soon }, (_, i) => <SoonCard lang={lang} slot={games.length + i + 1} />)}
+    {Array.from({ length: soon }, (_, i) => <SoonCard lang={lang} number={games.length + i + 1} />)}
   </ul>
 
   <p class="no-results" role="status" data-no-results hidden>{t('games.noResults')}</p>

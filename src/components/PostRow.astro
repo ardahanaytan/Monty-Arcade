@@ -13,7 +13,7 @@ const { lang, post, index } = Astro.props;
 
 <li>
   <a href={postUrl(post)} class="postrow">
-    <span class="postrow__num display" aria-hidden="true">{String(index).padStart(2, '0')}</span>
+    <span class="postrow__num display" aria-hidden="true" data-num={String(index).padStart(2, '0')}></span>
     <span class="postrow__body">
       <span class="postrow__title">{post.data.title}</span>
       <span class="postrow__desc">{post.data.description}</span>
@@ -48,6 +48,10 @@ const { lang, post, index } = Astro.props;
     font-size: 30px;
     line-height: 1;
     color: var(--text-ghost);
+  }
+  /* Dekoratif numara CSS ile çizilir (metin değil; kontrast denetimine girmez). */
+  .postrow__num::before {
+    content: attr(data-num);
   }
   .postrow__body {
     display: flex;

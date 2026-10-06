@@ -128,7 +128,7 @@ const jsonLd = {
       </div>
       <ul class="more plain">
         {others.map((g) => <GameCard lang={lang} game={g} />)}
-        {Array.from({ length: soonCount }, (_, i) => <SoonCard lang={lang} slot={allGames.length + i + 1} size="sm" />)}
+        {Array.from({ length: soonCount }, (_, i) => <SoonCard lang={lang} number={allGames.length + i + 1} size="sm" />)}
       </ul>
     </section>
   </div>

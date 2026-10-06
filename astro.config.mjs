@@ -44,6 +44,8 @@ export default defineConfig({
   output: 'static',
   trailingSlash: 'ignore',
   prefetch: { prefetchAll: true, defaultStrategy: 'hover' },
+  // Sayfa başına CSS küçük (~20 KB); satır içi vermek render-blocking isteği kaldırır.
+  build: { inlineStylesheets: 'always' },
   integrations: [
     sitemap({
       // Kök dil yönlendirme sayfası ve 404 sitemap'e girmez.

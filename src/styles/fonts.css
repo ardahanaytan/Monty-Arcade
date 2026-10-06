@@ -1,0 +1,25 @@
+/*
+ * Türkçe harfler (Ğ ğ İ ı Ş ş) için küçük ek font (~11 KB/stil).
+ * Fontsource'un 90 KB'lık latin-ext dosyası yerine bu kullanılır; aynı aile adı ve daha dar
+ * unicode-range ile sonra tanımlandığı için bu karakterlerde öncelik bunda.
+ * Kaynak: Google Fonts, Archivo (OFL), `text=ĞğİıŞş` alt kümesi.
+ */
+@font-face {
+  font-family: 'Archivo Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  src: url('../assets/fonts/archivo-tr-normal.woff2') format('woff2');
+  unicode-range: U+011E-011F, U+0130-0131, U+015E-015F;
+}
+
+@font-face {
+  font-family: 'Archivo Variable';
+  font-style: italic;
+  font-display: swap;
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  src: url('../assets/fonts/archivo-tr-italic.woff2') format('woff2');
+  unicode-range: U+011E-011F, U+0130-0131, U+015E-015F;
+}
