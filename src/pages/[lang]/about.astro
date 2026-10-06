@@ -3,6 +3,7 @@ import Base from '../../layouts/Base.astro';
 import Prose from '../../layouts/Prose.astro';
 import MontyHelmet from '../../components/MontyHelmet.astro';
 import Checker from '../../components/Checker.astro';
+import SocialLinks from '../../components/SocialLinks.astro';
 import { site } from '../../config/site';
 import { getStaticLangPaths, useTranslations, type Lang } from '../../i18n/ui';
 
@@ -13,7 +14,6 @@ const t = useTranslations(lang);
 
 const contacts = [
   { label: 'itch.io', href: site.links.itch },
-  { label: 'GitHub', href: site.links.github },
   { label: 'Ko-fi', href: site.links.kofi },
   { label: t('about.email'), href: site.links.email ? `mailto:${site.links.email}` : '' },
 ].filter((c) => c.href);
@@ -38,6 +38,7 @@ const contacts = [
         <Prose>
           <h2>{t('about.devTitle')}</h2>
           <p>{t('about.devText')}</p>
+          <SocialLinks lang={lang} variant="labeled" class="about-social" />
           <h2>{t('about.siteTitle')}</h2>
           <p>{t('about.siteText')}</p>
         </Prose>
@@ -98,6 +99,12 @@ const contacts = [
     justify-content: center;
   }
   .panel :global(.prose h2:first-child) {
+    margin-top: 0;
+  }
+  .panel :global(.prose .about-social) {
+    padding-left: 0;
+  }
+  .panel :global(.prose .about-social li + li) {
     margin-top: 0;
   }
   .contacts {

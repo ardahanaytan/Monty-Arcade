@@ -106,7 +106,9 @@ Markdown içerik…
 - **Site adı:** `src/config/site.ts` → `name` ve `wordmark`. Ardından `npm run og` ve gerekirse `public/favicon.svg`.
 - **Vurgu rengi:** `src/styles/tokens.css` → `--accent` (tek satır). Favicon ve OG görselinde `#ff6b2c` sabit yazılı.
 - **Alan adı:** `src/config/site.ts` → `url` (canonical, hreflang, sitemap, robots buna göre üretilir).
-- **Sosyal linkler:** `src/config/site.ts` → `links` (boş olanlar gizlenir; `kofi` doluysa footer'da "Destek ol" butonu çıkar).
+- **Sosyal linkler:** `src/config/site.ts` → `links`. `github` ve `linkedin` logolu olarak header'da (≥900px),
+  footer'da, ana sayfadaki Sürücü kartında ve Hakkında sayfasında görünür (`components/SocialLinks.astro`).
+  Boş olanlar gizlenir; `kofi` doluysa footer'da "Destek ol" butonu çıkar.
 - **Metinler:** `src/i18n/ui.ts`. Bileşenlerde sabit metin yok. Hakkında sayfası ve Sürücü kartındaki
   `[köşeli parantezli]` yer tutucuları buradan değiştir.
 - **v2 alanları:** `features.accounts` (giriş butonu, başarım paneli, kart rozet sayısı; şimdilik `false`),

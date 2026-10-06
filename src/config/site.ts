@@ -3,7 +3,14 @@ export const site = {
   wordmark: { top: 'MONTY', bottom: 'ARCADE' },
   author: 'ay',
   url: 'https://example.com', // yayın alan adı belli olunca
-  links: { itch: '', github: '', kofi: '', email: '' }, // boşsa gizlenir
+  // Boşsa gizlenir. github/linkedin: geliştirici profilleri (header, footer, Sürücü kartı, Hakkında).
+  links: {
+    github: 'https://github.com/ardahanaytan',
+    linkedin: 'https://www.linkedin.com/in/ardahan-aytan',
+    itch: '',
+    kofi: '',
+    email: '',
+  },
   features: {
     accounts: false, // v2: giriş butonu, başarım paneli, kart rozet sayısı
     achievementsTeaser: true, // v1: "Yakında: Profil & başarımlar" kutusu

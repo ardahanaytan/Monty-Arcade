@@ -1,5 +1,6 @@
 ---
 import Checker from './Checker.astro';
+import SocialLinks from './SocialLinks.astro';
 import { useTranslations, type Lang } from '../i18n/ui';
 
 interface Props {
@@ -15,7 +16,10 @@ const t = useTranslations(lang);
   <span class="card-eyebrow">{t('driver.eyebrow')}</span>
   <h2 id="driver-title" class="display">{t('driver.title')}</h2>
   <p>{t('driver.text')}</p>
-  <a href={`/${lang}/about/`}>{t('driver.link')}</a>
+  <div class="driver__foot">
+    <a href={`/${lang}/about/`}>{t('driver.link')}</a>
+    <SocialLinks lang={lang} variant="cream" />
+  </div>
 </section>
 
 <style>
@@ -28,5 +32,12 @@ const t = useTranslations(lang);
     margin-bottom: 14px;
     font-size: 15px;
     color: var(--card-ink-2);
+  }
+  .driver__foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px 16px;
   }
 </style>

@@ -1,6 +1,7 @@
 ---
 import Logo from './Logo.astro';
 import Icon from './Icon.astro';
+import SocialLinks from './SocialLinks.astro';
 import { site } from '../config/site';
 import { languages, useTranslations, type Lang } from '../i18n/ui';
 
@@ -38,6 +39,7 @@ const nav: { id: NavSection; href: string; label: string }[] = [
     </nav>
 
     <div class="header__tools">
+      <SocialLinks lang={lang} class="header__social" />
       <div class="lang-switch" role="group" aria-label={t('lang.label')}>
         {
           languages.map((l) => (
@@ -157,6 +159,19 @@ const nav: { id: NavSection; href: string; label: string }[] = [
     color: var(--text);
   }
 
+  .header__tools :global(.header__social) {
+    gap: 6px;
+  }
+  .header__tools :global(.header__social a) {
+    width: 40px;
+    height: 40px;
+  }
+  /* Dar ekranda yer yok: profiller footer'da, Sürücü kartında ve Hakkında'da. */
+  @media (max-width: 899px) {
+    .header__tools :global(.header__social) {
+      display: none;
+    }
+  }
   @media (max-width: 720px) {
     .header__inner {
       column-gap: 12px;

@@ -1,5 +1,6 @@
 ---
 import Checker from './Checker.astro';
+import SocialLinks from './SocialLinks.astro';
 import { site } from '../config/site';
 import { useTranslations, type Lang } from '../i18n/ui';
 
@@ -15,7 +16,6 @@ const links = [
   { href: `/${lang}/devlog/`, label: t('nav.devlog') },
   { href: `/${lang}/about/`, label: t('nav.about') },
   { href: site.links.itch, label: 'itch.io' },
-  { href: site.links.github, label: 'GitHub' },
 ].filter((l) => l.href);
 
 const badges = [
@@ -37,6 +37,7 @@ const year = new Date().getFullYear();
           {site.wordmark.top} <span>{site.wordmark.bottom}</span>
         </p>
         <p class="footer__tagline">{t('footer.tagline')}</p>
+        <SocialLinks lang={lang} variant="labeled" class="footer__social" />
       </div>
       <nav class="footer__nav" aria-label={t('footer.menu')}>
         {links.map((l) => <a href={l.href}>{l.label}</a>)}
@@ -92,6 +93,9 @@ const year = new Date().getFullYear();
   .footer__tagline {
     font-size: 15px;
     color: var(--text-3);
+  }
+  .footer__row :global(.footer__social) {
+    margin-top: 16px;
   }
   .footer__nav {
     display: flex;
