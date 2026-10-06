@@ -10,9 +10,9 @@ Planlama ve tasarım spesifikasyonu: [`../MONTY_ARCADE.md`](../MONTY_ARCADE.md)
 | Komut | Ne yapar |
 |---|---|
 | `npm install` | Bağımlılıkları kurar |
-| `npm run dev` | Geliştirme sunucusu (`http://localhost:4321`). **Taslaklar (`draft: true`) burada görünür.** |
+| `npm run dev` | Geliştirme sunucusu (`http://localhost:2705`). **Taslaklar (`draft: true`) burada görünür.** |
 | `npm run build` | Production çıktısını `dist/` klasörüne üretir. Taslaklar dahil edilmez. |
-| `npm run preview` | `dist/` çıktısını yerelde sunar |
+| `npm run preview` | `dist/` çıktısını yerelde sunar (`http://localhost:2607`) |
 | `npm run og` | `public/og-default.png` paylaşım görselini yeniden üretir (site adı değişince) |
 
 Node 22.18+ gerekir (`npm run og` `.ts` dosyalarını doğrudan içe aktarır). Geliştirmede Node 24 kullanıldı.
