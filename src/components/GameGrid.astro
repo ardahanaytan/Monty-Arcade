@@ -1,0 +1,176 @@
+---
+import GameCard from './GameCard.astro';
+import Icon from './Icon.astro';
+import SectionHeader from './SectionHeader.astro';
+import SoonCard from './SoonCard.astro';
+import { placeholderTags, tagLabel, useTranslations, type Lang } from '../i18n/ui';
+import { collectTags, placeholderCount, type Game } from '../lib/content';
+
+interface Props {
+  lang: Lang;
+  games: Game[];
+}
+
+const { lang, games } = Astro.props;
+const t = useTranslations(lang);
+
+// Oyun yokken taslaktaki örnek etiketler; oyun gelince oyunlardaki etiketler.
+const tags = games.length > 0 ? collectTags(games) : placeholderTags;
+const soon = placeholderCount(games.length);
+---
+
+<section id="games" class="games" aria-labelledby="all-games" data-game-grid data-lang={lang}>
+  <div class="games__head">
+    <SectionHeader eyebrow={t('games.eyebrow')} title={t('games.title')} id="all-games" />
+    <label class="search">
+      <span class="sr-only">{t('games.searchLabel')}</span>
+      <Icon name="search" class="search__icon" />
+      <input type="search" placeholder={t('games.search')} autocomplete="off" data-search />
+    </label>
+  </div>
+
+  <div class="chips" role="group" aria-label={t('games.tagsLabel')}>
+    <button type="button" class="chip" aria-pressed="true" data-tag="">{t('games.all')}</button>
+    {
+      tags.map((tag) => (
+        <button type="button" class="chip" aria-pressed="false" data-tag={tag}>
+          {tagLabel(tag, lang)}
+        </button>
+      ))
+    }
+  </div>
+
+  <ul class="grid plain">
+    {games.map((game, i) => <GameCard lang={lang} game={game} eager={i < 4} />)}
+    {Array.from({ length: soon }, (_, i) => <SoonCard lang={lang} slot={games.length + i + 1} />)}
+  </ul>
+
+  <p class="no-results" role="status" data-no-results hidden>{t('games.noResults')}</p>
+</section>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-game-grid]').forEach((root) => {
+    const lang = root.dataset.lang ?? 'en';
+    const input = root.querySelector<HTMLInputElement>('[data-search]');
+    const chips = [...root.querySelectorAll<HTMLButtonElement>('[data-tag]')];
+    const cards = [...root.querySelectorAll<HTMLElement>('[data-game]')];
+    const soon = [...root.querySelectorAll<HTMLElement>('[data-soon]')];
+    const empty = root.querySelector<HTMLElement>('[data-no-results]');
+    let tag = '';
+
+    const apply = () => {
+      const query = (input?.value ?? '').trim().toLocaleLowerCase(lang);
+      const filtering = tag !== '' || query !== '';
+      let shown = 0;
+      for (const card of cards) {
+        const tagOk = !tag || (card.dataset.tags ?? '').split(' ').includes(tag);
+        const textOk = !query || (card.dataset.search ?? '').includes(query);
+        const show = tagOk && textOk;
+        card.hidden = !show;
+        if (show) shown++;
+      }
+      for (const s of soon) s.hidden = filtering;
+      if (empty) empty.hidden = !filtering || shown > 0;
+    };
+
+    chips.forEach((chip) =>
+      chip.addEventListener('click', () => {
+        tag = chip.dataset.tag ?? '';
+        chips.forEach((c) => c.setAttribute('aria-pressed', String(c === chip)));
+        apply();
+      }),
+    );
+    input?.addEventListener('input', apply);
+  });
+</script>
+
+<style>
+  .games {
+    scroll-margin-top: 24px;
+  }
+  .games__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 14px 20px;
+    margin-bottom: 16px;
+  }
+  .search {
+    position: relative;
+    flex: 0 1 300px;
+    display: block;
+  }
+  .search :global(.search__icon) {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    translate: 0 -50%;
+    color: var(--text-4);
+    pointer-events: none;
+  }
+  .search input {
+    width: 100%;
+    min-height: 46px;
+    padding: 0 14px 0 42px;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: 12px;
+    outline: none;
+  }
+  .search input::placeholder {
+    color: var(--text-4);
+  }
+  .search input:focus-visible {
+    outline: 3px solid var(--led);
+    outline-offset: 3px;
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 22px;
+  }
+  .chip {
+    min-height: 38px;
+    padding: 0 16px;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-3);
+    background: transparent;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+  }
+  .chip:hover {
+    color: var(--text);
+    border-color: var(--text);
+  }
+  .chip[aria-pressed='true'] {
+    color: var(--on-accent);
+    background: var(--text);
+    border-color: var(--text);
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+  }
+  .grid > :global([hidden]) {
+    display: none;
+  }
+  .no-results {
+    padding: 28px 0 8px;
+    font-weight: 700;
+    color: var(--text-3);
+  }
+  @media (max-width: 560px) {
+    .search {
+      flex-basis: 100%;
+    }
+    .grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

@@ -1,0 +1,74 @@
+---
+import Base from '../../layouts/Base.astro';
+import HeroWelcome from '../../components/HeroWelcome.astro';
+import HeroFeatured from '../../components/HeroFeatured.astro';
+import SpecRow from '../../components/SpecRow.astro';
+import GameGrid from '../../components/GameGrid.astro';
+import SectionHeader from '../../components/SectionHeader.astro';
+import PostRow from '../../components/PostRow.astro';
+import DriverCard from '../../components/DriverCard.astro';
+import V2Teaser from '../../components/V2Teaser.astro';
+import { site } from '../../config/site';
+import { getStaticLangPaths, useTranslations, type Lang } from '../../i18n/ui';
+import { getFeatured, getGames, getPosts } from '../../lib/content';
+
+export const getStaticPaths = getStaticLangPaths;
+
+const lang = Astro.params.lang as Lang;
+const t = useTranslations(lang);
+
+const games = await getGames();
+const posts = (await getPosts(lang)).slice(0, 3);
+const featured = getFeatured(games);
+---
+
+<Base lang={lang} active="games">
+  <div class="container page">
+    {featured ? <HeroFeatured lang={lang} game={featured} /> : <HeroWelcome lang={lang} />}
+
+    <SpecRow lang={lang} gameCount={games.length} />
+
+    <GameGrid lang={lang} games={games} />
+
+    <div class="split">
+      <section class="split__main" aria-labelledby="latest-posts">
+        <div class="posts-head">
+          <SectionHeader eyebrow={t('devlog.eyebrow')} title={t('devlog.latest')} id="latest-posts" />
+        </div>
+        {
+          posts.length > 0 ? (
+            <ol class="posts plain">
+              {posts.map((post, i) => (
+                <PostRow lang={lang} post={post} index={i + 1} />
+              ))}
+            </ol>
+          ) : (
+            <p class="empty">{t('devlog.empty')}</p>
+          )
+        }
+      </section>
+
+      <aside class="split__side side">
+        <DriverCard lang={lang} />
+        {site.features.achievementsTeaser && <V2Teaser lang={lang} />}
+      </aside>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .posts-head {
+    margin-bottom: 16px;
+  }
+  .posts {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .empty {
+    color: var(--text-3);
+  }
+  .side {
+    padding-top: 6px;
+  }
+</style>

@@ -1,0 +1,94 @@
+---
+/** Hero kutusu: gradyan, hız çizgileri, damalı şerit, rozet. Metin varsayılan slot'ta, görsel "art" slot'unda. */
+import Checker from './Checker.astro';
+
+interface Props {
+  badge: string;
+}
+
+const { badge } = Astro.props;
+---
+
+<section class="hero" aria-labelledby="hero-title">
+  <div class="hero__speed" aria-hidden="true"></div>
+  <Checker bottom class="hero__checker" />
+
+  <div class="hero__text">
+    <span class="hero__badge">{badge}</span>
+    <slot />
+  </div>
+
+  <div class="hero__art">
+    <slot name="art" />
+  </div>
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 24px 40px;
+    padding: clamp(28px, 4.5vw, 56px);
+    padding-bottom: calc(clamp(28px, 4.5vw, 56px) + 14px);
+    overflow: hidden;
+    isolation: isolate;
+    border-radius: 22px;
+    background: linear-gradient(160deg, var(--hero-from) 0%, var(--hero-to) 100%);
+    border: 1px solid var(--line-3);
+    box-shadow: var(--shadow-hero);
+  }
+  .hero__speed {
+    position: absolute;
+    right: -80px;
+    top: -40px;
+    bottom: -40px;
+    width: 60%;
+    background: repeating-linear-gradient(-62deg, transparent 0 36px, rgba(255, 107, 44, 0.1) 36px 58px);
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 40%);
+    mask-image: linear-gradient(90deg, transparent, #000 40%);
+    z-index: -1;
+  }
+  .hero :global(.hero__checker) {
+    opacity: 0.85;
+  }
+  .hero__text {
+    flex: 1 1 440px;
+    min-width: 0;
+  }
+  .hero__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 18px;
+    padding: 6px 12px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    color: var(--led);
+    background: rgba(255, 194, 61, 0.08);
+    border: 1px solid rgba(255, 194, 61, 0.35);
+    border-radius: 6px;
+  }
+  .hero__text :global(.hero__title) {
+    margin-bottom: 18px;
+    font-size: clamp(40px, 5.6vw, 72px);
+    line-height: 0.98;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+  }
+  .hero__text :global(.hero__ctas) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .hero__art {
+    flex: 1 1 300px;
+    display: flex;
+    justify-content: center;
+    min-width: 0;
+  }
+</style>

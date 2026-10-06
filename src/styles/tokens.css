@@ -1,0 +1,73 @@
+:root {
+  /* Zemin */
+  --bg: #0d1328; /* sayfa zemini */
+  --bg-deep: #070b18; /* ticker şeridi, oynatıcı çerçevesi */
+  --bg-footer: #080c1a;
+  --surface: #131a36; /* kartlar, paneller, spec kutuları, post satırları */
+  --surface-2: #161e3d; /* giriş butonu, kilitli rozet zemini */
+  --surface-3: #1c2548; /* kbd tuşları, rozet kutuları, post hover */
+  --hero-from: #1a2347; /* hero gradyanı (160deg) */
+  --hero-to: #121935;
+  --cover-from: #24305e; /* kapak yer tutucu gradyanı (160deg) */
+  --cover-to: #161e3d;
+
+  /* Çizgiler */
+  --line: #222b50; /* header alt çizgisi, panel kenarı */
+  --line-2: #262f58; /* kart kenarı */
+  --line-3: #2a345c; /* hero kenarı */
+  --line-strong: #2c3660; /* input, chip, etiket, kesikli yakında kartı */
+  --line-btn: #3a4677; /* giriş butonu kenarı, kbd kenarı */
+  --line-btn-2: #4a5688; /* ikincil (outline) buton kenarı */
+  --line-hover: #33406e; /* post satırı hover kenarı */
+
+  /* Metin */
+  --text: #f3ead8; /* krem — ana metin ve başlıklar */
+  --text-2: #c9cbe0; /* paragraf (koyu zeminde) */
+  --text-3: #a9b0cf; /* ikincil metin, pasif menü, etiket */
+  --text-4: #8a92b8; /* tarih, ipucu, ikon */
+  --text-5: #6f78a3; /* mono küçük etiketler — sadece dekoratif/ikincil */
+  --text-ghost: #3a4677; /* devlog satırındaki büyük numaralar (dekoratif) */
+
+  /* Vurgular */
+  --accent: #ff6b2c; /* yarış turuncusu — birincil vurgu (tek satırla değiştirilebilir) */
+  --accent-glow: rgba(255, 107, 44, 0.3);
+  --accent-alt-1: #2ec4b6;
+  --accent-alt-2: #ffc23d;
+  --accent-alt-3: #e8425a;
+  --led: #ffc23d; /* LED sarısı */
+  --led-hover: #ffe08a;
+  --on-accent: #0d1328; /* turuncu/sarı zemin üstündeki metin her zaman lacivert */
+
+  /* Krem kart (Sürücü kartı / Teknik kart) */
+  --card-cream: #f3ead8;
+  --card-ink: #0d1328;
+  --card-ink-2: #3a3a4a;
+  --card-ink-3: #55566a;
+  --card-eyebrow: #8a3a12;
+
+  /* Arka plan deseni */
+  --grid-line: rgba(243, 234, 216, 0.035);
+  --top-glow: rgba(255, 107, 44, 0.14);
+
+  /* Yazı tipleri */
+  --font-sans: 'Archivo Variable', 'Archivo', system-ui, sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, monospace;
+  --font-badge: 'Courier New', monospace;
+
+  /* Gölgeler */
+  --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.3);
+  --shadow-card-hover: 0 18px 40px rgba(0, 0, 0, 0.45);
+  --shadow-hero: 0 30px 70px rgba(0, 0, 0, 0.4);
+  --shadow-player: 0 30px 70px rgba(0, 0, 0, 0.5);
+  --shadow-primary: inset 0 -4px 0 rgba(0, 0, 0, 0.22), 0 10px 26px rgba(255, 107, 44, 0.3);
+
+  /* Düzen */
+  --container: 1180px;
+  --gutter: 24px;
+}
+
+@media (max-width: 560px) {
+  :root {
+    --gutter: 16px;
+  }
+}

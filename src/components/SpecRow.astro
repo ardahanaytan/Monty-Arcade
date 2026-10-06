@@ -1,0 +1,57 @@
+---
+import { useTranslations, type Lang } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+  gameCount: number;
+}
+
+const { lang, gameCount } = Astro.props;
+const t = useTranslations(lang);
+
+const items = [
+  gameCount > 0
+    ? { value: String(gameCount), label: t('spec.games') }
+    : { value: t('spec.freeValue'), label: t('spec.free') },
+  { value: '0 MB', label: t('spec.install') },
+  { value: 'TR / EN', label: t('spec.langs') },
+];
+---
+
+<ul class="spec plain" aria-label={t('a11y.highlights')}>
+  {
+    items.map((item) => (
+      <li>
+        <strong class="display">{item.value}</strong>
+        <span>{item.label}</span>
+      </li>
+    ))
+  }
+</ul>
+
+<style>
+  .spec {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+  }
+  li {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 14px 18px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+  }
+  strong {
+    font-size: 22px;
+    color: var(--text);
+  }
+  span {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    color: var(--text-3);
+  }
+</style>

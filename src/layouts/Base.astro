@@ -1,0 +1,94 @@
+---
+import '@fontsource-variable/archivo/wdth.css';
+import '@fontsource-variable/archivo/wdth-italic.css';
+import '@fontsource/space-mono/400.css';
+import '@fontsource/space-mono/700.css';
+import '../styles/tokens.css';
+import '../styles/global.css';
+import archivoNormal from '@fontsource-variable/archivo/files/archivo-latin-wdth-normal.woff2?url';
+import archivoItalic from '@fontsource-variable/archivo/files/archivo-latin-wdth-italic.woff2?url';
+
+import Header, { type NavSection } from '../components/Header.astro';
+import Ticker from '../components/Ticker.astro';
+import Footer from '../components/Footer.astro';
+import { site } from '../config/site';
+import { languages, switchLangPath, useTranslations, type Lang } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+  /** Sayfa başlığı; boşsa ana sayfa biçimi kullanılır. */
+  title?: string;
+  description?: string;
+  active?: NavSection;
+  /** Dil değiştirici ve hreflang için her dildeki karşılık. Verilmezse yolun ilk parçası değiştirilir. */
+  langPaths?: Partial<Record<Lang, string>>;
+  /** Bu sayfanın gerçekten var olduğu diller (hreflang). Varsayılan: hepsi. */
+  alternateLangs?: readonly Lang[];
+  ticker?: boolean;
+  ogImage?: string;
+  ogType?: 'website' | 'article';
+}
+
+const {
+  lang,
+  title,
+  description,
+  active,
+  langPaths = {},
+  alternateLangs = languages,
+  ticker = true,
+  ogImage,
+  ogType = 'website',
+} = Astro.props;
+const t = useTranslations(lang);
+
+const pathname = Astro.url.pathname;
+const paths = Object.fromEntries(
+  languages.map((l) => [l, langPaths[l] ?? (l === lang ? pathname : switchLangPath(pathname, l))]),
+) as Record<Lang, string>;
+
+const fullTitle = title ? `${title} · ${site.name}` : `${site.name} — ${t('meta.tagline')}`;
+const desc = description ?? t('meta.tagline');
+const base = Astro.site ?? new URL(site.url);
+const canonical = new URL(pathname, base).href;
+const ogImageUrl = new URL(ogImage ?? '/og-default.png', base).href;
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={desc} />
+    <link rel="canonical" href={canonical} />
+    {alternateLangs.map((l) => <link rel="alternate" hreflang={l} href={new URL(paths[l], base).href} />)}
+    <link rel="alternate" hreflang="x-default" href={new URL('/', base).href} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta name="theme-color" content="#0d1328" />
+    <meta name="generator" content={Astro.generator} />
+
+    <link rel="preload" href={archivoNormal} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={archivoItalic} as="font" type="font/woff2" crossorigin />
+
+    <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={title ?? site.name} />
+    <meta property="og:description" content={desc} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:locale" content={lang === 'tr' ? 'tr_TR' : 'en_US'} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <slot name="head" />
+  </head>
+  <body>
+    <a href="#main" class="skip-link">{t('a11y.skip')}</a>
+    <Header lang={lang} active={active} langPaths={paths} />
+    {ticker && <Ticker lang={lang} />}
+    <main id="main" tabindex="-1">
+      <slot />
+    </main>
+    <Footer lang={lang} />
+  </body>
+</html>

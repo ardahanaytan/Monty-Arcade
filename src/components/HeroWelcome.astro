@@ -1,0 +1,40 @@
+---
+import Button from './Button.astro';
+import HeroShell from './HeroShell.astro';
+import MontyHelmet from './MontyHelmet.astro';
+import { useTranslations, type Lang } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<HeroShell badge={t('hero.badge')}>
+  <h1 id="hero-title" class="hero__title display">
+    {t('hero.title1')}<br /><span class="accent">{t('hero.title2')}</span>
+  </h1>
+  <p class="lead">{t('hero.lead')}</p>
+  <div class="hero__ctas">
+    <Button href={`/${lang}/devlog/`} iconAfter="arrow">{t('hero.ctaDevlog')}</Button>
+    <Button href={`/${lang}/about/`} variant="secondary">{t('hero.ctaAbout')}</Button>
+  </div>
+
+  <MontyHelmet slot="art" label={t('monty.alt')} class="hero-monty" />
+</HeroShell>
+
+<style>
+  .accent {
+    color: var(--accent);
+  }
+  .lead {
+    margin-bottom: 30px;
+  }
+  @media (max-width: 560px) {
+    :global(.hero-monty) {
+      max-width: 220px;
+    }
+  }
+</style>

@@ -1,0 +1,162 @@
+---
+import Checker from './Checker.astro';
+import { site } from '../config/site';
+import { useTranslations, type Lang } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+const links = [
+  { href: `/${lang}/#games`, label: t('nav.games') },
+  { href: `/${lang}/devlog/`, label: t('nav.devlog') },
+  { href: `/${lang}/about/`, label: t('nav.about') },
+  { href: site.links.itch, label: 'itch.io' },
+  { href: site.links.github, label: 'GitHub' },
+].filter((l) => l.href);
+
+const badges = [
+  { top: 'HTML5', bottom: 'POWERED' },
+  { top: 'NO FLASH', bottom: 'REQUIRED' },
+  { top: 'BUILT WITH', bottom: 'ASTRO', led: true },
+  { top: 'BEST VIEWED', bottom: 'ANY SCREEN' },
+];
+
+const year = new Date().getFullYear();
+---
+
+<footer class="footer">
+  <Checker variant="footer" />
+  <div class="container footer__inner">
+    <div class="footer__row">
+      <div>
+        <p class="footer__mark display">
+          {site.wordmark.top} <span>{site.wordmark.bottom}</span>
+        </p>
+        <p class="footer__tagline">{t('footer.tagline')}</p>
+      </div>
+      <nav class="footer__nav" aria-label={t('footer.menu')}>
+        {links.map((l) => <a href={l.href}>{l.label}</a>)}
+        {
+          site.links.kofi && (
+            <a href={site.links.kofi} class="footer__support gloss press" rel="noopener">
+              {t('footer.support')}
+            </a>
+          )
+        }
+      </nav>
+    </div>
+    <div class="badges" aria-hidden="true">
+      {
+        badges.map((b) => (
+          <span class:list={['badge', { 'badge--led': b.led }]}>
+            <span class="badge__top">{b.top}</span>
+            <span class="badge__bottom">{b.bottom}</span>
+          </span>
+        ))
+      }
+    </div>
+    <p class="footer__copy">© {year} {site.name.toLocaleUpperCase('en')}</p>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    margin-top: 56px;
+    background: var(--bg-footer);
+  }
+  .footer__inner {
+    padding-block: 36px 30px;
+  }
+  .footer__row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 20px 40px;
+  }
+  .footer__mark {
+    margin-bottom: 4px;
+    font-size: 24px;
+  }
+  .footer__mark span {
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.3em;
+    color: var(--accent);
+  }
+  .footer__tagline {
+    font-size: 15px;
+    color: var(--text-3);
+  }
+  .footer__nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 22px;
+    align-items: center;
+  }
+  .footer__nav a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .footer__nav a:hover {
+    color: var(--led);
+  }
+  .footer__nav .footer__support {
+    padding: 0 18px;
+    color: var(--on-accent);
+    text-decoration: none;
+    background: var(--led);
+    border-radius: 999px;
+  }
+  .footer__nav .footer__support:hover {
+    color: var(--on-accent);
+  }
+  .badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 26px 0 16px;
+  }
+  .badge {
+    width: 88px;
+    height: 31px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 6px;
+    font-family: var(--font-badge);
+    font-weight: 700;
+    line-height: 1.05;
+    color: var(--text);
+    background: var(--surface-3);
+    border: 1px solid var(--line-btn-2);
+  }
+  .badge__top {
+    font-size: 9px;
+    color: var(--text-3);
+  }
+  .badge__bottom {
+    font-size: 11px;
+  }
+  .badge--led {
+    color: var(--on-accent);
+    background: var(--led);
+    border-color: var(--led-hover);
+  }
+  .badge--led .badge__top {
+    color: var(--on-accent);
+  }
+  .footer__copy {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-5);
+  }
+</style>

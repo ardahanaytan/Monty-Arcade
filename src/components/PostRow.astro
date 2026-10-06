@@ -1,0 +1,90 @@
+---
+import { formatDate, type Lang } from '../i18n/ui';
+import { postUrl, type Post } from '../lib/content';
+
+interface Props {
+  lang: Lang;
+  post: Post;
+  index: number;
+}
+
+const { lang, post, index } = Astro.props;
+---
+
+<li>
+  <a href={postUrl(post)} class="postrow">
+    <span class="postrow__num display" aria-hidden="true">{String(index).padStart(2, '0')}</span>
+    <span class="postrow__body">
+      <span class="postrow__title">{post.data.title}</span>
+      <span class="postrow__desc">{post.data.description}</span>
+    </span>
+    <time class="postrow__date" datetime={post.data.date.toISOString().slice(0, 10)}>{formatDate(post.data.date, lang)}</time>
+  </a>
+</li>
+
+<style>
+  .postrow {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 16px 18px;
+    color: inherit;
+    text-decoration: none;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease;
+  }
+  .postrow:hover {
+    color: inherit;
+    background: var(--surface-3);
+    border-color: var(--line-hover);
+  }
+  .postrow__num {
+    flex: none;
+    width: 56px;
+    font-size: 30px;
+    line-height: 1;
+    color: var(--text-ghost);
+  }
+  .postrow__body {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+  }
+  .postrow__title {
+    font-weight: 800;
+    font-size: 18px;
+    line-height: 1.3;
+  }
+  .postrow__desc {
+    font-size: 14px;
+    color: var(--text-3);
+  }
+  .postrow__date {
+    flex: none;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-4);
+  }
+  @media (max-width: 560px) {
+    .postrow {
+      flex-wrap: wrap;
+      gap: 6px 14px;
+    }
+    .postrow__num {
+      width: 40px;
+      font-size: 24px;
+    }
+    .postrow__body {
+      flex-basis: calc(100% - 54px);
+    }
+    .postrow__date {
+      flex-basis: 100%;
+      padding-left: 54px;
+    }
+  }
+</style>

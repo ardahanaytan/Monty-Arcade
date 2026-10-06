@@ -1,0 +1,103 @@
+---
+/**
+ * Monty — özgün retro yarış kaskı maskotu (§7).
+ * variant="full": hero / hakkında / 404 için büyük kask.
+ * variant="small": logo ikonu.
+ * expression: "x" → 404 için çarpı LED gözler.
+ */
+interface Props {
+  variant?: 'full' | 'small';
+  size?: number;
+  animated?: boolean;
+  label?: string;
+  expression?: 'default' | 'x';
+  class?: string;
+}
+
+const { variant = 'full', size, animated = true, label, expression = 'default', class: className } = Astro.props;
+const width = size ?? (variant === 'full' ? 330 : 50);
+const height = Math.round(width * (variant === 'full' ? 230 / 240 : 220 / 240));
+const a11y = label ? { role: 'img', 'aria-label': label } : { 'aria-hidden': 'true' as const };
+---
+
+{
+  variant === 'full' ? (
+    <svg
+      viewBox="0 0 240 230"
+      width={width}
+      height={height}
+      class:list={['monty', { 'monty--float': animated }, className]}
+      {...a11y}
+    >
+      <ellipse cx="125" cy="218" rx="80" ry="8" fill="#000" opacity=".35" />
+      <path
+        d="M30 130 C30 62 78 22 130 22 C188 22 220 70 220 130 L220 158 C220 176 206 188 188 188 L62 188 C44 188 30 176 30 158 Z"
+        fill="var(--card-cream)"
+        stroke="var(--card-ink)"
+        stroke-width="5"
+      />
+      <path d="M112 23 C102 58 100 92 102 120 L136 120 C136 92 140 58 152 26 Z" fill="var(--accent)" />
+      <path d="M104 23 C94 58 92 92 94 120 L100 120 C98 92 100 58 110 23 Z" fill="var(--card-ink)" />
+      <path d="M156 26 C144 58 140 92 142 120 L148 120 C146 92 150 58 162 30 Z" fill="var(--card-ink)" />
+      <path d="M44 72 C60 44 86 30 108 27" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" opacity=".7" />
+      <rect x="46" y="94" width="164" height="68" rx="30" fill="var(--card-ink)" stroke="var(--card-ink)" stroke-width="5" />
+      <path d="M70 104 L190 104" stroke="#2b3561" stroke-width="5" stroke-linecap="round" />
+      {expression === 'x' ? (
+        <g stroke="var(--led)" stroke-width="7" stroke-linecap="round">
+          <path d="M86 114 L106 142 M106 114 L86 142" />
+          <path d="M148 114 L168 142 M168 114 L148 142" />
+        </g>
+      ) : (
+        <g class:list={{ eyes: animated }}>
+          <rect x="84" y="112" width="24" height="32" rx="5" fill="var(--led)" />
+          <rect x="146" y="112" width="24" height="32" rx="5" fill="var(--led)" />
+          <rect x="80" y="108" width="32" height="40" rx="8" fill="var(--led)" opacity=".18" />
+          <rect x="142" y="108" width="32" height="40" rx="8" fill="var(--led)" opacity=".18" />
+        </g>
+      )}
+      <path d="M96 176 L154 176" stroke="var(--card-ink)" stroke-width="5" stroke-linecap="round" />
+      <path d="M104 182 L146 182" stroke="var(--card-ink)" stroke-width="4" stroke-linecap="round" opacity=".5" />
+      <circle cx="206" cy="146" r="17" fill="var(--card-ink)" />
+      <text
+        x="206"
+        y="153"
+        text-anchor="middle"
+        font-family="Archivo Variable, Archivo, sans-serif"
+        font-weight="900"
+        font-style="italic"
+        font-size="20"
+        fill="var(--card-cream)"
+      >
+        M
+      </text>
+    </svg>
+  ) : (
+    <svg viewBox="0 0 240 220" width={width} height={height} class:list={['monty-icon', className]} {...a11y}>
+      <path
+        d="M30 130 C30 62 78 22 130 22 C188 22 220 70 220 130 L220 158 C220 176 206 188 188 188 L62 188 C44 188 30 176 30 158 Z"
+        fill="var(--card-cream)"
+        stroke="var(--card-cream)"
+        stroke-width="2"
+      />
+      <path d="M112 23 C102 58 100 92 102 120 L136 120 C136 92 140 58 152 26 Z" fill="var(--accent)" />
+      <rect x="48" y="96" width="160" height="64" rx="28" fill="var(--card-ink)" />
+      <g class:list={{ eyes: animated }}>
+        <rect x="90" y="114" width="20" height="26" rx="4" fill="var(--led)" />
+        <rect x="146" y="114" width="20" height="26" rx="4" fill="var(--led)" />
+      </g>
+    </svg>
+  )
+}
+
+<style>
+  .monty {
+    max-width: 100%;
+    height: auto;
+  }
+  .monty--float {
+    animation: floaty 5s ease-in-out infinite;
+  }
+  .monty-icon {
+    flex: none;
+  }
+</style>

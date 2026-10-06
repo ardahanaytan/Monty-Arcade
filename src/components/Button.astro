@@ -1,0 +1,67 @@
+---
+import Icon, { type IconName } from './Icon.astro';
+
+interface Props {
+  href: string;
+  variant?: 'primary' | 'secondary' | 'ghost';
+  iconBefore?: IconName;
+  iconAfter?: IconName;
+  class?: string;
+}
+
+const { href, variant = 'primary', iconBefore, iconAfter, class: className } = Astro.props;
+---
+
+<a href={href} class:list={['btn', `btn--${variant}`, { gloss: variant === 'primary', press: variant !== 'ghost' }, className]}>
+  {iconBefore && <Icon name={iconBefore} strokeWidth={2.6} />}
+  <slot />
+  {iconAfter && <Icon name={iconAfter} strokeWidth={2.6} />}
+</a>
+
+<style>
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-decoration: none;
+    border-radius: 999px;
+  }
+  .btn--primary {
+    min-height: 54px;
+    padding: 0 26px;
+    font-weight: 900;
+    font-size: 17px;
+    letter-spacing: 0.02em;
+    color: var(--on-accent);
+    background: var(--accent);
+    box-shadow: var(--shadow-primary);
+  }
+  .btn--primary:hover {
+    color: var(--on-accent);
+  }
+  .btn--secondary {
+    min-height: 54px;
+    padding: 0 24px;
+    font-weight: 800;
+    font-size: 17px;
+    color: var(--text);
+    border: 1.5px solid var(--line-btn-2);
+  }
+  .btn--secondary:hover {
+    color: var(--text);
+    border-color: var(--text-3);
+  }
+  .btn--ghost {
+    min-height: 44px;
+    padding: 0 14px;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-2);
+    border-radius: 10px;
+  }
+  .btn--ghost:hover {
+    color: var(--text);
+    background: var(--line);
+  }
+</style>

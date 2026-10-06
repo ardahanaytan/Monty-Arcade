@@ -1,0 +1,32 @@
+---
+import Checker from './Checker.astro';
+import { useTranslations, type Lang } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<section class="cream-card driver" aria-labelledby="driver-title">
+  <Checker variant="cream" bottom />
+  <span class="card-eyebrow">{t('driver.eyebrow')}</span>
+  <h2 id="driver-title" class="display">{t('driver.title')}</h2>
+  <p>{t('driver.text')}</p>
+  <a href={`/${lang}/about/`}>{t('driver.link')}</a>
+</section>
+
+<style>
+  h2 {
+    margin-bottom: 8px;
+    font-size: 26px;
+    line-height: 1.05;
+  }
+  p {
+    margin-bottom: 14px;
+    font-size: 15px;
+    color: var(--card-ink-2);
+  }
+</style>

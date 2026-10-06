@@ -1,0 +1,76 @@
+---
+import Icon from './Icon.astro';
+import { useTranslations, type Lang } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<section class="teaser" aria-labelledby="teaser-title">
+  <span class="teaser__badge">{t('teaser.badge')}</span>
+  <h2 id="teaser-title" class="subhead">{t('teaser.title')}</h2>
+  <p>{t('teaser.text')}</p>
+  <div class="teaser__badges" aria-hidden="true">
+    <span style="--c: var(--led)"><Icon name="star" size={24} /></span>
+    <span style="--c: var(--accent)"><Icon name="flag" size={24} /></span>
+    <span style="--c: var(--text-2)"><Icon name="clock" size={24} /></span>
+    <span class="teaser__secret">???</span>
+  </div>
+</section>
+
+<style>
+  .teaser {
+    background: var(--surface);
+    border: 1px solid var(--line-2);
+    border-radius: 18px;
+    padding: 22px;
+  }
+  .teaser__badge {
+    display: inline-block;
+    margin-bottom: 10px;
+    padding: 3px 8px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    color: var(--on-accent);
+    background: var(--led);
+    border-radius: 4px;
+  }
+  h2 {
+    margin-bottom: 6px;
+    font-size: 21px;
+    line-height: 1.2;
+  }
+  p {
+    margin-bottom: 16px;
+    font-size: 14px;
+    color: var(--text-3);
+  }
+  .teaser__badges {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .teaser__badges span {
+    aspect-ratio: 1;
+    display: grid;
+    place-items: center;
+    color: var(--c);
+    border-radius: 12px;
+    background: var(--surface-3);
+    border: 1px solid var(--c);
+  }
+  .teaser__badges .teaser__secret {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-5);
+    background: transparent;
+    border: 1.5px dashed var(--line-btn);
+  }
+</style>

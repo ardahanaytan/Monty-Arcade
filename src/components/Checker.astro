@@ -1,0 +1,20 @@
+---
+/** Damalı bayrak şeridi. "hero" 14px, "footer" 12px, "cream" krem kart altı 10px (ters renk). */
+interface Props {
+  variant?: 'hero' | 'footer' | 'cream';
+  bottom?: boolean;
+  class?: string;
+}
+
+const { variant = 'hero', bottom = false, class: className } = Astro.props;
+---
+
+<div
+  aria-hidden="true"
+  class:list={[
+    'checker',
+    { 'checker--footer': variant === 'footer', 'checker--inverse': variant === 'cream', 'checker--bottom': bottom },
+    className,
+  ]}
+>
+</div>

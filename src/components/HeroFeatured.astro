@@ -1,0 +1,85 @@
+---
+/** v1.5 — "Haftanın oyunu" hero'su. Oyun yoksa kullanılmaz. */
+import { Image } from 'astro:assets';
+import Button from './Button.astro';
+import HeroShell from './HeroShell.astro';
+import MontyHelmet from './MontyHelmet.astro';
+import Tag from './Tag.astro';
+import { useTranslations, type Lang } from '../i18n/ui';
+import { gameUrl, type Game } from '../lib/content';
+
+interface Props {
+  lang: Lang;
+  game: Game;
+}
+
+const { lang, game } = Astro.props;
+const t = useTranslations(lang);
+const url = gameUrl(game, lang);
+---
+
+<HeroShell badge={t('hero.featuredBadge')}>
+  <h1 id="hero-title" class="hero__title display">{game.data.title[lang]}</h1>
+  <p class="lead">{game.data.tagline[lang]}</p>
+  {
+    game.data.tags.length > 0 && (
+      <div class="tags">
+        {game.data.tags.map((tag) => (
+          <Tag tag={tag} lang={lang} size="md" />
+        ))}
+      </div>
+    )
+  }
+  <div class="hero__ctas">
+    <Button href={`${url}#play`} iconBefore="play">{t('hero.play')}</Button>
+    <Button href={url} variant="secondary">{t('hero.details')}</Button>
+  </div>
+
+  <a slot="art" href={url} class="cover" tabindex="-1" aria-hidden="true">
+    <Image
+      src={game.data.cover}
+      alt=""
+      widths={[480, 640, 960]}
+      sizes="(max-width: 760px) 90vw, 480px"
+      loading="eager"
+      fetchpriority="high"
+    />
+    <span class="sticker"><MontyHelmet variant="small" size={56} animated={false} /></span>
+  </a>
+</HeroShell>
+
+<style>
+  .lead {
+    margin-bottom: 18px;
+  }
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 28px;
+  }
+  .cover {
+    position: relative;
+    display: block;
+    width: min(100%, 480px);
+    transform: rotate(-2deg);
+    transition: transform 0.2s ease;
+  }
+  .cover:hover {
+    transform: rotate(0deg);
+  }
+  .cover :global(img) {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    border: 4px solid var(--text);
+    border-radius: 16px;
+  }
+  .sticker {
+    position: absolute;
+    right: -10px;
+    bottom: -12px;
+    transform: rotate(8deg);
+    filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.4));
+  }
+</style>

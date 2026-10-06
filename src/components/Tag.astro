@@ -1,0 +1,33 @@
+---
+import { tagLabel, type Lang } from '../i18n/ui';
+
+interface Props {
+  tag: string;
+  lang: Lang;
+  size?: 'sm' | 'md';
+}
+
+const { tag, lang, size = 'sm' } = Astro.props;
+---
+
+<span class:list={['tag', `tag--${size}`]}>{tagLabel(tag, lang)}</span>
+
+<style>
+  .tag {
+    display: inline-block;
+    font-weight: 700;
+    color: var(--text-3);
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    line-height: 1.5;
+    white-space: nowrap;
+  }
+  .tag--sm {
+    padding: 2px 9px;
+    font-size: 12px;
+  }
+  .tag--md {
+    padding: 3px 11px;
+    font-size: 13px;
+  }
+</style>

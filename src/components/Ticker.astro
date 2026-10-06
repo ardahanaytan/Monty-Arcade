@@ -1,0 +1,129 @@
+---
+import { getGames, getPosts, gameUrl, postUrl } from '../lib/content';
+import { upper, useTranslations, type Lang } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+type Item = { text: string; href?: string };
+
+const games = (await getGames()).slice(0, 3);
+const posts = (await getPosts(lang)).slice(0, 2);
+
+const gameItems: Item[] = games.map((g) => ({
+  text: `${t('ticker.newGame')}: ${upper(g.data.title[lang], lang)}`,
+  href: gameUrl(g, lang),
+}));
+const postItems: Item[] = posts.map((p) => ({
+  text: `${t('ticker.newPost')}: ${upper(p.data.title, lang)}`,
+  href: postUrl(p),
+}));
+
+const announcements: Item[] = [
+  { text: t('ticker.1') },
+  { text: t('ticker.2') },
+  { text: t('ticker.3') },
+  { text: t('ticker.4') },
+];
+
+// Oyun yokken sabit duyurular + son yazılar; oyun gelince son 3 oyun + son 2 yazı.
+let items: Item[] = games.length > 0 ? [...gameItems, ...postItems] : [...announcements, ...postItems];
+// Döngüyü dolduracak kadar tekrarla.
+while (items.length < 4) items = [...items, ...items];
+---
+
+<div class="ticker">
+  <div class="container ticker__inner">
+    <span class="ticker__label"><span class="ticker__dot" aria-hidden="true"></span>{t('ticker.label')}</span>
+    <div class="ticker__mask">
+      <ul class="ticker__track plain">
+        {
+          items.map((item) => (
+            <li>{item.href ? <a href={item.href}>▸ {item.text}</a> : <span>▸ {item.text}</span>}</li>
+          ))
+        }
+        {
+          items.map((item) => (
+            <li aria-hidden="true">
+              {item.href ? (
+                <a href={item.href} tabindex="-1">
+                  ▸ {item.text}
+                </a>
+              ) : (
+                <span>▸ {item.text}</span>
+              )}
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </div>
+</div>
+
+<style>
+  .ticker {
+    background: var(--bg-deep);
+    border-bottom: 1px solid var(--line);
+  }
+  .ticker__inner {
+    display: flex;
+    align-items: stretch;
+  }
+  .ticker__label {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-right: 14px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    color: var(--accent);
+  }
+  .ticker__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 10px var(--accent);
+  }
+  .ticker__mask {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 94%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 4%, #000 94%, transparent);
+  }
+  .ticker__track {
+    display: flex;
+    width: max-content;
+    padding: 9px 0;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    color: var(--led);
+    text-shadow: 0 0 8px rgba(255, 194, 61, 0.45);
+    animation: scroll 42s linear infinite;
+  }
+  .ticker__mask:hover .ticker__track,
+  .ticker__mask:focus-within .ticker__track {
+    animation-play-state: paused;
+  }
+  .ticker__track li {
+    padding: 0 28px;
+    white-space: nowrap;
+  }
+  .ticker__track a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .ticker__track a:hover {
+    color: var(--led-hover);
+    text-decoration: underline;
+  }
+</style>

@@ -1,0 +1,22 @@
+---
+interface Props {
+  eyebrow: string;
+  title: string;
+  id?: string;
+  as?: 'h1' | 'h2';
+  size?: 'section' | 'small';
+}
+
+const { eyebrow, title, id, as: Heading = 'h2', size = 'section' } = Astro.props;
+---
+
+<div class="section-header">
+  <span class="eyebrow">{eyebrow}</span>
+  <Heading id={id} class:list={['h2', { 'h2--small': size === 'small' }]}>{title}</Heading>
+</div>
+
+<style>
+  .h2--small {
+    font-size: clamp(26px, 3vw, 34px);
+  }
+</style>

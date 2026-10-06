@@ -1,0 +1,62 @@
+---
+import { useTranslations, type Lang } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+  slot: number;
+  size?: 'lg' | 'sm';
+}
+
+const { lang, slot, size = 'lg' } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<li class:list={['soon', `soon--${size}`]} aria-hidden="true" data-soon>
+  <span class="soon__slot">{t('soon.slot')} {String(slot).padStart(2, '0')}</span>
+  <span class="soon__title display">{t('soon.title')}</span>
+  {size === 'lg' && <span class="soon__text">{t('soon.text')}</span>}
+</li>
+
+<style>
+  .soon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 20px;
+    text-align: center;
+    border: 1.5px dashed var(--line-strong);
+    border-radius: 16px;
+  }
+  .soon--lg {
+    min-height: 290px;
+    background: repeating-linear-gradient(-45deg, transparent 0 12px, rgba(243, 234, 216, 0.025) 12px 24px);
+  }
+  .soon--sm {
+    min-height: 170px;
+    gap: 4px;
+  }
+  .soon__slot {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    color: var(--text-5);
+  }
+  .soon--sm .soon__slot {
+    font-size: 12px;
+  }
+  .soon__title {
+    font-size: 26px;
+    line-height: 1.15;
+    color: var(--text-2);
+  }
+  .soon--sm .soon__title {
+    font-size: 22px;
+  }
+  .soon__text {
+    font-size: 14px;
+    color: var(--text-4);
+  }
+</style>

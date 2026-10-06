@@ -1,0 +1,164 @@
+---
+import { Image } from 'astro:assets';
+import Icon from './Icon.astro';
+import Tag from './Tag.astro';
+import { site } from '../config/site';
+import { languages, tagLabel, useTranslations, type Lang } from '../i18n/ui';
+import { gameUrl, isNew, type Game } from '../lib/content';
+
+interface Props {
+  lang: Lang;
+  game: Game;
+  eager?: boolean;
+}
+
+const { lang, game, eager = false } = Astro.props;
+const t = useTranslations(lang);
+const { title, tagline, tags, cover, achievements } = game.data;
+
+// İki dildeki başlık + tagline + etiketler (filtre/arama için).
+const search = languages
+  .flatMap((l) => [title[l], tagline[l], ...tags.map((tag) => tagLabel(tag, l))])
+  .join(' ')
+  .toLocaleLowerCase(lang);
+---
+
+<li class="card" data-game data-tags={tags.join(' ')} data-search={search}>
+  <a href={gameUrl(game, lang)} class="card__link">
+    <div class="card__cover">
+      <Image
+        src={cover}
+        alt=""
+        widths={[320, 480, 640]}
+        sizes="(max-width: 560px) 100vw, (max-width: 900px) 50vw, 280px"
+        loading={eager ? 'eager' : 'lazy'}
+      />
+      {isNew(game) && <span class="card__new">{t('card.new')}</span>}
+      <span class="card__play gloss"><Icon name="play" size={12} />{t('card.play')}</span>
+    </div>
+    <div class="card__body">
+      <h3 class="card__title subhead">{title[lang]}</h3>
+      <p class="card__tagline">{tagline[lang]}</p>
+    </div>
+  </a>
+  <div class="card__meta">
+    {tags.slice(0, 3).map((tag) => <Tag tag={tag} lang={lang} />)}
+    {
+      site.features.accounts && achievements.length > 0 && (
+        <span class="card__ach" title={t('card.achievements')}>
+          <Icon name="trophy" size={14} />
+          <span class="sr-only">{t('card.achievements')}:</span>
+          {achievements.length}
+        </span>
+      )
+    }
+  </div>
+</li>
+
+<style>
+  .card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border: 1px solid var(--line-2);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: var(--shadow-card);
+    transition:
+      transform 0.2s ease,
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    border-color: var(--accent);
+    box-shadow: var(--shadow-card-hover);
+  }
+  .card:focus-within {
+    outline: 3px solid var(--led);
+    outline-offset: 3px;
+  }
+  .card__link {
+    display: block;
+    flex: 1;
+    color: inherit;
+    text-decoration: none;
+  }
+  .card__link:hover {
+    color: inherit;
+  }
+  .card__link:focus-visible {
+    outline: none;
+  }
+  .card__cover {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    background: linear-gradient(160deg, var(--cover-from) 0%, var(--cover-to) 100%);
+  }
+  .card__cover :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .card__new {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    padding: 3px 8px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--on-accent);
+    background: var(--led);
+    border-radius: 4px;
+    transform: rotate(-3deg);
+  }
+  .card__play {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    font-weight: 900;
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    color: var(--on-accent);
+    border-radius: 999px;
+    background: var(--accent);
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.22);
+  }
+  .card__body {
+    padding: 14px 16px 4px;
+  }
+  .card__title {
+    margin-bottom: 4px;
+    font-size: 19px;
+    line-height: 1.2;
+  }
+  .card__tagline {
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text-3);
+  }
+  .card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 16px 16px;
+  }
+  .card__ach {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--led);
+  }
+</style>

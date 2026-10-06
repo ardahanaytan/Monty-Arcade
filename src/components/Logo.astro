@@ -1,0 +1,52 @@
+---
+import MontyHelmet from './MontyHelmet.astro';
+import { site } from '../config/site';
+import { useTranslations, type Lang } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<a href={`/${lang}/`} class="logo" aria-label={t('a11y.home')}>
+  <MontyHelmet variant="small" />
+  <span class="logo__mark">
+    <span class="logo__top">{site.wordmark.top}</span>
+    <span class="logo__bottom">{site.wordmark.bottom}</span>
+  </span>
+</a>
+
+<style>
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    margin-right: auto;
+    border-radius: 10px;
+  }
+  .logo__mark {
+    display: flex;
+    flex-direction: column;
+    line-height: 0.9;
+  }
+  .logo__top {
+    font-stretch: 125%;
+    font-style: italic;
+    font-weight: 900;
+    font-size: 30px;
+    letter-spacing: 0.01em;
+    color: var(--text);
+  }
+  .logo__bottom {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.42em;
+    color: var(--accent);
+    margin-top: 4px;
+  }
+</style>
