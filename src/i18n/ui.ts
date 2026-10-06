@@ -319,6 +319,17 @@ export function switchLangPath(pathname: string, to: Lang): string {
   return parts.join('/') || `/${to}/`;
 }
 
+/** Her dil için bu sayfanın karşılığı: verilen yollar, yoksa yolun ilk parçası değiştirilir. */
+export function resolveLangPaths(
+  pathname: string,
+  lang: Lang,
+  overrides: Partial<Record<Lang, string>> = {},
+): Record<Lang, string> {
+  return Object.fromEntries(
+    languages.map((l) => [l, overrides[l] ?? (l === lang ? pathname : switchLangPath(pathname, l))]),
+  ) as Record<Lang, string>;
+}
+
 export function getStaticLangPaths() {
   return languages.map((lang) => ({ params: { lang } }));
 }

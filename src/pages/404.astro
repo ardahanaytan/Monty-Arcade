@@ -1,49 +1,78 @@
 ---
 /**
- * Kök 404: hangi dilde olduğu bilinmediği için EN render edilir; küçük bir script
- * tarayıcı dili veya URL'deki /tr/ önekine göre metinleri ve linkleri Türkçeye çevirir.
+ * Kök 404: hangi dilde istendiği build sırasında bilinmediği için sayfa iki dilde de render edilir
+ * (varsayılan EN görünür). Küçük script URL'deki dil önekine, yoksa tarayıcı diline göre doğru kopyayı açar.
  */
-import Base from '../layouts/Base.astro';
+import Head from '../components/Head.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
 import Button from '../components/Button.astro';
 import MontyHelmet from '../components/MontyHelmet.astro';
-import { ui } from '../i18n/ui';
+import { site } from '../config/site';
+import { languages, useTranslations } from '../i18n/ui';
 
-const lang = 'en';
-const t = ui.en;
-const i18n = {
-  tr: { title: ui.tr['404.title'], text: ui.tr['404.text'], back: ui.tr['404.back'] },
-};
+const home = { tr: '/tr/', en: '/en/' };
 ---
 
-<Base lang={lang} title={t['404.title']} description={t['404.text']} ticker={false} noindex langPaths={{ tr: '/tr/', en: '/en/' }}>
-  <div class="container page dnf" data-i18n={JSON.stringify(i18n)}>
-    <MontyHelmet expression="x" size={220} animated={false} />
-    <p class="dnf__code mono" aria-hidden="true">{t['404.code']}</p>
-    <h1 class="display" data-k="title">{t['404.title']}</h1>
-    <p class="lead" data-k="text">{t['404.text']}</p>
-    <Button href="/en/" iconAfter="arrow"><span data-k="back">{t['404.back']}</span></Button>
-  </div>
-</Base>
+<!doctype html>
+<html lang="en">
+  <head>
+    <Head lang="en" title={useTranslations('en')('404.title')} langPaths={home} noindex />
+  </head>
+  <body>
+    {
+      languages.map((lang) => {
+        const t = useTranslations(lang);
+        return (
+          <div class="variant" data-variant={lang} data-title={`${t('404.title')} · ${site.name}`} hidden={lang !== 'en'}>
+            <a href={`#main-${lang}`} class="skip-link">
+              {t('a11y.skip')}
+            </a>
+            <Header lang={lang} langPaths={home} />
+            <main id={`main-${lang}`} tabindex="-1" lang={lang}>
+              <div class="container page dnf">
+                <MontyHelmet expression="x" size={220} animated={false} />
+                <p class="dnf__code mono" aria-hidden="true">
+                  {t('404.code')}
+                </p>
+                <h1 class="display">{t('404.title')}</h1>
+                <p class="lead">{t('404.text')}</p>
+                <Button href={`/${lang}/`} iconAfter="arrow">
+                  {t('404.back')}
+                </Button>
+              </div>
+            </main>
+            <Footer lang={lang} />
+          </div>
+        );
+      })
+    }
 
-<script>
-  const root = document.querySelector<HTMLElement>('[data-i18n]');
-  const pathLang = location.pathname.split('/')[1];
-  const nav = (navigator.languages?.[0] || navigator.language || '').toLowerCase();
-  const isTr = pathLang === 'tr' || (pathLang !== 'en' && nav.startsWith('tr'));
-  if (root && isTr) {
-    const dict = JSON.parse(root.dataset.i18n ?? '{}').tr as Record<string, string>;
-    document.documentElement.lang = 'tr';
-    root.querySelectorAll<HTMLElement>('[data-k]').forEach((el) => {
-      el.textContent = dict[el.dataset.k!] ?? el.textContent;
-    });
-    document.title = `${dict.title} · Monty Arcade`;
-    document.querySelectorAll<HTMLAnchorElement>('a[href^="/en/"]').forEach((a) => {
-      if (!a.hasAttribute('hreflang')) a.href = a.getAttribute('href')!.replace(/^\/en\//, '/tr/');
-    });
-  }
-</script>
+    <script>
+      const pathLang = location.pathname.split('/')[1];
+      const nav = (navigator.languages?.[0] || navigator.language || '').toLowerCase();
+      const lang = pathLang === 'tr' || pathLang === 'en' ? pathLang : nav.startsWith('tr') ? 'tr' : 'en';
+      document.querySelectorAll<HTMLElement>('[data-variant]').forEach((el) => {
+        const active = el.dataset.variant === lang;
+        el.hidden = !active;
+        if (active) {
+          document.documentElement.lang = lang;
+          document.title = el.dataset.title ?? document.title;
+        }
+      });
+    </script>
+  </body>
+</html>
 
 <style>
+  .variant {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  .variant[hidden] {
+    display: none;
+  }
   .dnf {
     align-items: center;
     text-align: center;
