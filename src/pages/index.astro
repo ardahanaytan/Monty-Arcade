@@ -1,0 +1,89 @@
+---
+/** Kök: tarayıcı diline göre /tr/ veya /en/'e yönlendirir. JS kapalıyken dil seçimi gösterir. */
+import '@fontsource-variable/archivo/wdth.css';
+import '@fontsource-variable/archivo/wdth-italic.css';
+import '@fontsource/space-mono/700.css';
+import '../styles/tokens.css';
+import '../styles/global.css';
+import MontyHelmet from '../components/MontyHelmet.astro';
+import { site } from '../config/site';
+import { ui } from '../i18n/ui';
+
+const base = Astro.site ?? new URL(site.url);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{site.name}</title>
+    <meta name="description" content={ui.en['meta.tagline']} />
+    <link rel="canonical" href={new URL('/en/', base).href} />
+    <link rel="alternate" hreflang="tr" href={new URL('/tr/', base).href} />
+    <link rel="alternate" hreflang="en" href={new URL('/en/', base).href} />
+    <link rel="alternate" hreflang="x-default" href={new URL('/', base).href} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content="#0d1328" />
+    <script is:inline>
+      (function () {
+        var saved = null;
+        try {
+          saved = localStorage.getItem('monty:lang');
+        } catch (e) {}
+        var l = (saved || (navigator.languages && navigator.languages[0]) || navigator.language || '').toLowerCase();
+        location.replace(l.indexOf('tr') === 0 ? '/tr/' : '/en/');
+      })();
+    </script>
+    <noscript><meta http-equiv="refresh" content="2;url=/en/" /></noscript>
+  </head>
+  <body>
+    <main class="root">
+      <MontyHelmet size={160} label={ui.en['monty.alt']} />
+      <h1 class="display">{site.name}</h1>
+      <p>{ui.en['root.choose']}</p>
+      <div class="root__links">
+        <a href="/tr/" hreflang="tr" lang="tr">{ui.tr['lang.name']}</a>
+        <a href="/en/" hreflang="en" lang="en">{ui.en['lang.name']}</a>
+      </div>
+    </main>
+  </body>
+</html>
+
+<style>
+  .root {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 24px;
+    text-align: center;
+  }
+  h1 {
+    font-size: 40px;
+    line-height: 1;
+  }
+  p {
+    color: var(--text-3);
+  }
+  .root__links {
+    display: flex;
+    gap: 12px;
+  }
+  .root__links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 48px;
+    padding: 0 22px;
+    font-weight: 800;
+    color: var(--text);
+    text-decoration: none;
+    border: 1.5px solid var(--line-btn-2);
+    border-radius: 999px;
+  }
+  .root__links a:hover {
+    border-color: var(--text);
+  }
+</style>

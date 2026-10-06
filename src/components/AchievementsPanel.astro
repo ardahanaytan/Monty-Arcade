@@ -1,0 +1,213 @@
+---
+/**
+ * v2 — Başarım paneli. `features.accounts` kapalıyken çağıran sayfa bunu render etmez.
+ * Şimdilik tüm başarımlar kilitli gösterilir; v2'de açılanlar Supabase'den (girişliyken)
+ * veya localStorage'dan (misafir) istemci tarafında işaretlenecek.
+ */
+import Icon from './Icon.astro';
+import { useTranslations, type Lang } from '../i18n/ui';
+import type { Game } from '../lib/content';
+
+interface Props {
+  lang: Lang;
+  game: Game;
+}
+
+const { lang, game } = Astro.props;
+const t = useTranslations(lang);
+const list = game.data.achievements;
+const unlocked = 0;
+const tierColor = { common: 'var(--text-3)', rare: 'var(--accent)', legendary: 'var(--led)' } as const;
+---
+
+<section class="ach" aria-labelledby="ach-title" data-achievements={game.id}>
+  <div class="ach__head">
+    <h2 id="ach-title" class="subhead">
+      <Icon name="trophy" size={20} class="ach__trophy" />
+      {t('ach.title')}
+    </h2>
+    <span class="ach__count">{unlocked} / {list.length}</span>
+  </div>
+  <div
+    class="ach__bar"
+    role="progressbar"
+    aria-label={t('ach.progress')}
+    aria-valuemin="0"
+    aria-valuemax={list.length}
+    aria-valuenow={unlocked}
+  >
+    <span style={`width: ${list.length ? (unlocked / list.length) * 100 : 0}%`}></span>
+  </div>
+
+  <ul class="ach__list plain">
+    {
+      list.map((a) =>
+        a.hidden ? (
+          <li class="ach__item is-locked" data-ach={a.id}>
+            <span class="ach__icon ach__icon--secret">???</span>
+            <span class="ach__text">
+              <span class="ach__name">{t('ach.hidden')}</span>
+              <span class="ach__desc">{t('ach.hiddenText')}</span>
+            </span>
+          </li>
+        ) : (
+          <li class="ach__item is-locked" data-ach={a.id} style={`--tier: ${tierColor[a.tier]}`}>
+            <span class="ach__icon">
+              <Icon name="lock" size={20} class="ach__lock" />
+              <Icon name={a.icon} size={22} class="ach__badge" />
+            </span>
+            <span class="ach__text">
+              <span class="ach__name">{a.title[lang]}</span>
+              <span class="ach__desc">{a.description[lang]}</span>
+            </span>
+            <span class="ach__tier">{t(`ach.${a.tier}`)}</span>
+          </li>
+        ),
+      )
+    }
+  </ul>
+
+  <div class="ach__foot">
+    <a href="#">{t('ach.all')}</a>
+    <span>{t('ach.guestNote')}</span>
+  </div>
+</section>
+
+<style>
+  .ach {
+    background: var(--surface);
+    border: 1px solid var(--line-2);
+    border-radius: 18px;
+    padding: 22px;
+  }
+  .ach__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 20px;
+    line-height: 1.2;
+  }
+  h2 :global(.ach__trophy) {
+    color: var(--led);
+  }
+  .ach__count {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--led);
+  }
+  .ach__bar {
+    height: 8px;
+    margin-bottom: 18px;
+    background: var(--bg);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .ach__bar span {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: var(--led);
+  }
+  .ach__list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .ach__item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+  }
+  .ach__icon {
+    flex: none;
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    color: var(--tier);
+    border-radius: 10px;
+    background: var(--surface-3);
+    border: 1px solid var(--tier);
+  }
+  .ach__icon :global(.ach__lock) {
+    display: none;
+  }
+  .ach__text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+  }
+  .ach__name {
+    font-weight: 800;
+    font-size: 15px;
+  }
+  .ach__desc {
+    font-size: 13px;
+    color: var(--text-3);
+  }
+  .ach__tier {
+    flex: none;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--tier);
+  }
+  /* Kilitli */
+  .is-locked {
+    background: transparent;
+    border-style: dashed;
+    border-color: var(--line-strong);
+  }
+  .is-locked .ach__icon {
+    color: var(--text-5);
+    background: var(--surface-2);
+    border: 0;
+  }
+  .is-locked .ach__icon :global(.ach__lock) {
+    display: block;
+  }
+  .is-locked .ach__icon :global(.ach__badge) {
+    display: none;
+  }
+  .is-locked .ach__name {
+    color: var(--text-3);
+  }
+  .is-locked .ach__desc {
+    color: var(--text-4);
+  }
+  .ach__icon--secret {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 13px;
+  }
+  .ach__foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .ach__foot a {
+    font-weight: 800;
+    font-size: 14px;
+  }
+  .ach__foot span {
+    font-size: 13px;
+    color: var(--text-4);
+  }
+</style>

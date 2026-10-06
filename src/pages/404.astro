@@ -1,0 +1,67 @@
+---
+/**
+ * Kök 404: hangi dilde olduğu bilinmediği için EN render edilir; küçük bir script
+ * tarayıcı dili veya URL'deki /tr/ önekine göre metinleri ve linkleri Türkçeye çevirir.
+ */
+import Base from '../layouts/Base.astro';
+import Button from '../components/Button.astro';
+import MontyHelmet from '../components/MontyHelmet.astro';
+import { ui } from '../i18n/ui';
+
+const lang = 'en';
+const t = ui.en;
+const i18n = {
+  tr: { title: ui.tr['404.title'], text: ui.tr['404.text'], back: ui.tr['404.back'] },
+};
+---
+
+<Base lang={lang} title={t['404.title']} description={t['404.text']} ticker={false} noindex langPaths={{ tr: '/tr/', en: '/en/' }}>
+  <div class="container page dnf" data-i18n={JSON.stringify(i18n)}>
+    <MontyHelmet expression="x" size={220} animated={false} />
+    <p class="dnf__code mono" aria-hidden="true">{t['404.code']}</p>
+    <h1 class="display" data-k="title">{t['404.title']}</h1>
+    <p class="lead" data-k="text">{t['404.text']}</p>
+    <Button href="/en/" iconAfter="arrow"><span data-k="back">{t['404.back']}</span></Button>
+  </div>
+</Base>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-i18n]');
+  const pathLang = location.pathname.split('/')[1];
+  const nav = (navigator.languages?.[0] || navigator.language || '').toLowerCase();
+  const isTr = pathLang === 'tr' || (pathLang !== 'en' && nav.startsWith('tr'));
+  if (root && isTr) {
+    const dict = JSON.parse(root.dataset.i18n ?? '{}').tr as Record<string, string>;
+    document.documentElement.lang = 'tr';
+    root.querySelectorAll<HTMLElement>('[data-k]').forEach((el) => {
+      el.textContent = dict[el.dataset.k!] ?? el.textContent;
+    });
+    document.title = `${dict.title} · Monty Arcade`;
+    document.querySelectorAll<HTMLAnchorElement>('a[href^="/en/"]').forEach((a) => {
+      if (!a.hasAttribute('hreflang')) a.href = a.getAttribute('href')!.replace(/^\/en\//, '/tr/');
+    });
+  }
+</script>
+
+<style>
+  .dnf {
+    align-items: center;
+    text-align: center;
+    padding-block: 48px 24px;
+    gap: 14px;
+  }
+  .dnf__code {
+    font-size: clamp(64px, 12vw, 120px);
+    line-height: 1;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    text-shadow: 0 0 24px var(--accent-glow);
+  }
+  h1 {
+    font-size: clamp(36px, 5vw, 56px);
+    line-height: 1;
+  }
+  .lead {
+    margin-bottom: 12px;
+  }
+</style>

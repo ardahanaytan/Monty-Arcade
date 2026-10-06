@@ -1,0 +1,119 @@
+---
+import Base from '../../layouts/Base.astro';
+import Prose from '../../layouts/Prose.astro';
+import MontyHelmet from '../../components/MontyHelmet.astro';
+import Checker from '../../components/Checker.astro';
+import { site } from '../../config/site';
+import { getStaticLangPaths, useTranslations, type Lang } from '../../i18n/ui';
+
+export const getStaticPaths = getStaticLangPaths;
+
+const lang = Astro.params.lang as Lang;
+const t = useTranslations(lang);
+
+const contacts = [
+  { label: 'itch.io', href: site.links.itch },
+  { label: 'GitHub', href: site.links.github },
+  { label: 'Ko-fi', href: site.links.kofi },
+  { label: t('about.email'), href: site.links.email ? `mailto:${site.links.email}` : '' },
+].filter((c) => c.href);
+---
+
+<Base lang={lang} title={t('about.title')} description={t('about.montyText')} active="about">
+  <div class="container page">
+    <section class="about-hero" aria-labelledby="about-title">
+      <div class="about-hero__text">
+        <span class="eyebrow">{t('about.eyebrow')}</span>
+        <h1 id="about-title" class="display">{t('about.montyTitle')}</h1>
+        <p class="lead">{t('about.montyText')}</p>
+      </div>
+      <div class="about-hero__art">
+        <MontyHelmet label={t('monty.alt')} size={300} />
+      </div>
+      <Checker bottom />
+    </section>
+
+    <div class="split">
+      <div class="split__main panel">
+        <Prose>
+          <h2>{t('about.devTitle')}</h2>
+          <p>{t('about.devText')}</p>
+          <h2>{t('about.siteTitle')}</h2>
+          <p>{t('about.siteText')}</p>
+        </Prose>
+      </div>
+
+      {
+        contacts.length > 0 && (
+          <aside class="split__side">
+            <section class="cream-card" aria-labelledby="contact-title">
+              <Checker variant="cream" bottom />
+              <h2 id="contact-title" class="card-eyebrow">
+                {t('about.contactTitle')}
+              </h2>
+              <ul class="contacts plain">
+                {contacts.map((c) => (
+                  <li>
+                    <a href={c.href} rel="me noopener">
+                      {c.label} →
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </aside>
+        )
+      }
+    </div>
+  </div>
+</Base>
+
+<style>
+  .about-hero {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 24px 40px;
+    padding: clamp(28px, 4.5vw, 56px);
+    padding-bottom: calc(clamp(28px, 4.5vw, 56px) + 14px);
+    overflow: hidden;
+    border-radius: 22px;
+    background: linear-gradient(160deg, var(--hero-from) 0%, var(--hero-to) 100%);
+    border: 1px solid var(--line-3);
+    box-shadow: var(--shadow-hero);
+  }
+  .about-hero__text {
+    flex: 1 1 440px;
+    min-width: 0;
+  }
+  .about-hero h1 {
+    margin-bottom: 18px;
+    font-size: clamp(40px, 5.6vw, 72px);
+    line-height: 0.98;
+  }
+  .about-hero__art {
+    flex: 1 1 260px;
+    display: flex;
+    justify-content: center;
+  }
+  .panel :global(.prose h2:first-child) {
+    margin-top: 0;
+  }
+  .contacts {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 16px;
+  }
+  .contacts a {
+    display: inline-flex;
+    min-height: 32px;
+    align-items: center;
+  }
+  @media (max-width: 560px) {
+    .about-hero__art :global(svg) {
+      max-width: 220px;
+    }
+  }
+</style>

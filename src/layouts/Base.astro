@@ -27,6 +27,7 @@ interface Props {
   ticker?: boolean;
   ogImage?: string;
   ogType?: 'website' | 'article';
+  noindex?: boolean;
 }
 
 const {
@@ -39,6 +40,7 @@ const {
   ticker = true,
   ogImage,
   ogType = 'website',
+  noindex = false,
 } = Astro.props;
 const t = useTranslations(lang);
 
@@ -61,9 +63,19 @@ const ogImageUrl = new URL(ogImage ?? '/og-default.png', base).href;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{fullTitle}</title>
     <meta name="description" content={desc} />
-    <link rel="canonical" href={canonical} />
-    {alternateLangs.map((l) => <link rel="alternate" hreflang={l} href={new URL(paths[l], base).href} />)}
-    <link rel="alternate" hreflang="x-default" href={new URL('/', base).href} />
+    {
+      noindex ? (
+        <meta name="robots" content="noindex" />
+      ) : (
+        <>
+          <link rel="canonical" href={canonical} />
+          {alternateLangs.map((l) => (
+            <link rel="alternate" hreflang={l} href={new URL(paths[l], base).href} />
+          ))}
+          <link rel="alternate" hreflang="x-default" href={new URL('/', base).href} />
+        </>
+      )
+    }
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="sitemap" href="/sitemap-index.xml" />
     <meta name="theme-color" content="#0d1328" />

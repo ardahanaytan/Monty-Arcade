@@ -1,0 +1,232 @@
+---
+import Base from '../../../layouts/Base.astro';
+import Player from '../../../components/Player.astro';
+import Tag from '../../../components/Tag.astro';
+import Icon from '../../../components/Icon.astro';
+import ControlsList from '../../../components/ControlsList.astro';
+import TechCard from '../../../components/TechCard.astro';
+import AchievementsPanel from '../../../components/AchievementsPanel.astro';
+import GameCard from '../../../components/GameCard.astro';
+import SoonCard from '../../../components/SoonCard.astro';
+import SectionHeader from '../../../components/SectionHeader.astro';
+import { getImage } from 'astro:assets';
+import { site } from '../../../config/site';
+import { languages, upper, useTranslations, type Lang } from '../../../i18n/ui';
+import { gameUrl, getGames, getPosts, paragraphs, postSlug, postUrl, type Game } from '../../../lib/content';
+
+export async function getStaticPaths() {
+  const games = await getGames();
+  return languages.flatMap((lang) => games.map((game) => ({ params: { lang, slug: game.id }, props: { game } })));
+}
+
+interface Props {
+  game: Game;
+}
+
+const { game } = Astro.props;
+const lang = Astro.params.lang as Lang;
+const t = useTranslations(lang);
+const { title, tagline, description, tags, controls, relatedPosts } = game.data;
+
+const allGames = await getGames();
+const others = allGames.filter((g) => g.id !== game.id).slice(0, 3);
+const soonCount = Math.max(0, 3 - others.length);
+
+const posts = await getPosts(lang);
+const related = posts.filter((p) => p.data.game === game.id || relatedPosts.includes(postSlug(p)));
+
+const og = await getImage({ src: game.data.cover, width: 1200, format: 'png' });
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'VideoGame',
+  name: title[lang],
+  description: tagline[lang],
+  inLanguage: lang,
+  genre: tags,
+  gamePlatform: 'Web browser',
+  playMode: 'SinglePlayer',
+  datePublished: game.data.releaseDate.toISOString().slice(0, 10),
+  url: new URL(gameUrl(game, lang), Astro.site).href,
+  image: new URL(og.src, Astro.site).href,
+  author: { '@type': 'Person', name: site.author },
+  offers: { '@type': 'Offer', price: 0, priceCurrency: 'USD' },
+};
+---
+
+<Base lang={lang} title={title[lang]} description={tagline[lang]} active="games" ticker={false} ogImage={og.src}>
+  <script type="application/ld+json" slot="head" set:html={JSON.stringify(jsonLd)} />
+
+  <div class="container page game-page">
+    <div class="head">
+      <nav class="breadcrumb" aria-label={t('a11y.breadcrumb')}>
+        <a href={`/${lang}/#games`}>{t('game.breadcrumb')}</a>
+        <span aria-hidden="true">/</span>
+        <span aria-current="page">{upper(title[lang], lang)}</span>
+      </nav>
+      <div class="head__row">
+        <h1 class="display">{title[lang]}</h1>
+        {
+          tags.length > 0 && (
+            <div class="head__tags">
+              {tags.map((tag) => (
+                <Tag tag={tag} lang={lang} size="md" />
+              ))}
+            </div>
+          )
+        }
+      </div>
+    </div>
+
+    <Player lang={lang} game={game} />
+
+    <div class="split">
+      <section class="split__main panel briefing" aria-labelledby="about-game">
+        <span class="eyebrow">{t('game.briefing')}</span>
+        <h2 id="about-game" class="display briefing__title">{t('game.about')}</h2>
+        <div class="briefing__text">
+          {paragraphs(description[lang]).map((p) => <p>{p}</p>)}
+        </div>
+
+        {
+          controls.length > 0 && (
+            <>
+              <h2 class="subhead briefing__sub">{t('game.controls')}</h2>
+              <ControlsList lang={lang} controls={controls} />
+            </>
+          )
+        }
+
+        {
+          related.length > 0 && (
+            <>
+              <h2 class="subhead briefing__sub">{t('game.related')}</h2>
+              <ul class="related plain">
+                {related.map((p) => (
+                  <li>
+                    <a href={postUrl(p)}>
+                      <span>{p.data.title}</span>
+                      <Icon name="arrow" />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )
+        }
+      </section>
+
+      <aside class="split__side side">
+        {site.features.accounts && game.data.achievements.length > 0 && <AchievementsPanel lang={lang} game={game} />}
+        <TechCard lang={lang} game={game} />
+      </aside>
+    </div>
+
+    <section aria-labelledby="more">
+      <div class="more-head">
+        <SectionHeader eyebrow={t('game.moreEyebrow')} title={t('game.more')} id="more" size="small" />
+      </div>
+      <ul class="more plain">
+        {others.map((g) => <GameCard lang={lang} game={g} />)}
+        {Array.from({ length: soonCount }, (_, i) => <SoonCard lang={lang} slot={allGames.length + i + 1} size="sm" />)}
+      </ul>
+    </section>
+  </div>
+</Base>
+
+<style>
+  .game-page {
+    gap: 24px;
+    padding-top: 26px;
+  }
+  .head {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .breadcrumb {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    color: var(--text-4);
+  }
+  .breadcrumb a {
+    color: var(--text-3);
+  }
+  .breadcrumb > span[aria-hidden] {
+    margin: 0 8px;
+  }
+  .breadcrumb [aria-current] {
+    color: var(--text);
+  }
+  .head__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 18px;
+  }
+  h1 {
+    font-size: clamp(36px, 5vw, 60px);
+    line-height: 1;
+    overflow-wrap: anywhere;
+  }
+  .head__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .briefing__title {
+    margin-bottom: 12px;
+    font-size: 28px;
+    line-height: 1.05;
+  }
+  .briefing__text {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 28px;
+    font-size: 17px;
+    color: var(--text-2);
+  }
+  .briefing__sub {
+    margin-bottom: 14px;
+    font-size: 20px;
+    line-height: 1.2;
+  }
+  .briefing :global(.controls) {
+    margin-bottom: 28px;
+  }
+  .related {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .related a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 14px 16px;
+    font-weight: 800;
+    color: var(--text);
+    text-decoration: none;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    transition: border-color 0.15s ease;
+  }
+  .related a:hover {
+    border-color: var(--line-hover);
+  }
+  .side {
+    flex-basis: 320px;
+  }
+  .more-head {
+    margin-bottom: 16px;
+  }
+  .more {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 18px;
+  }
+</style>

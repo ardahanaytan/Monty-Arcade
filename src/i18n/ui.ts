@@ -58,6 +58,7 @@ const tr = {
   'soon.title': 'Pitte hazırlanıyor',
   'soon.text': 'Yeni oyun yolda…',
   'devlog.eyebrow': '02 / DEVLOG',
+  'devlog.pageEyebrow': 'DEVLOG',
   'devlog.latest': 'Son yazılar',
   'devlog.title': 'Devlog',
   'devlog.intro': 'Oyunların arkasındaki notlar, denemeler ve hikâyeler.',
@@ -128,6 +129,7 @@ const tr = {
   'about.siteText':
     'Site Astro ile üretilen statik sayfalardan oluşuyor; sunucu yok, veritabanı yok. Sayfalar hafif ve hızlı, oyunlar ise sadece sen "Oyna"ya bastığında yükleniyor.',
   'about.contactTitle': 'İletişim',
+  'about.email': 'E-posta',
   'root.choose': 'Dil seç / Choose your language',
 };
 
@@ -187,6 +189,7 @@ const en: Record<UIKey, string> = {
   'soon.title': 'In the pits',
   'soon.text': 'A new game is on the way…',
   'devlog.eyebrow': '02 / DEVLOG',
+  'devlog.pageEyebrow': 'DEVLOG',
   'devlog.latest': 'Latest posts',
   'devlog.title': 'Devlog',
   'devlog.intro': 'Notes, experiments and stories behind the games.',
@@ -257,6 +260,7 @@ const en: Record<UIKey, string> = {
   'about.siteText':
     'The site is made of static pages generated with Astro; no server, no database. Pages are light and fast, and games only load when you press "Play".',
   'about.contactTitle': 'Contact',
+  'about.email': 'Email',
   'root.choose': 'Dil seç / Choose your language',
 };
 

@@ -1,0 +1,341 @@
+---
+/** Monty Player — tıkla-yükle iframe oynatıcı (§8.13). Oyun iframe'i sadece tıklayınca oluşturulur. */
+import { Image } from 'astro:assets';
+import Icon from './Icon.astro';
+import { formatDate, upper, useTranslations, type Lang } from '../i18n/ui';
+import { playUrl, type Game } from '../lib/content';
+
+interface Props {
+  lang: Lang;
+  game: Game;
+}
+
+const { lang, game } = Astro.props;
+const t = useTranslations(lang);
+const { title, cover, aspectRatio, sizeMB, releaseDate } = game.data;
+const src = `${playUrl(game)}?lang=${lang}`;
+const ratioLabel = aspectRatio.replace(/\s/g, '').replace('/', ':');
+---
+
+<section id="play" class="player" aria-label={t('a11y.game')} data-player data-src={src} data-title={title[lang]}>
+  <div class="player__bar">
+    <span class="player__brand"><span class="player__dot" aria-hidden="true"></span>{t('game.player')}</span>
+    <span class="player__ratio">{ratioLabel}</span>
+  </div>
+
+  <div class="player__stage" style={`aspect-ratio: ${aspectRatio}`} data-stage>
+    <div class="player__start" data-start-layer>
+      <Image src={cover} alt="" widths={[480]} sizes="480px" class="player__blur" loading="eager" />
+      <div class="player__speed" aria-hidden="true"></div>
+      <button type="button" class="player__go gloss" aria-label={t('game.start')} data-start>
+        <Icon name="play" size={46} />
+      </button>
+      <span class="player__cta display">{t('game.clickToPlay')}</span>
+      <span class="player__note">
+        {sizeMB ? t('game.loadNote', { size: sizeMB.toLocaleString(lang) }) : t('game.loadNoteNoSize')}
+      </span>
+    </div>
+    <div class="player__loading" data-loading hidden>
+      <span class="player__loading-text">{t('game.loading')}</span>
+      <span class="player__bar-track" aria-hidden="true"><span></span></span>
+    </div>
+  </div>
+
+  <div class="player__tools">
+    <button type="button" class="tool" data-fullscreen><Icon name="fullscreen" />{t('game.fullscreen')}</button>
+    <button type="button" class="tool" data-restart disabled><Icon name="restart" />{t('game.restart')}</button>
+    <button type="button" class="tool" data-sound hidden aria-pressed="false"><Icon name="sound" />{t('game.sound')}</button>
+    <span class="player__released">{t('game.released')}: {upper(formatDate(releaseDate, lang), lang)}</span>
+  </div>
+</section>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-player]').forEach((root) => {
+    const stage = root.querySelector<HTMLElement>('[data-stage]')!;
+    const startLayer = root.querySelector<HTMLElement>('[data-start-layer]')!;
+    const loading = root.querySelector<HTMLElement>('[data-loading]')!;
+    const startBtn = root.querySelector<HTMLButtonElement>('[data-start]')!;
+    const restartBtn = root.querySelector<HTMLButtonElement>('[data-restart]')!;
+    const fullscreenBtn = root.querySelector<HTMLButtonElement>('[data-fullscreen]')!;
+    const soundBtn = root.querySelector<HTMLButtonElement>('[data-sound]')!;
+    const src = root.dataset.src!;
+    let iframe: HTMLIFrameElement | null = null;
+    let muted = false;
+
+    const start = () => {
+      if (iframe) return;
+      startLayer.hidden = true;
+      loading.hidden = false;
+      iframe = document.createElement('iframe');
+      iframe.src = src;
+      iframe.title = root.dataset.title ?? '';
+      iframe.allow = 'fullscreen; autoplay; gamepad';
+      iframe.className = 'player__frame';
+      iframe.addEventListener('load', () => {
+        loading.hidden = true;
+        iframe?.focus();
+      });
+      stage.append(iframe);
+      restartBtn.disabled = false;
+    };
+
+    startBtn.addEventListener('click', start);
+    restartBtn.addEventListener('click', () => {
+      if (!iframe) return;
+      loading.hidden = false;
+      iframe.src = src;
+    });
+    fullscreenBtn.addEventListener('click', () => {
+      if (!iframe) start();
+      if (document.fullscreenElement) document.exitFullscreen();
+      else stage.requestFullscreen?.();
+    });
+    if (location.hash === '#play') startBtn.focus({ preventScroll: true });
+
+    // Monty SDK (v1.5): oyun hazır olduğunu bildirirse ses butonu görünür.
+    window.addEventListener('message', (event) => {
+      if (event.origin !== location.origin || !iframe || event.source !== iframe.contentWindow) return;
+      const data = event.data;
+      if (!data || data.source !== 'monty-sdk') return;
+      if (data.type === 'ready') {
+        loading.hidden = true;
+        soundBtn.hidden = false;
+      }
+    });
+    soundBtn.addEventListener('click', () => {
+      muted = !muted;
+      soundBtn.setAttribute('aria-pressed', String(muted));
+      iframe?.contentWindow?.postMessage({ source: 'monty-site', v: 1, type: 'mute', muted }, location.origin);
+    });
+  });
+</script>
+
+<style>
+  .player {
+    scroll-margin-top: 16px;
+    background: var(--bg-deep);
+    border: 1px solid var(--line-2);
+    border-radius: 20px;
+    padding: 10px;
+    box-shadow: var(--shadow-player);
+  }
+  .player__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 4px 8px 10px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--text-5);
+  }
+  .player__brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+  }
+  .player__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+  .player__stage {
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    background-color: var(--surface);
+  }
+  .player__stage:fullscreen {
+    border-radius: 0;
+  }
+  .player__start {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    padding: 16px;
+    text-align: center;
+    isolation: isolate;
+    background-image: radial-gradient(circle at 50% 45%, rgba(255, 107, 44, 0.16), transparent 50%);
+  }
+  .player__start[hidden] {
+    display: none;
+  }
+  .player__start :global(.player__blur) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: blur(18px) brightness(0.5);
+    transform: scale(1.1);
+    z-index: -2;
+  }
+  .player__speed {
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(-62deg, transparent 0 36px, rgba(243, 234, 216, 0.025) 36px 58px);
+    z-index: -1;
+  }
+  .player__go {
+    width: 116px;
+    height: 116px;
+    flex: none;
+    display: grid;
+    place-items: center;
+    padding: 0 0 0 6px;
+    color: var(--on-accent);
+    border: 0;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow:
+      inset 0 -6px 0 rgba(0, 0, 0, 0.22),
+      0 0 0 8px rgba(255, 107, 44, 0.12),
+      0 20px 50px rgba(255, 107, 44, 0.3);
+    animation: pulse 2.4s ease-in-out infinite;
+    transition: transform 0.12s ease;
+  }
+  .player__go::before {
+    inset: 4px 16% 54% 16%;
+  }
+  .player__go:hover {
+    transform: scale(1.04);
+  }
+  .player__cta {
+    font-size: clamp(22px, 2.6vw, 30px);
+    line-height: 1.1;
+  }
+  .player__note {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--text-4);
+  }
+  .player__loading {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    background: var(--bg-deep);
+  }
+  .player__loading[hidden] {
+    display: none;
+  }
+  .player__loading-text {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    color: var(--led);
+    text-shadow: 0 0 8px rgba(255, 194, 61, 0.45);
+    animation: led-blink 1s steps(2, start) infinite;
+  }
+  .player__bar-track {
+    width: min(240px, 60%);
+    height: 8px;
+    overflow: hidden;
+    background: var(--surface);
+    border-radius: 999px;
+  }
+  .player__bar-track span {
+    display: block;
+    width: 40%;
+    height: 100%;
+    background: var(--led);
+    border-radius: 999px;
+    animation: loading-slide 1.2s ease-in-out infinite;
+  }
+  .player__stage :global(.player__frame) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: #000;
+  }
+  .player__tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 4px 2px;
+  }
+  .tool {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 14px;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-2);
+    background: transparent;
+    border: 0;
+    border-radius: 10px;
+  }
+  .tool:hover:not(:disabled) {
+    color: var(--text);
+    background: var(--line);
+  }
+  .tool:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+  .tool[hidden] {
+    display: none;
+  }
+  .player__released {
+    margin-left: auto;
+    padding-right: 8px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-4);
+  }
+
+  @keyframes pulse {
+    50% {
+      box-shadow:
+        inset 0 -6px 0 rgba(0, 0, 0, 0.22),
+        0 0 0 14px rgba(255, 107, 44, 0.12),
+        0 20px 50px rgba(255, 107, 44, 0.35);
+    }
+  }
+  @keyframes led-blink {
+    to {
+      visibility: hidden;
+    }
+  }
+  @keyframes loading-slide {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(250%);
+    }
+  }
+  @media (max-width: 560px) {
+    .player__go {
+      width: 84px;
+      height: 84px;
+    }
+    .player__go :global(svg) {
+      width: 34px;
+      height: 34px;
+    }
+    .player__start {
+      gap: 10px;
+    }
+  }
+</style>

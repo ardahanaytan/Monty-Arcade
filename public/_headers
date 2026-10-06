@@ -1,0 +1,6 @@
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+/play/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+/sdk/*
+  Cache-Control: public, max-age=3600

@@ -18,7 +18,8 @@ const lang = Astro.params.lang as Lang;
 const t = useTranslations(lang);
 
 const games = await getGames();
-const posts = (await getPosts(lang)).slice(0, 3);
+const allPosts = await getPosts(lang);
+const posts = allPosts.slice(0, 3);
 const featured = getFeatured(games);
 ---
 
@@ -39,7 +40,7 @@ const featured = getFeatured(games);
           posts.length > 0 ? (
             <ol class="posts plain">
               {posts.map((post, i) => (
-                <PostRow lang={lang} post={post} index={i + 1} />
+                <PostRow lang={lang} post={post} index={allPosts.length - i} />
               ))}
             </ol>
           ) : (

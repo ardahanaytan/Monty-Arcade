@@ -1,0 +1,92 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sample Game</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0d1328; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; touch-action: manipulation; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+  // Taslak test oyunu: Monty Player'ı denemek için. Gerçek bir oyun değildir.
+  const lang = new URLSearchParams(location.search).get('lang') === 'tr' ? 'tr' : 'en';
+  const txt = {
+    tr: { start: 'BAŞLAMAK İÇİN BOŞLUK / DOKUN', over: 'KAZA! TEKRAR İÇİN BOŞLUK', score: 'KONİ' },
+    en: { start: 'PRESS SPACE / TAP TO START', over: 'CRASH! SPACE TO RETRY', score: 'CONES' },
+  }[lang];
+
+  const c = document.getElementById('c');
+  const ctx = c.getContext('2d');
+  let W = 0, H = 0, ground = 0;
+  function resize() {
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    W = c.clientWidth; H = c.clientHeight;
+    c.width = W * dpr; c.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ground = H * 0.78;
+  }
+  addEventListener('resize', resize); resize();
+
+  let state = 'idle', y = 0, vy = 0, cones = [], score = 0, speed = 0, spawn = 0, last = performance.now(), offset = 0;
+  function reset() { y = 0; vy = 0; cones = []; score = 0; speed = W * 0.45; spawn = 0.8; state = 'run'; }
+  function jump() {
+    if (state !== 'run') return reset();
+    if (y === 0) vy = H * 1.15;
+  }
+  addEventListener('keydown', (e) => {
+    if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); jump(); }
+    if (e.code === 'KeyR') reset();
+  });
+  addEventListener('pointerdown', jump);
+
+  function frame(now) {
+    const dt = Math.min((now - last) / 1000, 0.05); last = now;
+    const size = H * 0.14, px = W * 0.15;
+    if (state === 'run') {
+      speed += dt * W * 0.01;
+      offset = (offset + speed * dt) % 56;
+      vy -= H * 3.2 * dt; y = Math.max(0, y + vy * dt); if (y === 0) vy = Math.max(vy, 0);
+      spawn -= dt;
+      if (spawn <= 0) { cones.push({ x: W + 20, passed: false }); spawn = 0.9 + Math.random() * 1.1; }
+      for (const k of cones) {
+        k.x -= speed * dt;
+        if (!k.passed && k.x + size * 0.3 < px) { k.passed = true; score++; }
+        if (Math.abs(k.x - (px + size / 2)) < size * 0.55 && y < size * 0.5) state = 'over';
+      }
+      cones = cones.filter((k) => k.x > -50);
+    }
+    // sahne
+    ctx.fillStyle = '#0d1328'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(255,107,44,.08)';
+    for (let i = -1; i < W / 56 + 2; i++) { ctx.beginPath(); const x = i * 56 - offset; ctx.moveTo(x, 0); ctx.lineTo(x + 22, 0); ctx.lineTo(x - 40, ground); ctx.lineTo(x - 62, ground); ctx.fill(); }
+    ctx.fillStyle = '#070b18'; ctx.fillRect(0, ground, W, H - ground);
+    const sq = 12;
+    for (let i = 0; i < W / sq + 2; i++) for (let j = 0; j < 2; j++) { if ((i + j) % 2) { ctx.fillStyle = '#f3ead8'; ctx.fillRect(i * sq - (offset % (sq * 2)), ground + j * sq, sq, sq); } }
+    // koniler
+    for (const k of cones) {
+      ctx.fillStyle = '#ff6b2c'; ctx.beginPath();
+      ctx.moveTo(k.x, ground - size * 0.5); ctx.lineTo(k.x + size * 0.22, ground); ctx.lineTo(k.x - size * 0.22, ground); ctx.fill();
+    }
+    // kask
+    const hy = ground - size - y;
+    ctx.fillStyle = '#f3ead8'; ctx.beginPath(); ctx.roundRect(px, hy, size, size * 0.85, [size * 0.5, size * 0.5, size * 0.15, size * 0.15]); ctx.fill();
+    ctx.fillStyle = '#ff6b2c'; ctx.fillRect(px + size * 0.42, hy, size * 0.16, size * 0.4);
+    ctx.fillStyle = '#0d1328'; ctx.beginPath(); ctx.roundRect(px + size * 0.08, hy + size * 0.38, size * 0.84, size * 0.3, size * 0.15); ctx.fill();
+    ctx.fillStyle = '#ffc23d'; ctx.fillRect(px + size * 0.3, hy + size * 0.44, size * 0.1, size * 0.16); ctx.fillRect(px + size * 0.6, hy + size * 0.44, size * 0.1, size * 0.16);
+    // yazılar
+    ctx.font = `700 ${Math.max(12, H * 0.035)}px "Courier New", monospace`;
+    ctx.fillStyle = '#ffc23d'; ctx.textAlign = 'left'; ctx.fillText(`${txt.score}: ${score}`, 16, 28);
+    if (state !== 'run') { ctx.textAlign = 'center'; ctx.fillStyle = '#f3ead8'; ctx.fillText(state === 'idle' ? txt.start : txt.over, W / 2, H * 0.4); }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  // Monty SDK'nın (v1.5) yerine geçen minimal "hazırım" bildirimi.
+  if (window.parent !== window) window.parent.postMessage({ source: 'monty-sdk', v: 1, type: 'ready' }, location.origin);
+</script>
+</body>
+</html>

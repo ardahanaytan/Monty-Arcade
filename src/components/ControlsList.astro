@@ -1,0 +1,70 @@
+---
+import type { Lang } from '../i18n/ui';
+import type { Game } from '../lib/content';
+
+interface Props {
+  lang: Lang;
+  controls: Game['data']['controls'];
+}
+
+const { lang, controls } = Astro.props;
+---
+
+<ul class="controls plain">
+  {
+    controls.map((c) => (
+      <li>
+        <span class="keys">
+          {c.keys.map((k) => (
+            <kbd class:list={{ wide: [...k].length > 2 }}>{k}</kbd>
+          ))}
+        </span>
+        <span class="action">{c.action[lang]}</span>
+      </li>
+    ))
+  }
+</ul>
+
+<style>
+  .controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
+  }
+  li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+  }
+  .keys {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  kbd {
+    min-width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    padding: 0 8px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--text);
+    background: var(--surface-3);
+    border: 1px solid var(--line-btn);
+    border-radius: 8px;
+    box-shadow: 0 3px 0 var(--line-strong);
+  }
+  kbd.wide {
+    min-width: 92px;
+    font-size: 12px;
+  }
+  .action {
+    font-weight: 700;
+  }
+</style>

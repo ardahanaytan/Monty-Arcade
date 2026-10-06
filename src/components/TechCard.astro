@@ -1,0 +1,58 @@
+---
+import Checker from './Checker.astro';
+import { formatDate, tagLabel, useTranslations, type Lang } from '../i18n/ui';
+import type { Game } from '../lib/content';
+
+interface Props {
+  lang: Lang;
+  game: Game;
+}
+
+const { lang, game } = Astro.props;
+const t = useTranslations(lang);
+const { releaseDate, tags, sizeMB, mobile } = game.data;
+
+const rows = [
+  { label: t('game.tech.release'), value: formatDate(releaseDate, lang) },
+  { label: t('game.tech.genre'), value: tags.map((tag) => tagLabel(tag, lang)).join(', ') || '—' },
+  { label: t('game.tech.size'), value: sizeMB ? `${sizeMB.toLocaleString(lang)} MB` : '—' },
+  { label: t('game.tech.mobile'), value: mobile ? t('game.yes') : t('game.no') },
+];
+---
+
+<section class="cream-card tech" aria-labelledby="tech-title">
+  <Checker variant="cream" bottom />
+  <h2 id="tech-title" class="card-eyebrow">{t('game.tech')}</h2>
+  <dl>
+    {
+      rows.map((r) => (
+        <>
+          <dt>{r.label}</dt>
+          <dd>{r.value}</dd>
+        </>
+      ))
+    }
+  </dl>
+</section>
+
+<style>
+  .tech {
+    padding: 22px 22px 30px;
+  }
+  h2 {
+    margin-bottom: 10px;
+  }
+  dl {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 8px 16px;
+    font-size: 15px;
+  }
+  dt {
+    font-weight: 700;
+    color: var(--card-ink-3);
+  }
+  dd {
+    font-weight: 800;
+  }
+</style>

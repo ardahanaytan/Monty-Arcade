@@ -1,0 +1,179 @@
+---
+import { render } from 'astro:content';
+import Base from '../../../layouts/Base.astro';
+import Prose from '../../../layouts/Prose.astro';
+import GameCard from '../../../components/GameCard.astro';
+import { formatDate, languages, useTranslations, type Lang } from '../../../i18n/ui';
+import { getGames, getPosts, postSlug, postUrl, readingMinutes, type Post } from '../../../lib/content';
+
+export async function getStaticPaths() {
+  const games = await getGames();
+  const paths = [];
+  for (const lang of languages) {
+    const posts = await getPosts(lang);
+    for (const [i, post] of posts.entries()) {
+      paths.push({
+        params: { lang, slug: postSlug(post) },
+        props: {
+          post,
+          newer: posts[i - 1],
+          older: posts[i + 1],
+          game: games.find((g) => g.id === post.data.game),
+        },
+      });
+    }
+  }
+  return paths;
+}
+
+interface Props {
+  post: Post;
+  newer?: Post;
+  older?: Post;
+  game?: Awaited<ReturnType<typeof getGames>>[number];
+}
+
+const { post, newer, older, game } = Astro.props;
+const lang = Astro.params.lang as Lang;
+const t = useTranslations(lang);
+const slug = postSlug(post);
+const { Content } = await render(post);
+
+// Dil değiştirici: karşılığı varsa o yazıya, yoksa hedef dilin devlog listesine.
+const langPaths: Partial<Record<Lang, string>> = {};
+const alternateLangs: Lang[] = [];
+for (const l of languages) {
+  const twin = l === lang ? post : (await getPosts(l)).find((p) => postSlug(p) === slug);
+  langPaths[l] = twin ? postUrl(twin) : `/${l}/devlog/`;
+  if (twin) alternateLangs.push(l);
+}
+---
+
+<Base
+  lang={lang}
+  title={post.data.title}
+  description={post.data.description}
+  active="devlog"
+  ogType="article"
+  langPaths={langPaths}
+  alternateLangs={alternateLangs}
+>
+  <article class="container page post">
+    <header class="post__head">
+      <a href={`/${lang}/devlog/`} class="post__back">{t('devlog.back')}</a>
+      <p class="post__meta">
+        <time datetime={post.data.date.toISOString().slice(0, 10)}>{formatDate(post.data.date, lang)}</time>
+        <span aria-hidden="true">·</span>
+        <span>{t('devlog.readTime', { n: readingMinutes(post.body) })}</span>
+      </p>
+      <h1 class="display">{post.data.title}</h1>
+      <p class="lead">{post.data.description}</p>
+    </header>
+
+    <Prose>
+      <Content />
+    </Prose>
+
+    {
+      game && (
+        <section class="post__game" aria-labelledby="post-game">
+          <h2 id="post-game" class="eyebrow">
+            {t('devlog.relatedGame')}
+          </h2>
+          <ul class="plain">
+            <GameCard lang={lang} game={game} />
+          </ul>
+        </section>
+      )
+    }
+
+    {
+      (newer || older) && (
+        <nav class="post__nav" aria-label={t('devlog.title')}>
+          {older ? (
+            <a href={postUrl(older)} class="post__nav-link" rel="prev">
+              <span>← {t('devlog.prev')}</span>
+              <strong>{older.data.title}</strong>
+            </a>
+          ) : (
+            <span />
+          )}
+          {newer && (
+            <a href={postUrl(newer)} class="post__nav-link post__nav-link--next" rel="next">
+              <span>{t('devlog.next')} →</span>
+              <strong>{newer.data.title}</strong>
+            </a>
+          )}
+        </nav>
+      )
+    }
+  </article>
+</Base>
+
+<style>
+  .post {
+    max-width: calc(68ch + 2 * var(--gutter));
+  }
+  .post__head {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .post__back {
+    align-self: flex-start;
+    font-weight: 800;
+    font-size: 14px;
+    text-decoration: none;
+  }
+  .post__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--text-4);
+  }
+  h1 {
+    font-size: clamp(36px, 5vw, 56px);
+    line-height: 1.02;
+    text-wrap: balance;
+  }
+  .post__game ul {
+    max-width: 320px;
+  }
+  .post__nav {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    padding-top: 8px;
+    border-top: 1px solid var(--line);
+  }
+  .post__nav-link {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 14px 16px;
+    color: var(--text);
+    text-decoration: none;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease;
+  }
+  .post__nav-link:hover {
+    color: var(--text);
+    background: var(--surface-3);
+    border-color: var(--line-hover);
+  }
+  .post__nav-link span {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-4);
+  }
+  .post__nav-link--next {
+    text-align: right;
+  }
+</style>
