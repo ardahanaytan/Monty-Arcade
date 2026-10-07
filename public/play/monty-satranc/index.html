@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Monty Chess</title>
+<link rel="preload" href="./fonts/archivo-latin-standard-italic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<div class="app" id="app">
+  <main class="board-area">
+    <div class="board-frame" id="boardFrame">
+      <canvas id="board" role="img"></canvas>
+      <div class="promo" id="promo" hidden>
+        <span class="promo__title" data-t="promote"></span>
+        <div class="promo__row" id="promoRow"></div>
+      </div>
+    </div>
+  </main>
+
+  <aside class="panel" id="panel">
+    <section class="seat seat--ai">
+      <span class="seat__avatar seat__avatar--monty" aria-hidden="true">
+        <svg viewBox="0 0 240 220"><path d="M30 130 C30 62 78 22 130 22 C188 22 220 70 220 130 L220 158 C220 176 206 188 188 188 L62 188 C44 188 30 176 30 158 Z" fill="#f3ead8"/><path d="M112 23 C102 58 100 92 102 120 L136 120 C136 92 140 58 152 26 Z" fill="#ff6b2c"/><rect x="48" y="96" width="160" height="64" rx="28" fill="#0d1328"/><g class="eyes"><rect x="90" y="114" width="20" height="26" rx="4" fill="#ffc23d"/><rect x="146" y="114" width="20" height="26" rx="4" fill="#ffc23d"/></g></svg>
+      </span>
+      <div class="seat__info">
+        <div class="seat__name"><span>MONTY</span><span class="badge" id="levelBadge"></span></div>
+        <div class="seat__caps" id="capsAi"></div>
+      </div>
+      <span class="thinking" id="thinking" hidden aria-hidden="true"><i></i><i></i><i></i></span>
+    </section>
+
+    <div class="status" id="status" aria-live="polite"></div>
+    <ol class="moves" id="moves"></ol>
+
+    <section class="seat seat--you">
+      <span class="seat__avatar" id="youAvatar" aria-hidden="true"></span>
+      <div class="seat__info">
+        <div class="seat__name"><span data-t="you"></span></div>
+        <div class="seat__caps" id="capsYou"></div>
+      </div>
+    </section>
+
+    <div class="actions">
+      <button type="button" class="btn" id="btnUndo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-t="undo"></span></button>
+      <button type="button" class="btn" id="btnResign"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4h11l-2 4 2 4H5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="resignLabel" data-t="resign"></span></button>
+      <button type="button" class="btn btn--accent" id="btnNew"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg><span data-t="newGame"></span></button>
+      <button type="button" class="btn btn--icon" id="btnSound" aria-pressed="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path class="wave" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="cross" d="M16.5 9.5l5 5m0-5l-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <div class="overlay" id="menu">
+    <div class="card card--menu">
+      <header class="menu__head">
+        <svg class="menu__helmet" viewBox="0 0 240 230" aria-hidden="true"><path d="M30 130 C30 62 78 22 130 22 C188 22 220 70 220 130 L220 158 C220 176 206 188 188 188 L62 188 C44 188 30 176 30 158 Z" fill="#f3ead8" stroke="#0d1328" stroke-width="5"/><path d="M112 23 C102 58 100 92 102 120 L136 120 C136 92 140 58 152 26 Z" fill="#ff6b2c"/><path d="M104 23 C94 58 92 92 94 120 L100 120 C98 92 100 58 110 23 Z" fill="#0d1328"/><path d="M156 26 C144 58 140 92 142 120 L148 120 C146 92 150 58 162 30 Z" fill="#0d1328"/><path d="M44 72 C60 44 86 30 108 27" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" opacity=".7"/><rect x="46" y="94" width="164" height="68" rx="30" fill="#0d1328"/><g class="eyes"><rect x="84" y="112" width="24" height="32" rx="5" fill="#ffc23d"/><rect x="146" y="112" width="24" height="32" rx="5" fill="#ffc23d"/></g><path d="M96 176 L154 176" stroke="#0d1328" stroke-width="5" stroke-linecap="round"/></svg>
+        <div>
+          <h1 class="display menu__title" data-t="title"></h1>
+          <p class="menu__sub" data-t="subtitle"></p>
+        </div>
+      </header>
+
+      <div class="field">
+        <span class="field__label" data-t="difficulty"></span>
+        <div class="choices choices--level" id="levelChoices">
+          <button type="button" class="choice" data-level="easy"><b data-t="easy"></b><span data-t="easyDesc"></span><small data-record="easy"></small></button>
+          <button type="button" class="choice" data-level="medium"><b data-t="medium"></b><span data-t="mediumDesc"></span><small data-record="medium"></small></button>
+          <button type="button" class="choice" data-level="hard"><b data-t="hard"></b><span data-t="hardDesc"></span><small data-record="hard"></small></button>
+        </div>
+      </div>
+
+      <div class="field">
+        <span class="field__label" data-t="color"></span>
+        <div class="choices choices--color" id="colorChoices">
+          <button type="button" class="choice choice--color" data-color="white"><img alt="" data-piece="white"><b data-t="white"></b></button>
+          <button type="button" class="choice choice--color" data-color="random"><img alt="" data-piece="random"><b data-t="random"></b></button>
+          <button type="button" class="choice choice--color" data-color="black"><img alt="" data-piece="black"><b data-t="black"></b></button>
+        </div>
+      </div>
+
+      <div class="menu__actions">
+        <button type="button" class="btn btn--big btn--accent" id="btnStart" data-t="start"></button>
+        <button type="button" class="btn btn--big" id="btnResume" data-t="resume" hidden></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="over" hidden>
+    <div class="card card--over">
+      <p class="over__kicker" id="overKicker"></p>
+      <h2 class="display over__title" id="overTitle"></h2>
+      <p class="over__reason" id="overReason"></p>
+      <p class="over__record" id="overRecord"></p>
+      <div class="menu__actions">
+        <button type="button" class="btn btn--big btn--accent" id="btnAgain" data-t="again"></button>
+        <button type="button" class="btn btn--big" id="btnMenu" data-t="menu"></button>
+        <button type="button" class="btn btn--big btn--ghost" id="btnReview" data-t="review"></button>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="./engine.js"></script>
+<script src="./game.js"></script>
+</body>
+</html>

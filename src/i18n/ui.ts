@@ -283,6 +283,7 @@ export const tagLabels: Record<string, Record<Lang, string>> = {
   casual: { tr: 'Rahat', en: 'Casual' },
   platformer: { tr: 'Platform', en: 'Platformer' },
   'one-button': { tr: 'Tek tuş', en: 'One button' },
+  board: { tr: 'Masa oyunu', en: 'Board game' },
   mobile: { tr: 'Mobil uyumlu', en: 'Mobile friendly' },
 };
 
