@@ -157,9 +157,8 @@ ana sayfa hero'su ve sitemap bir sonraki build'de güncellenir. Oyun dilini `?la
 
 </details>
 
-**Taslak örnek oyun:** `src/content/games/ornek-oyun.md` ve `public/play/ornek-oyun/` oynatıcıyı ve oyun sayfası
-şablonunu test etmek için var (`draft: true`). Production build'e girmez: dosyaları build sonunda `dist/`'ten silinir
-(`astro.config.mjs` → `stripDraftGames`). İlk gerçek oyun gelince silinebilir.
+**Taslak oyunlar:** `draft: true` olan oyunlar production build'e girmez: dosyaları build sonunda `dist/`'ten silinir
+(`astro.config.mjs` → `stripDraftGames`).
 
 ## ✍️ Devlog yazısı
 

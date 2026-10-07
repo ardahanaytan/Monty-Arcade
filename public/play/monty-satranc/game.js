@@ -161,7 +161,7 @@
     let siteMuted = false;
     function unlock() {
       if (!ac) {
-        const AC = window.AudioContext || window.webkitAudioContext;
+        const AC = window.AudioContext || /** @type {any} */ (window).webkitAudioContext; // eski Safari
         if (!AC) return;
         ac = new AC();
         noise = ac.createBuffer(1, Math.floor(ac.sampleRate * 0.25), ac.sampleRate);

@@ -4,8 +4,9 @@ Bu dosya, Monty Arcade'de yayınlanacak bir oyunu **yapmak** ve siteye **eklemek
 Yeni bir oyun oturumuna başlarken önce bunu oku. Sitenin genel yapısı için [`README.tr.md`](README.tr.md),
 ilk planlama belgesi için `../MONTY_ARCADE.md` (repo dışında; kısmen eski) var.
 
-> **Durum (v1.0.1):** Site yayında (https://monty-arcade.vercel.app). Hiç gerçek oyun yok; sadece test için
-> `ornek-oyun` adında taslak bir oyun var. Monty SDK (başarımlar) henüz yazılmadı, ilk oyunlarla birlikte (v1.5) gelecek.
+> **Durum (v1.0.1):** Site yayında (https://monty-arcade.vercel.app). Dört oyun taslak olarak hazır, henüz yayında değil:
+> `monty-satranc`, `kask-kacisi`, `isiklar-sondu`, `pit-stop`. Oyunlar `unlock` mesajlarını gönderiyor ama sitede
+> başarım bildirimi (Monty SDK'nın site tarafı) henüz yazılmadı.
 
 ---
 
@@ -92,7 +93,15 @@ window.addEventListener('message', (e) => {
 ```
 
 Bugün oynatıcının anladığı mesajlar sadece bunlar (`ready` ve `mute`). Uygulaması: `src/components/Player.astro`.
-Örnek: `public/play/ornek-oyun/index.html`.
+
+### Oyun kiti (`kit.js`)
+
+Kask Kaçışı, Işıklar Söndü ve Pit Stop aynı küçük kiti kullanıyor: `public/play/<slug>/kit.js`. Her oyunun klasöründe
+aynı dosyanın bir kopyası var (oyunlar dışarıya bağımlı olmasın diye). Kit şunları yapar:
+dil (`kit.lang`), `monty:<slug>:` önekli kayıt (`kit.store`), `ready` / `unlock` mesajları, sitenin `mute` mesajı,
+sekme gizlenince `pause` olayı ve WebAudio ile dosyasız sesler (`kit.sound.tone` / `kit.sound.noise`).
+Yeni bir oyuna başlarken `kit.js` ve `fonts.css` + `fonts/` klasörünü bu oyunlardan birinden kopyala.
+Kiti değiştirirsen değişikliği diğer kopyalara da uygula.
 
 ### Gelecek: Monty SDK (v1.5 — henüz YOK)
 
@@ -176,8 +185,7 @@ oyun sayfası, "Diğer oyunlar", sitemap ve oyun sayfasının `VideoGame` JSON-L
 3. Hazır olunca `draft: true` satırını sil, `npm run build` + `npm run preview` (`http://localhost:2607`) ile son kontrol.
    `npm run check` (tip kontrolü) de hatasız olmalı.
 
-**İlk gerçek oyun yayınlanınca** test için duran örnek oyunu sil: `src/content/games/ornek-oyun.md`,
-`src/content/games/covers/ornek-oyun.png` ve `public/play/ornek-oyun/`.
+Kapak görselleri `scripts/covers/<slug>.mjs` betikleriyle SVG'den üretilir (`node scripts/covers/<slug>.mjs`).
 
 ---
 
