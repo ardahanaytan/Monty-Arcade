@@ -15,6 +15,8 @@ The flash game portals of the 2000s, rebuilt for today's web.
 [![i18n](https://img.shields.io/badge/i18n-TR%20%2F%20EN-ffc23d?style=flat-square&labelColor=0d1328)](src/i18n/ui.ts)
 [![Lighthouse](https://img.shields.io/badge/Lighthouse-97%E2%80%93100-f3ead8?style=flat-square&logo=lighthouse&logoColor=white&labelColor=0d1328)](https://developer.chrome.com/docs/lighthouse)
 
+### [▶ Play at monty-arcade.vercel.app](https://monty-arcade.vercel.app)
+
 **English** · [Türkçe](README.tr.md)
 
 </div>
@@ -199,7 +201,7 @@ Most settings live in [`src/config/site.ts`](src/config/site.ts):
 ```ts
 export const site = {
   name: 'Monty Arcade',
-  url: 'https://example.com',   // canonical, hreflang, sitemap and robots are generated from this
+  url: 'https://monty-arcade.vercel.app',   // canonical, hreflang, sitemap and robots are generated from this
   links: { github, linkedin, itch, kofi, email },   // empty links are hidden
   features: {
     accounts: false,            // v2: sign-in, achievements panel, badge counts

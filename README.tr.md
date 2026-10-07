@@ -15,6 +15,8 @@ Kendi yaptığım küçük tarayıcı oyunlarının evi ve onları yaparken tutt
 [![i18n](https://img.shields.io/badge/i18n-TR%20%2F%20EN-ffc23d?style=flat-square&labelColor=0d1328)](src/i18n/ui.ts)
 [![Lighthouse](https://img.shields.io/badge/Lighthouse-97%E2%80%93100-f3ead8?style=flat-square&logo=lighthouse&logoColor=white&labelColor=0d1328)](https://developer.chrome.com/docs/lighthouse)
 
+### [▶ monty-arcade.vercel.app adresinde oyna](https://monty-arcade.vercel.app/tr/)
+
 [English](README.md) · **Türkçe**
 
 </div>
@@ -202,7 +204,7 @@ Tüm token'lar [`src/styles/tokens.css`](src/styles/tokens.css) dosyasında. `--
 ```ts
 export const site = {
   name: 'Monty Arcade',
-  url: 'https://example.com',   // canonical, hreflang, sitemap ve robots buna göre üretilir
+  url: 'https://monty-arcade.vercel.app',   // canonical, hreflang, sitemap ve robots buna göre üretilir
   links: { github, linkedin, itch, kofi, email },   // boş olanlar gizlenir
   features: {
     accounts: false,            // v2: giriş butonu, başarım paneli, kart rozet sayısı
