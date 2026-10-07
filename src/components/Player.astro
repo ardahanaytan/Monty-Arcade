@@ -44,7 +44,19 @@ const ratioLabel = aspectRatio.replace(/\s/g, '').replace('/', ':');
   <div class="player__tools">
     <button type="button" class="tool" data-fullscreen><Icon name="fullscreen" />{t('game.fullscreen')}</button>
     <button type="button" class="tool" data-restart disabled><Icon name="restart" />{t('game.restart')}</button>
-    <button type="button" class="tool" data-sound hidden aria-pressed="false"><Icon name="sound" />{t('game.sound')}</button>
+    <button
+      type="button"
+      class="tool tool--sound"
+      data-sound
+      hidden
+      aria-pressed="false"
+      data-label-on={t('game.soundOn')}
+      data-label-off={t('game.soundOff')}
+    >
+      <span class="tool__icon tool__icon--on"><Icon name="sound" /></span>
+      <span class="tool__icon tool__icon--off"><Icon name="muted" /></span>
+      <span data-sound-label>{t('game.soundOn')}</span>
+    </button>
     <span class="player__released">{t('game.released')}: {upper(formatDate(releaseDate, lang), lang)}</span>
   </div>
 </section>
@@ -58,9 +70,24 @@ const ratioLabel = aspectRatio.replace(/\s/g, '').replace('/', ':');
     const restartBtn = root.querySelector<HTMLButtonElement>('[data-restart]')!;
     const fullscreenBtn = root.querySelector<HTMLButtonElement>('[data-fullscreen]')!;
     const soundBtn = root.querySelector<HTMLButtonElement>('[data-sound]')!;
+    const soundLabel = soundBtn.querySelector<HTMLElement>('[data-sound-label]')!;
     const src = root.dataset.src!;
     let iframe: HTMLIFrameElement | null = null;
+    // Ses tercihi tüm oyunlar için hatırlanır (sadece bu tarayıcıda).
+    const MUTE_KEY = 'monty:site:muted';
     let muted = false;
+    try {
+      muted = localStorage.getItem(MUTE_KEY) === '1';
+    } catch {}
+
+    const renderSound = () => {
+      soundBtn.setAttribute('aria-pressed', String(muted));
+      soundLabel.textContent = (muted ? soundBtn.dataset.labelOff : soundBtn.dataset.labelOn) ?? '';
+    };
+    const sendMute = () => {
+      iframe?.contentWindow?.postMessage({ source: 'monty-site', v: 1, type: 'mute', muted }, location.origin);
+    };
+    renderSound();
 
     const start = () => {
       if (iframe) return;
@@ -100,12 +127,17 @@ const ratioLabel = aspectRatio.replace(/\s/g, '').replace('/', ':');
       if (data.type === 'ready') {
         loading.hidden = true;
         soundBtn.hidden = false;
+        // Oyun her yüklendiğinde (yeniden başlatma dahil) mevcut ses durumunu öğrensin.
+        if (muted) sendMute();
       }
     });
     soundBtn.addEventListener('click', () => {
       muted = !muted;
-      soundBtn.setAttribute('aria-pressed', String(muted));
-      iframe?.contentWindow?.postMessage({ source: 'monty-site', v: 1, type: 'mute', muted }, location.origin);
+      try {
+        localStorage.setItem(MUTE_KEY, muted ? '1' : '0');
+      } catch {}
+      renderSound();
+      sendMute();
     });
   });
 </script>
@@ -295,6 +327,21 @@ const ratioLabel = aspectRatio.replace(/\s/g, '').replace('/', ':');
   }
   .tool[hidden] {
     display: none;
+  }
+  .tool__icon {
+    display: inline-flex;
+  }
+  .tool--sound .tool__icon--off,
+  .tool--sound[aria-pressed='true'] .tool__icon--on {
+    display: none;
+  }
+  .tool--sound[aria-pressed='true'] .tool__icon--off {
+    display: inline-flex;
+  }
+  /* sessizken buton vurgulu durur: durum bir bakışta anlaşılsın */
+  .tool--sound[aria-pressed='true'] {
+    color: var(--accent);
+    background: rgba(255, 107, 44, 0.12);
   }
   .player__released {
     margin-left: auto;

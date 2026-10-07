@@ -613,6 +613,7 @@
     }
     text(T.pit(Math.min(5, S.stopIdx + (S.mode === 'leave' || S.mode === 'between' ? 0 : 1))), 22, 36, 14, { font: 'mono', color: '#f3ead8', align: 'left' });
     if (S.records.bestStop) text(`${T.best} ${S.records.bestStop.toFixed(3)}`, VW - 22, 36, 12, { font: 'mono', color: 'rgba(243,234,216,.6)', align: 'right' });
+    if (sound.muted) text('♪ ✕', VW - 22, 58, 12, { font: 'mono', color: 'rgba(243,234,216,.5)', align: 'right' });
     for (const p of S.pops) {
       const a = Math.min(1, (0.8 - p.t) * 4);
       text(p.text, p.x, p.y - p.t * 30, 22, { color: p.color, glow: 'rgba(0,0,0,.6)', alpha: a });
