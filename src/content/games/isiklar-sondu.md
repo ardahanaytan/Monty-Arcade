@@ -48,5 +48,5 @@ achievements:
     icon: target
     tier: common
     hidden: true
-draft: true
+draft: false
 ---

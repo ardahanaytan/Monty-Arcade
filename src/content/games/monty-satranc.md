@@ -54,5 +54,5 @@ achievements:
     icon: target
     tier: rare
     hidden: true
-draft: true
+draft: false
 ---

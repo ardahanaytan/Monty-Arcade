@@ -54,5 +54,5 @@ achievements:
     description: { tr: "Tek koşuda 50 LED civata topla.", en: "Collect 50 LED bolts in one run." }
     icon: bolt
     tier: rare
-draft: true
+draft: false
 ---
