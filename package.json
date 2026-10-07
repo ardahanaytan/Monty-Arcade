@@ -20,5 +20,15 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
     "typescript": "^6.0.3"
+  },
+  "description": "Monty Arcade — small browser games and a devlog. The flash game portals of the 2000s, rebuilt for today's web.",
+  "author": "Ardahan Aytan (https://github.com/ardahanaytan)",
+  "homepage": "https://github.com/ardahanaytan/Monty-Arcade#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ardahanaytan/Monty-Arcade.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ardahanaytan/Monty-Arcade/issues"
   }
 }

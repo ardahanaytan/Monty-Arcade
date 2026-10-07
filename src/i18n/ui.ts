@@ -27,7 +27,7 @@ const tr = {
   'ticker.4': 'YAKINDA: PROFİL VE BAŞARIMLAR',
   'ticker.newGame': 'YENİ OYUN',
   'ticker.newPost': 'DEVLOG',
-  'hero.badge': '● ÇOK YAKINDA AÇILIYOR',
+  'hero.badge': '● KAPILAR AÇILDI',
   'hero.title1': 'Küçük oyunlar.',
   'hero.title2': 'Büyük nostalji.',
   'hero.lead':
@@ -71,7 +71,7 @@ const tr = {
   'driver.eyebrow': 'SÜRÜCÜ KARTI',
   'driver.title': 'Monty kim?',
   'driver.text':
-    'Adını bir yarış efsanesinden alan bu kask, sitenin maskotu. Arkasında ise boş zamanlarında küçük web oyunları yapan [adın] var.',
+    'Adını bir yarış efsanesinden alan bu kask, sitenin maskotu. Arkasında ise boş zamanlarında küçük web oyunları yapan Ardahan var.',
   'driver.link': 'Hakkında →',
   'teaser.badge': 'YAKINDA',
   'teaser.title': 'Profil & başarım rozetleri',
@@ -162,7 +162,7 @@ const en: Record<UIKey, string> = {
   'ticker.4': 'COMING SOON: PROFILES & ACHIEVEMENTS',
   'ticker.newGame': 'NEW GAME',
   'ticker.newPost': 'DEVLOG',
-  'hero.badge': '● OPENING SOON',
+  'hero.badge': '● NOW OPEN',
   'hero.title1': 'Small games.',
   'hero.title2': 'Big nostalgia.',
   'hero.lead':
@@ -206,7 +206,7 @@ const en: Record<UIKey, string> = {
   'driver.eyebrow': 'DRIVER CARD',
   'driver.title': "Who's Monty?",
   'driver.text':
-    "This helmet, named after a racing legend, is the site's mascot. Behind it is [your name], who makes small web games in their free time.",
+    "This helmet, named after a racing legend, is the site's mascot. Behind it is Ardahan, who makes small web games in their free time.",
   'driver.link': 'About →',
   'teaser.badge': 'COMING SOON',
   'teaser.title': 'Profiles & achievement badges',

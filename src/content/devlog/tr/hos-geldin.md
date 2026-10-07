@@ -1,6 +1,6 @@
 ---
 title: "Monty Arcade'e hoş geldin!"
-description: "Kendi yaptığım küçük oyunları bir araya topladığım köşeye hoşgeldin."
+description: "Kendi yaptığım küçük oyunları bir araya topladığım köşeye hoş geldin."
 date: 2026-10-06
 ---
 
