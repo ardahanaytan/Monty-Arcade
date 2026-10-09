@@ -17,7 +17,8 @@ export type IconName =
   | 'fullscreen'
   | 'restart'
   | 'sound'
-  | 'muted';
+  | 'muted'
+  | 'close';
 
 interface Props {
   name: IconName;
@@ -47,6 +48,7 @@ const paths: Record<IconName, string> = {
   restart: '<path d="M4 12a8 8 0 1 0 2.5-5.8"/><path d="M4 4v5h5"/>',
   sound: '<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9a4 4 0 0 1 0 6"/>',
   muted: '<path d="M4 9v6h4l5 4V5L8 9z"/><path d="m17 9 4 6M21 9l-4 6"/>',
+  close: '<path d="M6 6l12 12M18 6 6 18"/>',
 };
 
 const filled = name === 'play';

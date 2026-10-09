@@ -24,6 +24,13 @@ const ratioLabel = aspectRatio.replace(/\s/g, '').replace('/', ':');
   </div>
 
   <div class="player__stage" style={`aspect-ratio: ${aspectRatio}`} data-stage>
+    <!-- Sadece yedek tam ekranda (tam ekran API'si olmayan iPhone vb.) görünür -->
+    <div class="player__fsbar">
+      <span class="player__brand"><span class="player__dot" aria-hidden="true"></span>{title[lang]}</span>
+      <button type="button" class="player__fsexit" data-fs-exit>
+        <Icon name="close" />{t('game.exitFullscreen')}
+      </button>
+    </div>
     <div class="player__start" data-start-layer>
       <Image src={cover} alt="" widths={[480]} sizes="480px" class="player__blur" loading="eager" />
       <div class="player__speed" aria-hidden="true"></div>
@@ -112,11 +119,73 @@ const ratioLabel = aspectRatio.replace(/\s/g, '').replace('/', ':');
       loading.hidden = false;
       iframe.src = src;
     });
+    // Tam ekran: önce gerçek Fullscreen API (iPad'de webkit önekli). iPhone'da öğeler için tam ekran API'si
+    // yok; orada ve istek reddedilirse oynatıcı CSS ile ekranı kaplar ("yedek tam ekran").
+    type WebkitDoc = Document & {
+      webkitFullscreenEnabled?: boolean;
+      webkitFullscreenElement?: Element | null;
+      webkitExitFullscreen?: () => void;
+    };
+    type WebkitEl = HTMLElement & { webkitRequestFullscreen?: () => void };
+    const doc = document as WebkitDoc;
+    const fsExitBtn = root.querySelector<HTMLButtonElement>('[data-fs-exit]')!;
+    let pseudoFs = false;
+
+    const enterPseudoFs = () => {
+      if (pseudoFs) return;
+      pseudoFs = true;
+      stage.classList.add('is-pseudo-fs');
+      document.documentElement.classList.add('player-fs-lock');
+      // telefonun "geri" hareketi sayfadan çıkmasın, tam ekrandan çıksın
+      history.pushState({ montyFs: true }, '');
+      iframe?.focus();
+    };
+    const exitPseudoFs = (fromHistory = false) => {
+      if (!pseudoFs) return;
+      pseudoFs = false;
+      stage.classList.remove('is-pseudo-fs');
+      document.documentElement.classList.remove('player-fs-lock');
+      if (!fromHistory && history.state?.montyFs) history.back();
+    };
+    window.addEventListener('popstate', () => exitPseudoFs(true));
+    fsExitBtn.addEventListener('click', () => exitPseudoFs());
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') exitPseudoFs();
+    });
+
     fullscreenBtn.addEventListener('click', () => {
       if (!iframe) start();
-      if (document.fullscreenElement) document.exitFullscreen();
-      else stage.requestFullscreen?.();
+      if (pseudoFs) return exitPseudoFs();
+      if (doc.fullscreenElement || doc.webkitFullscreenElement) {
+        if (doc.exitFullscreen) doc.exitFullscreen();
+        else doc.webkitExitFullscreen?.();
+        return;
+      }
+      const el = stage as WebkitEl;
+      const enabled = doc.fullscreenEnabled ?? doc.webkitFullscreenEnabled ?? false;
+      if (enabled && (el.requestFullscreen || el.webkitRequestFullscreen)) {
+        // Bazı uygulama içi tarayıcılar isteği ne kabul ne reddeder; kısa sürede açılmazsa yedeğe geç.
+        const fallback = setTimeout(() => {
+          if (!doc.fullscreenElement && !doc.webkitFullscreenElement) enterPseudoFs();
+        }, 900);
+        if (el.requestFullscreen) {
+          el.requestFullscreen().catch(() => {
+            clearTimeout(fallback);
+            enterPseudoFs();
+          });
+        } else {
+          el.webkitRequestFullscreen?.();
+        }
+      } else {
+        enterPseudoFs();
+      }
     });
+    // Gerçek tam ekran geç de olsa açılırsa yedek mod kapansın.
+    const onFsChange = () => {
+      if ((doc.fullscreenElement || doc.webkitFullscreenElement) && pseudoFs) exitPseudoFs();
+    };
+    document.addEventListener('fullscreenchange', onFsChange);
+    document.addEventListener('webkitfullscreenchange', onFsChange);
     if (location.hash === '#play') startBtn.focus({ preventScroll: true });
 
     // Monty SDK (v1.5): oyun hazır olduğunu bildirirse ses butonu görünür.
@@ -184,6 +253,76 @@ const ratioLabel = aspectRatio.replace(/\s/g, '').replace('/', ':');
   }
   .player__stage:fullscreen {
     border-radius: 0;
+  }
+
+  /* Yedek tam ekran: Fullscreen API'si olmayan cihazlarda oynatıcı ekranı kaplar */
+  .player__fsbar {
+    display: none;
+  }
+  :global(html.player-fs-lock),
+  :global(html.player-fs-lock body) {
+    overflow: hidden;
+  }
+  .player__stage.is-pseudo-fs {
+    --fsbar: 44px;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    aspect-ratio: auto !important;
+    border-radius: 0;
+    background: var(--bg-deep);
+  }
+  .is-pseudo-fs .player__fsbar {
+    position: absolute;
+    top: env(safe-area-inset-top);
+    left: env(safe-area-inset-left);
+    right: env(safe-area-inset-right);
+    height: var(--fsbar);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 6px 0 14px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--text-5);
+  }
+  .is-pseudo-fs .player__fsbar .player__brand {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .player__fsexit {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 36px;
+    padding: 0 12px;
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0;
+    color: var(--text);
+    background: var(--line);
+    border: 0;
+    border-radius: 10px;
+  }
+  .player__stage.is-pseudo-fs :global(.player__frame),
+  .player__stage.is-pseudo-fs .player__start,
+  .player__stage.is-pseudo-fs .player__loading {
+    top: calc(env(safe-area-inset-top) + var(--fsbar));
+    left: env(safe-area-inset-left);
+    right: env(safe-area-inset-right);
+    bottom: env(safe-area-inset-bottom);
+    /* iframe "auto" boyutta 300x150'ye döner; ölçüyü açıkça ver */
+    width: calc(100% - env(safe-area-inset-left) - env(safe-area-inset-right));
+    height: calc(100% - env(safe-area-inset-top) - var(--fsbar) - env(safe-area-inset-bottom));
   }
   .player__start {
     position: absolute;
