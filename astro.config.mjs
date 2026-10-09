@@ -48,8 +48,8 @@ export default defineConfig({
   build: { inlineStylesheets: 'always' },
   integrations: [
     sitemap({
-      // Kök dil yönlendirme sayfası ve 404 sitemap'e girmez.
-      filter: (page) => !/\/404\/?$/.test(page) && new URL(page).pathname !== '/',
+      // Kök dil yönlendirme sayfası, 404 ve profil kabuğu (/<dil>/u/) sitemap'e girmez.
+      filter: (page) => !/\/404\/?$/.test(page) && new URL(page).pathname !== '/' && !/^\/[a-z]{2}\/u\//.test(new URL(page).pathname),
     }),
     stripDraftGames(),
   ],

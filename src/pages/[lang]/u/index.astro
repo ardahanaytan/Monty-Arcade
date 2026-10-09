@@ -1,0 +1,730 @@
+---
+/**
+ * v2 — Sürücü profili (§11.7). Statik kabuk; veri istemcide Supabase'den okunur.
+ * Canlıda `/tr/u/<ad>` → bu sayfa (vercel.json `rewrites`); geliştirmede `/tr/u/?u=<ad>`.
+ */
+import { getImage } from 'astro:assets';
+import Base from '../../../layouts/Base.astro';
+import Checker from '../../../components/Checker.astro';
+import Icon, { type IconName } from '../../../components/Icon.astro';
+import { getStaticLangPaths, useTranslations, type Lang } from '../../../i18n/ui';
+import { gameUrl, getGames } from '../../../lib/content';
+
+export const getStaticPaths = getStaticLangPaths;
+
+const lang = Astro.params.lang as Lang;
+const t = useTranslations(lang);
+
+const games = (await getGames()).filter((g) => g.data.achievements.length > 0);
+const catalog = await Promise.all(
+  games.map(async (g) => ({
+    id: g.id,
+    title: g.data.title[lang],
+    url: gameUrl(g, lang),
+    cover: (await getImage({ src: g.data.cover, width: 160, format: 'webp' })).src,
+    achievements: g.data.achievements.map((a) => ({
+      id: a.id,
+      name: a.title[lang],
+      desc: a.description[lang],
+      icon: a.icon,
+      tier: a.tier,
+      hidden: a.hidden,
+    })),
+  })),
+);
+const icons = [...new Set(catalog.flatMap((g) => g.achievements.map((a) => a.icon)))] as IconName[];
+---
+
+<Base lang={lang} title={t('profile.title')} description={t('profile.description')} noindex>
+  <div
+    class="container page profile"
+    data-profile
+    data-lang={lang}
+    data-catalog={JSON.stringify(catalog)}
+    data-delete-confirm={t('profile.deleteConfirm')}
+    data-hidden-name={t('ach.hidden')}
+  >
+    <p class="profile__status" data-view="loading">{t('profile.loading')}</p>
+
+    <section class="panel profile__message" data-view="message" hidden>
+      <p data-message></p>
+      <button type="button" class="profile__btn profile__btn--primary gloss press" data-login-open data-message-action hidden>
+      </button>
+      <template data-messages>
+        <span data-key="notFound">{t('profile.notFound')}</span>
+        <span data-key="signedOut">{t('profile.signedOut')}</span>
+        <span data-key="pickUsername">{t('profile.pickUsername')}</span>
+        <span data-key="error">{t('profile.error')}</span>
+        <span data-key="login">{t('nav.login')}</span>
+        <span data-key="pick">{t('profile.pick')}</span>
+      </template>
+    </section>
+
+    <div class="profile__body" data-view="profile" hidden>
+      <section class="cream-card license" aria-labelledby="profile-name">
+        <Checker variant="cream" bottom />
+        <span class="card-eyebrow">{t('profile.eyebrow')}</span>
+        <div class="license__row">
+          <span class="license__avatar">
+            <img alt="" width="88" height="88" data-avatar hidden />
+            <Icon name="user" size={44} />
+          </span>
+          <div class="license__id">
+            <h1 id="profile-name" class="display" data-username></h1>
+            <p class="license__display" data-display-name></p>
+          </div>
+          <span class="license__plate" data-plate></span>
+        </div>
+        <dl class="license__stats">
+          <div><dt>{t('profile.joined')}</dt><dd data-stat="joined"></dd></div>
+          <div><dt>{t('profile.badges')}</dt><dd data-stat="badges"></dd></div>
+          <div><dt>{t('profile.rare')}</dt><dd data-stat="rare"></dd></div>
+          <div><dt>{t('profile.games')}</dt><dd data-stat="games"></dd></div>
+        </dl>
+      </section>
+
+      <section class="panel" aria-labelledby="showcase-title">
+        <div class="section-head">
+          <h2 id="showcase-title" class="subhead">{t('profile.showcase')}</h2>
+          <button type="button" class="profile__btn" data-showcase-edit hidden>{t('profile.showcaseEdit')}</button>
+        </div>
+        <p class="profile__hint" data-showcase-hint hidden>{t('profile.showcaseHint')}</p>
+        <ul class="showcase plain" data-showcase></ul>
+        <p class="profile__empty" data-showcase-empty hidden>{t('profile.showcaseEmpty')}</p>
+        <div class="profile__actions" data-showcase-actions hidden>
+          <button type="button" class="profile__btn profile__btn--primary gloss press" data-showcase-save>
+            {t('profile.save')}
+          </button>
+          <button type="button" class="profile__btn" data-showcase-cancel>{t('profile.cancel')}</button>
+        </div>
+      </section>
+
+      <div class="split">
+        <section class="split__main panel" aria-labelledby="progress-title">
+          <h2 id="progress-title" class="subhead">{t('profile.progress')}</h2>
+          <ul class="games plain" data-games></ul>
+        </section>
+        <aside class="split__side side">
+          <section class="panel" aria-labelledby="recent-title">
+            <h2 id="recent-title" class="subhead">{t('profile.recent')}</h2>
+            <ol class="recent plain" data-recent></ol>
+            <p class="profile__empty" data-recent-empty hidden>{t('profile.recentEmpty')}</p>
+          </section>
+          <section class="panel" aria-labelledby="account-title" data-owner-only hidden>
+            <h2 id="account-title" class="subhead">{t('profile.account')}</h2>
+            <div class="profile__actions">
+              <button type="button" class="profile__btn" data-logout>{t('nav.logout')}</button>
+              <button type="button" class="profile__btn profile__btn--danger" data-delete>{t('profile.delete')}</button>
+            </div>
+          </section>
+        </aside>
+      </div>
+    </div>
+
+    {/* İstemci tarafında kopyalanan rozet ikonları */}
+    {
+      icons.map((name) => (
+        <template data-icon={name}>
+          <Icon name={name} size={22} />
+        </template>
+      ))
+    }
+    <template data-icon="lock"><Icon name="lock" size={18} /></template>
+  </div>
+</Base>
+
+<script>
+  import {
+    deleteAccount,
+    getAccount,
+    onAccount,
+    profileUrl,
+    saveShowcase,
+    signOut,
+    whenAccountReady,
+    type Profile,
+  } from '../../../lib/client/account';
+  import { supabase } from '../../../lib/client/supabase';
+
+  type Tier = 'common' | 'rare' | 'legendary';
+  interface Ach {
+    id: string;
+    name: string;
+    desc: string;
+    icon: string;
+    tier: Tier;
+    hidden: boolean;
+  }
+  interface CatalogGame {
+    id: string;
+    title: string;
+    url: string;
+    cover: string;
+    achievements: Ach[];
+  }
+  interface Unlock {
+    game_id: string;
+    achievement_id: string;
+    unlocked_at: string;
+  }
+
+  const TIER_COLOR: Record<Tier, string> = { common: 'var(--text-3)', rare: 'var(--accent)', legendary: 'var(--led)' };
+  const MAX_SHOWCASE = 6;
+
+  const root = document.querySelector<HTMLElement>('[data-profile]');
+  if (root) void init(root);
+
+  async function init(root: HTMLElement) {
+    const lang = root.dataset.lang ?? 'en';
+    const catalog: CatalogGame[] = JSON.parse(root.dataset.catalog ?? '[]');
+    const byKey = new Map<string, { game: CatalogGame; ach: Ach }>();
+    catalog.forEach((game) => game.achievements.forEach((ach) => byKey.set(`${game.id}:${ach.id}`, { game, ach })));
+    const $ = <T extends Element = HTMLElement>(sel: string) => root.querySelector<T>(sel)!;
+    const msgText = (key: string) =>
+      $<HTMLTemplateElement>('[data-messages]').content.querySelector(`[data-key="${key}"]`)?.textContent ?? '';
+    const dateFmt = new Intl.DateTimeFormat(lang, { day: 'numeric', month: 'short', year: 'numeric' });
+
+    const view = (name: 'loading' | 'message' | 'profile') =>
+      root.querySelectorAll<HTMLElement>('[data-view]').forEach((el) => (el.hidden = el.dataset.view !== name));
+
+    const message = (key: string, action?: 'login' | 'pick') => {
+      $('[data-message]').textContent = msgText(key);
+      const btn = $('[data-message-action]');
+      btn.hidden = !action;
+      if (action) btn.textContent = msgText(action);
+      view('message');
+    };
+
+    const icon = (name: string) =>
+      root.querySelector<HTMLTemplateElement>(`template[data-icon="${name}"]`)?.content.cloneNode(true) ?? document.createTextNode('');
+
+    // Hangi profil? /tr/u/<ad> veya ?u=<ad>; yoksa giriş yapan kullanıcınınki.
+    let username =
+      location.pathname.match(/^\/[a-z]{2}\/u\/([a-z0-9_]{3,20})\/?$/)?.[1] ??
+      new URLSearchParams(location.search).get('u') ??
+      null;
+
+    if (!supabase) return message('error');
+    await whenAccountReady();
+
+    if (!username) {
+      const { user, profile } = getAccount();
+      if (!user) {
+        message('signedOut', 'login');
+        // Bu sayfada giriş yapılırsa profiline geç.
+        onAccount((s) => s.profile?.username && location.replace(profileUrl(lang, s.profile.username)));
+        return;
+      }
+      if (!profile?.username) {
+        message('pickUsername', 'pick');
+        onAccount((s) => s.profile?.username && location.replace(profileUrl(lang, s.profile.username)));
+        return;
+      }
+      username = profile.username;
+      history.replaceState(null, '', profileUrl(lang, username));
+    }
+
+    const { data: profile, error } = await supabase.from('profiles').select('*').eq('username', username).maybeSingle();
+    if (error) return message('error');
+    if (!profile) return message('notFound');
+    const { data: rows } = await supabase
+      .from('user_achievements')
+      .select('game_id, achievement_id, unlocked_at')
+      .eq('user_id', profile.id)
+      .order('unlocked_at', { ascending: false });
+    const unlocks = ((rows ?? []) as Unlock[]).filter((r) => byKey.has(`${r.game_id}:${r.achievement_id}`));
+    const owned = new Set(unlocks.map((r) => `${r.game_id}:${r.achievement_id}`));
+
+    // Dil değiştirici aynı profile gitsin.
+    document.querySelectorAll<HTMLAnchorElement>('[data-lang-link]').forEach((a) => {
+      a.href = profileUrl(a.dataset.langLink ?? lang, username!);
+    });
+    document.title = `${username} · ${document.title.split(' · ').pop()}`;
+
+    let current = profile as Profile;
+    let editing = false;
+    let selection: string[] = [];
+
+    const badge = (key: string, opts: { selectable?: boolean } = {}) => {
+      const entry = byKey.get(key)!;
+      const has = owned.has(key);
+      const secret = entry.ach.hidden && !has;
+      const el = document.createElement(opts.selectable ? 'button' : 'span');
+      el.className = 'badge';
+      el.style.setProperty('--tier', TIER_COLOR[entry.ach.tier]);
+      el.classList.toggle('is-locked', !has);
+      if (el instanceof HTMLButtonElement) {
+        el.type = 'button';
+        el.dataset.key = key;
+        el.setAttribute('aria-pressed', String(selection.includes(key)));
+      }
+      const label = secret ? root.dataset.hiddenName ?? '???' : `${entry.ach.name} · ${entry.game.title}`;
+      el.title = secret ? label : `${entry.ach.name} — ${entry.ach.desc}`;
+      el.setAttribute('aria-label', label);
+      if (secret) el.append('???');
+      else el.append(has ? icon(entry.ach.icon) : icon('lock'));
+      return el;
+    };
+
+    const renderShowcase = () => {
+      const list = $('[data-showcase]');
+      const items = editing ? selection : current.showcase.filter((k) => owned.has(k));
+      list.replaceChildren(
+        ...items.map((key) => {
+          const li = document.createElement('li');
+          const { game, ach } = byKey.get(key)!;
+          li.className = 'showcase__item';
+          li.style.setProperty('--tier', TIER_COLOR[ach.tier]);
+          li.append(badge(key));
+          const name = document.createElement('span');
+          name.className = 'showcase__name';
+          name.textContent = ach.name;
+          const sub = document.createElement('span');
+          sub.className = 'showcase__game';
+          sub.textContent = game.title;
+          li.append(name, sub);
+          return li;
+        }),
+      );
+      $('[data-showcase-empty]').hidden = items.length > 0;
+      $('[data-showcase-hint]').hidden = !editing;
+      $('[data-showcase-actions]').hidden = !editing;
+    };
+
+    const renderGames = () => {
+      $('[data-games]').replaceChildren(
+        ...catalog.map((game) => {
+          const keys = game.achievements.map((a) => `${game.id}:${a.id}`);
+          const done = keys.filter((k) => owned.has(k)).length;
+          const li = document.createElement('li');
+          li.className = 'game';
+          li.innerHTML = `
+            <a class="game__cover" href="${game.url}"><img src="${game.cover}" alt="" width="80" height="50" loading="lazy" /></a>
+            <div class="game__info">
+              <div class="game__head"><a class="game__title"></a><span class="game__count">${done} / ${keys.length}</span></div>
+              <span class="game__bar"><span style="width:${(done / keys.length) * 100}%"></span></span>
+              <div class="game__badges"></div>
+            </div>`;
+          const title = li.querySelector<HTMLAnchorElement>('.game__title')!;
+          title.href = game.url;
+          title.textContent = game.title;
+          li.querySelector('.game__badges')!.append(
+            ...keys.map((k) => badge(k, { selectable: editing && owned.has(k) })),
+          );
+          return li;
+        }),
+      );
+    };
+
+    const renderRecent = () => {
+      $('[data-recent]').replaceChildren(
+        ...unlocks.slice(0, 6).map((r) => {
+          const key = `${r.game_id}:${r.achievement_id}`;
+          const { game, ach } = byKey.get(key)!;
+          const li = document.createElement('li');
+          li.className = 'recent__item';
+          li.append(badge(key));
+          const text = document.createElement('span');
+          text.className = 'recent__text';
+          const name = document.createElement('strong');
+          name.textContent = ach.name;
+          const sub = document.createElement('span');
+          sub.textContent = `${game.title} · ${dateFmt.format(new Date(r.unlocked_at))}`;
+          text.append(name, sub);
+          li.append(text);
+          return li;
+        }),
+      );
+      $('[data-recent-empty]').hidden = unlocks.length > 0;
+    };
+
+    const renderLicense = () => {
+      $('[data-username]').textContent = current.username ?? '';
+      const display = $('[data-display-name]');
+      display.textContent = current.display_name ?? '';
+      display.hidden = !current.display_name;
+      const avatar = $<HTMLImageElement>('[data-avatar]');
+      avatar.hidden = !current.avatar_url;
+      if (current.avatar_url) avatar.src = current.avatar_url;
+      $('[data-plate]').textContent = `#${String(unlocks.length).padStart(3, '0')}`;
+      const rare = unlocks.filter((r) => byKey.get(`${r.game_id}:${r.achievement_id}`)!.ach.tier !== 'common').length;
+      $('[data-stat="joined"]').textContent = dateFmt.format(new Date(current.created_at));
+      $('[data-stat="badges"]').textContent = String(unlocks.length);
+      $('[data-stat="rare"]').textContent = String(rare);
+      $('[data-stat="games"]').textContent = String(new Set(unlocks.map((r) => r.game_id)).size);
+    };
+
+    const render = () => {
+      renderLicense();
+      renderShowcase();
+      renderGames();
+      renderRecent();
+    };
+
+    // Sahibine özel: vitrin düzenleme, çıkış, hesap silme.
+    onAccount(({ user }) => {
+      const isOwner = user?.id === current.id;
+      root.querySelectorAll<HTMLElement>('[data-owner-only]').forEach((el) => (el.hidden = !isOwner));
+      $('[data-showcase-edit]').hidden = !isOwner || editing || owned.size === 0;
+      if (!isOwner && editing) {
+        editing = false;
+        render();
+      }
+    });
+
+    $('[data-showcase-edit]').addEventListener('click', () => {
+      editing = true;
+      selection = current.showcase.filter((k) => owned.has(k));
+      $('[data-showcase-edit]').hidden = true;
+      render();
+    });
+    $('[data-showcase-cancel]').addEventListener('click', () => {
+      editing = false;
+      $('[data-showcase-edit]').hidden = false;
+      render();
+    });
+    $('[data-showcase-save]').addEventListener('click', async (e) => {
+      const btn = e.currentTarget as HTMLButtonElement;
+      btn.disabled = true;
+      const err = await saveShowcase(selection);
+      btn.disabled = false;
+      if (err) return;
+      current = getAccount().profile ?? { ...current, showcase: selection };
+      editing = false;
+      $('[data-showcase-edit]').hidden = false;
+      render();
+    });
+    $('[data-games]').addEventListener('click', (e) => {
+      const btn = (e.target as Element).closest<HTMLButtonElement>('button.badge[data-key]');
+      if (!btn || !editing) return;
+      const key = btn.dataset.key!;
+      if (selection.includes(key)) selection = selection.filter((k) => k !== key);
+      else if (selection.length < MAX_SHOWCASE) selection = [...selection, key];
+      render();
+    });
+
+    $('[data-logout]').addEventListener('click', async () => {
+      await signOut();
+      location.href = `/${lang}/`;
+    });
+    $('[data-delete]').addEventListener('click', async () => {
+      if (!confirm(root.dataset.deleteConfirm ?? '')) return;
+      const err = await deleteAccount();
+      if (!err) location.href = `/${lang}/`;
+    });
+
+    render();
+    view('profile');
+  }
+</script>
+
+<style>
+  .profile {
+    gap: 24px;
+    padding-top: 30px;
+  }
+  .profile__status {
+    color: var(--text-3);
+  }
+  .profile__message {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .profile__message p {
+    font-size: 18px;
+    color: var(--text-2);
+  }
+  .profile__body {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  .profile [hidden] {
+    display: none !important;
+  }
+  .profile__btn {
+    min-height: 44px;
+    padding: 0 18px;
+    font: inherit;
+    font-weight: 800;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--surface-2);
+    border: 1px solid var(--line-btn);
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .profile__btn:hover {
+    border-color: var(--line-btn-2);
+  }
+  .profile__btn--primary {
+    color: var(--on-accent);
+    background: var(--accent);
+    border-color: transparent;
+  }
+  .profile__btn--danger {
+    color: var(--accent-alt-3);
+    border-color: rgba(232, 66, 90, 0.5);
+  }
+  .profile__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .profile__hint,
+  .profile__empty {
+    margin-top: 6px;
+    font-size: 14px;
+    color: var(--text-4);
+  }
+  .section-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  h2.subhead {
+    font-size: 20px;
+  }
+
+  /* Sürücü lisansı */
+  .license {
+    position: relative;
+    padding-bottom: 40px;
+  }
+  .license__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 18px;
+    margin-top: 10px;
+  }
+  .license__avatar {
+    position: relative;
+    width: 88px;
+    height: 88px;
+    display: grid;
+    place-items: center;
+    color: var(--card-ink-3);
+    background: rgba(13, 19, 40, 0.08);
+    border: 3px solid var(--card-ink);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  .license__avatar img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .license__id {
+    flex: 1;
+    min-width: 0;
+  }
+  .license__id h1 {
+    font-size: clamp(30px, 6vw, 46px);
+    line-height: 1;
+    color: var(--card-ink);
+    overflow-wrap: anywhere;
+  }
+  .license__display {
+    margin-top: 4px;
+    color: var(--card-ink-2);
+  }
+  .license__plate {
+    padding: 6px 12px;
+    font-family: var(--font-badge);
+    font-weight: 700;
+    font-size: 22px;
+    color: var(--card-ink);
+    background: var(--led);
+    border: 3px solid var(--card-ink);
+    border-radius: 8px;
+  }
+  .license__stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 22px;
+  }
+  .license__stats div {
+    padding: 10px 12px;
+    border: 1.5px dashed rgba(13, 19, 40, 0.3);
+    border-radius: 10px;
+  }
+  .license__stats dt {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--card-eyebrow);
+  }
+  .license__stats dd {
+    font-weight: 900;
+    font-size: 22px;
+    color: var(--card-ink);
+  }
+  @media (max-width: 640px) {
+    .license__stats {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  /* Rozet */
+  .profile :global(.badge) {
+    width: 44px;
+    height: 44px;
+    display: inline-grid;
+    place-items: center;
+    padding: 0;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--tier);
+    background: var(--surface-3);
+    border: 1px solid var(--tier);
+    border-radius: 10px;
+  }
+  .profile :global(.badge.is-locked) {
+    color: var(--text-5);
+    background: var(--surface-2);
+    border: 1px dashed var(--line-strong);
+  }
+  .profile :global(button.badge) {
+    cursor: pointer;
+  }
+  .profile :global(button.badge[aria-pressed='true']) {
+    outline: 3px solid var(--led);
+    outline-offset: 2px;
+  }
+
+  /* Vitrin */
+  .showcase {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+    margin-top: 14px;
+  }
+  .showcase :global(.showcase__item) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 16px 10px;
+    text-align: center;
+    background: var(--bg);
+    border: 1px solid var(--tier);
+    border-radius: 14px;
+  }
+  .showcase :global(.badge) {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 6px;
+  }
+  .showcase :global(.showcase__name) {
+    font-weight: 800;
+    font-size: 15px;
+  }
+  .showcase :global(.showcase__game) {
+    font-size: 12px;
+    color: var(--text-4);
+  }
+
+  /* Oyunlar */
+  .games {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 14px;
+  }
+  .games :global(.game) {
+    display: flex;
+    gap: 14px;
+    padding: 12px;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+  }
+  .games :global(.game__cover img) {
+    display: block;
+    width: 80px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 8px;
+  }
+  .games :global(.game__info) {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .games :global(.game__head) {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .games :global(.game__title) {
+    font-weight: 800;
+    color: var(--text);
+    text-decoration: none;
+  }
+  .games :global(.game__title:hover) {
+    color: var(--accent);
+  }
+  .games :global(.game__count) {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--led);
+  }
+  .games :global(.game__bar) {
+    height: 6px;
+    background: var(--surface-2);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .games :global(.game__bar span) {
+    display: block;
+    height: 100%;
+    background: var(--led);
+  }
+  .games :global(.game__badges) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .games :global(.badge) {
+    width: 38px;
+    height: 38px;
+  }
+
+  /* Son açılanlar */
+  .recent {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .recent :global(.recent__item) {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .recent :global(.recent__text) {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    font-size: 13px;
+    color: var(--text-4);
+  }
+  .recent :global(.recent__text strong) {
+    font-size: 15px;
+    color: var(--text);
+  }
+</style>
