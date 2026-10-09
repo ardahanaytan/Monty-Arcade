@@ -4,9 +4,9 @@ Bu dosya, Monty Arcade'de yayınlanacak bir oyunu **yapmak** ve siteye **eklemek
 Yeni bir oyun oturumuna başlarken önce bunu oku. Sitenin genel yapısı için [`README.tr.md`](README.tr.md),
 ilk planlama belgesi için `../MONTY_ARCADE.md` (repo dışında; kısmen eski) var.
 
-> **Durum (v1.2.0):** Site yayında (https://monty-arcade.vercel.app). Dört oyun yayında:
-> `monty-satranc`, `kask-kacisi`, `isiklar-sondu`, `pit-stop`. Oyunlar `unlock` mesajlarını gönderiyor ama sitede
-> başarım bildirimi (Monty SDK'nın site tarafı) henüz yazılmadı.
+> **Durum (v2 geliştirmede):** Site yayında (https://monty-arcade.vercel.app). Dört oyun yayında:
+> `monty-satranc`, `kask-kacisi`, `isiklar-sondu`, `pit-stop`. v2 ile site oyunların `unlock` mesajlarını işliyor:
+> başarım bildirimi, üyelik (Supabase) ve profil sayfası var.
 
 ---
 
@@ -103,9 +103,24 @@ sekme gizlenince `pause` olayı ve WebAudio ile dosyasız sesler (`kit.sound.ton
 Yeni bir oyuna başlarken `kit.js` ve `fonts.css` + `fonts/` klasörünü bu oyunlardan birinden kopyala.
 Kiti değiştirirsen değişikliği diğer kopyalara da uygula.
 
-### Gelecek: Monty SDK (site tarafı v2'de — henüz YOK)
+### Başarımlar sitede nasıl işlenir? (v2)
 
-İlk oyunlarla birlikte `public/sdk/monty.js` yazılacak. Oyunlar `<script src="/sdk/monty.js"></script>` ile ekleyip şunları kullanacak:
+Oynatıcı (`src/components/Player.astro`) oyundan gelen `unlock` mesajını alır; `achievementId` oyunun bilgi
+dosyasındaki listede yoksa yok sayar, daha önce açıldıysa tekrar bildirmez, açıldıysa sağ altta "Başarım açıldı!"
+bildirimini gösterir. Başarımlar **yalnızca üyelerde kalıcıdır** (Supabase); misafirin başarımları sadece o sekmenin
+oturumunda tutulur ve bildirimde "Kaydedilmedi. Üye ol, kaybolmasın!" yazar. Misafir aynı oturumda giriş yaparsa
+başarımları hesabına aktarılır. Bu bilinçli bir üyelik teşviki; misafir başarımlarını `localStorage`'a kalıcı yazma.
+Ayrıntı: `../MONTY_ARCADE.md` §11.2. Kod: `src/lib/client/achievements.ts`.
+
+**Başarım veritabanında da olmalı.** Sunucu, Supabase `achievements` tablosunda olmayan başarımı kabul etmez.
+Yeni oyun eklerken ya da bir oyunun başarım listesini değiştirirken `npm run sync:achievements` çalıştır ve çıkan
+SQL'i Supabase'te çalıştır (SQL editörü ya da Claude Code'daki Supabase MCP). Komut sadece ekler/günceller; içerikten
+silinen başarımı veritabanından silmez (silmek oyuncuların açtığı rozetleri de siler).
+
+### Gelecek: ayrı Monty SDK dosyası (henüz YOK)
+
+Şimdilik her oyun kendi `kit.js` kopyasıyla aynı mesajları gönderiyor; bu yeterli. İleride ortak bir
+`public/sdk/monty.js` yazılırsa oyunlar `<script src="/sdk/monty.js"></script>` ile ekleyip şunları kullanacak:
 
 ```js
 Monty.ready();                      // yükleme bitti
@@ -116,14 +131,8 @@ Monty.on('pause' | 'resume', fn);   // sekme gizlenince vb.
 Monty.lang;                         // 'tr' | 'en'
 ```
 
-Mesaj biçimi: `{ source: 'monty-sdk', v: 1, type: 'unlock', gameId, achievementId }`. Site tarafında yapılacaklar:
-`achievementId` oyunun bilgi dosyasındaki listede yoksa yok say; daha önce açıldıysa tekrar bildirme; açıldıysa sağ altta
-"Başarım açıldı!" bildirimi (toast) göster. Başarımlar **yalnızca üyelerde kalıcıdır** (Supabase); misafirin başarımları
-sadece o oturumda tutulur ve toast'ta "Kaydedilmedi — üye ol, kaybolmasın" yazar. Bu bilinçli bir üyelik teşviki;
-misafir başarımlarını `localStorage`'a kalıcı yazma. Ayrıntı: `../MONTY_ARCADE.md` §11.2. SDK site dışında sessizce hiçbir şey yapmamalı.
-
-**İlk oyunu yaparken:** SDK'yı yazmak ilk oyunun işinin bir parçası. O zamana kadar oyunda başarımları
-`Monty.unlock(...)` çağrılarıyla tasarlamak ve SDK'yı bu dosyadaki tasarıma göre yazmak yeterli.
+Mesaj biçimi aynı kalır: `{ source: 'monty-sdk', v: 1, type: 'unlock', gameId, achievementId }`. SDK site dışında
+(ör. itch.io'da) sessizce hiçbir şey yapmamalı.
 
 ---
 
@@ -194,9 +203,11 @@ Kapak görselleri `scripts/covers/<slug>.mjs` betikleriyle SVG'den üretilir (`n
 
 1. Oyun için bir devlog yazısı yaz (`src/content/devlog/{tr,en}/<slug>.md`, frontmatter'da `game: <slug>`): fikir nereden çıktı,
    nerede takıldın, ne öğrendin. Yazının sonunda oyunun kartı otomatik görünür.
-2. Commit at. **Oyun eklemek push sebebidir**: `main`'e push et, sürüm etiketi koy (ör. `v1.1.0`) ve etiketi de push et.
+2. Oyunun başarımları varsa `npm run sync:achievements` çıktısını Supabase'te çalıştır (bkz. §3). Push'tan **önce**
+   yap; yoksa oyuncuların açtığı başarımlar sunucuda reddedilir.
+3. Commit at. **Oyun eklemek push sebebidir**: `main`'e push et, sürüm etiketi koy (ör. `v1.1.0`) ve etiketi de push et.
    Vercel birkaç dakika içinde yayınlar.
-3. Oyunu sonradan güncellersen: `/play/` dosyaları tarayıcı ve CDN'de **1 gün** önbellekte kalır. Hemen yansıması
+4. Oyunu sonradan güncellersen: `/play/` dosyaları tarayıcı ve CDN'de **1 gün** önbellekte kalır. Hemen yansıması
    gerekiyorsa build'i yeni bir alt klasöre koy (`public/play/<slug>/v2/`) ve bilgi dosyasında `playUrl: /play/<slug>/v2/index.html` yaz.
 
 ---

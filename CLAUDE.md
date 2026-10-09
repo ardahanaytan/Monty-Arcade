@@ -14,7 +14,8 @@ Kendi yaptığım küçük HTML5 oyunlarının yayınlandığı statik Astro sit
 - Her değişiklikten sonra `npm run build` ve `npm run check` hatasız olmalı.
 - Uydurma içerik (sahte istatistik, yorum, oyuncu sayısı) ekleme.
 - Maskot Monty özgün kalır; telifli karakterlere benzeyen hiçbir şey ekleme.
-- v2 alanları (`features.accounts`) kapalı kalır; üyelik/başarım altyapısı istenmeden kodlanmaz.
+- Başarımlar **yalnızca üyelerde kalıcı** (Supabase); misafir başarımları sadece sekme oturumunda tutulur. Bu bilinçli bir
+  üyelik teşviki: misafir başarımlarını `localStorage`'a kalıcı yazma (`../MONTY_ARCADE.md` §11.2).
 
 ## Git
 
@@ -23,6 +24,20 @@ Kendi yaptığım küçük HTML5 oyunlarının yayınlandığı statik Astro sit
   `package.json` sürümünü eşitle. Emin değilsen sor.
 - `main`'e her push Vercel'de otomatik yayına çıkar.
 
+## Supabase (v2)
+
+- Proje: `Monty-Arcade` (ref `ducvcbfbjmthorqglxqt`, Frankfurt), org "Monty Arcade". Claude Code'da Supabase MCP ile erişilir.
+- Şema değişikliği: önce `supabase/migrations/<zaman>_<ad>.sql` dosyasını yaz, sonra aynı SQL'i MCP `apply_migration` ile uygula,
+  ardından `get_advisors` (security + performance) çalıştır.
+- Tablolara istemciden doğrudan yazma yok; yazma RPC'lerle (`unlock_achievement`, `merge_guest_achievements`, `delete_my_account`).
+  "Automatically expose new tables" kapalı: yeni tabloya `grant` ve RLS kuralını açıkça yaz.
+- Oyun eklenince / başarım listesi değişince: `npm run sync:achievements` çıktısını veritabanında çalıştır.
+- `.env` (git'te yok): `PUBLIC_SUPABASE_URL`, `PUBLIC_SUPABASE_PUBLISHABLE_KEY` (herkese açık değerler) ve
+  `SUPABASE_DB_PASSWORD` (gizli; site kullanmaz, okuma). Aynı iki `PUBLIC_` değeri Vercel ortam değişkenlerinde de olmalı.
+
 ## Komutlar
 
-`npm run dev` (2705, taslaklar görünür) · `npm run build` · `npm run preview` (2607) · `npm run check` · `npm run og`
+`npm run dev` (2705, taslaklar görünür) · `npm run build` · `npm run preview` (2607) · `npm run check` · `npm run og` ·
+`npm run sync:achievements`
+
+Geliştirmede profil adresi `/tr/u/?u=<ad>` (Vercel'deki `/tr/u/<ad>` yeniden yazma kuralı dev sunucusunda çalışmaz).
