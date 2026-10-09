@@ -58,7 +58,7 @@ const nav: { id: NavSection; href: string; label: string }[] = [
       {
         site.features.accounts && (
           <div class="account" data-account data-lang={lang} data-unsaved-text={t('ach.unsaved')}>
-            <button type="button" class="unsaved" data-login-open data-unsaved hidden>
+            <button type="button" class="unsaved" data-login-open="signup" data-unsaved hidden>
               <Icon name="trophy" size={16} />
               <span data-unsaved-label />
             </button>
@@ -115,15 +115,10 @@ const nav: { id: NavSection; href: string; label: string }[] = [
       loginBtn.hidden = Boolean(user);
       link.hidden = !user;
       if (!user) return;
-      const username = profile?.username;
-      if (username) {
-        link.href = profileUrl(lang, username);
-        link.removeAttribute('data-login-open');
-        name.textContent = username;
-      } else {
-        // Kullanıcı adı yok: tıklayınca seçim penceresi açılır.
-        link.href = '#';
-        link.setAttribute('data-login-open', '');
+      // Kullanıcı adı kayıtta seçilir; profil henüz yüklenmediyse link /<dil>/u/ (kendi profiline yönlendirir).
+      if (profile?.username) {
+        link.href = profileUrl(lang, profile.username);
+        name.textContent = profile.username;
       }
       const src = profile?.avatar_url;
       avatar.hidden = !src;

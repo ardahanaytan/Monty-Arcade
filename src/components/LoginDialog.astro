@@ -1,11 +1,11 @@
 ---
 /**
- * Giriş / üye ol penceresi ve ilk girişte kullanıcı adı seçimi (v2).
- * `[data-login-open]` olan her öğe bu pencereyi açar. Oturum mantığı: `src/lib/client/account.ts`.
+ * Giriş / üye ol penceresi (v2): e-posta + kullanıcı adı + şifre, şifremi unuttum ve yeni şifre adımları.
+ * `[data-login-open]` olan her öğe bu pencereyi açar; değeri "signup" ise doğrudan Üye ol sekmesi açılır.
+ * Oturum mantığı: `src/lib/client/account.ts`.
  */
 import Icon from './Icon.astro';
-import { site } from '../config/site';
-import { useTranslations, type Lang } from '../i18n/ui';
+import { useTranslations, type Lang, type UIKey } from '../i18n/ui';
 
 interface Props {
   lang: Lang;
@@ -13,36 +13,88 @@ interface Props {
 
 const { lang } = Astro.props;
 const t = useTranslations(lang);
+const rules = ['length', 'upper', 'lower', 'digit', 'symbol'] as const;
+const errors = [
+  'email_taken',
+  'username_taken',
+  'invalid_username',
+  'weak_password',
+  'invalid_credentials',
+  'email_not_confirmed',
+  'rate_limited',
+  'same_password',
+  'other',
+] as const;
 ---
 
-<dialog class="login" data-login aria-labelledby="login-title" data-unsaved-text={t('login.unsaved')}>
+<dialog class="login" data-login aria-label={t('login.tabs')} data-unsaved-text={t('login.unsaved')}>
   <button type="button" class="login__close" data-login-close aria-label={t('login.close')}>
     <Icon name="close" />
   </button>
 
-  <div data-step="signin">
-    <span class="eyebrow">MONTY ARCADE</span>
-    <h2 id="login-title" class="display login__title">{t('login.title')}</h2>
+  <span class="eyebrow">MONTY ARCADE</span>
+  <p class="login__unsaved" data-login-unsaved hidden></p>
+
+  <div class="login__tabs" role="tablist" aria-label={t('login.tabs')} data-tabs>
+    <button type="button" role="tab" id="tab-signin" aria-controls="step-signin" data-tab="signin">
+      {t('login.title')}
+    </button>
+    <button type="button" role="tab" id="tab-signup" aria-controls="step-signup" data-tab="signup">
+      {t('login.signupTitle')}
+    </button>
+  </div>
+
+  <!-- Giriş -->
+  <form id="step-signin" class="login__form" data-step="signin" role="tabpanel" aria-labelledby="tab-signin" novalidate>
     <p class="login__text">{t('login.text')}</p>
-    <p class="login__unsaved" data-login-unsaved hidden></p>
+    <label class="login__label" for="signin-email">{t('login.email')}</label>
+    <input id="signin-email" name="email" type="email" required autocomplete="email" />
+    <label class="login__label" for="signin-password">{t('login.password')}</label>
+    <input id="signin-password" name="password" type="password" required autocomplete="current-password" data-password />
+    <label class="login__show"><input type="checkbox" data-show-password />{t('login.showPassword')}</label>
+    <p class="login__msg" data-msg role="alert" hidden></p>
+    <button type="submit" class="login__btn login__btn--primary gloss press">{t('login.submit')}</button>
+    <button type="button" class="login__link" data-go="forgot">{t('login.forgot')}</button>
+  </form>
 
-    <div class="login__providers">
-      {
-        site.authProviders.map((p) => (
-          <button type="button" class="login__btn press" data-provider={p}>
-            {t(`login.${p}`)}
-          </button>
-        ))
-      }
-    </div>
-
-    <form class="login__email" data-email-form>
-      <span class="login__or">{t('login.or')}</span>
-      <label class="sr-only" for="login-email">{t('login.email')}</label>
-      <input id="login-email" type="email" name="email" required autocomplete="email" placeholder={t('login.email')} />
-      <button type="submit" class="login__btn login__btn--primary gloss press">{t('login.send')}</button>
-    </form>
-    <p class="login__msg" data-login-msg role="status" hidden></p>
+  <!-- Üye ol -->
+  <form id="step-signup" class="login__form" data-step="signup" role="tabpanel" aria-labelledby="tab-signup" novalidate hidden>
+    <p class="login__text">{t('login.text')}</p>
+    <label class="login__label" for="signup-username">{t('login.username')}</label>
+    <input
+      id="signup-username"
+      name="username"
+      required
+      minlength="3"
+      maxlength="20"
+      autocomplete="username"
+      autocapitalize="none"
+      spellcheck="false"
+      aria-describedby="signup-username-hint"
+      data-username
+    />
+    <p id="signup-username-hint" class="login__hint" data-username-status data-hint={t('login.usernameHint')}>
+      {t('login.usernameHint')}
+    </p>
+    <label class="login__label" for="signup-email">{t('login.email')}</label>
+    <input id="signup-email" name="email" type="email" required autocomplete="email" />
+    <label class="login__label" for="signup-password">{t('login.password')}</label>
+    <input
+      id="signup-password"
+      name="password"
+      type="password"
+      required
+      autocomplete="new-password"
+      aria-describedby="signup-rules"
+      data-password
+      data-rules-input
+    />
+    <label class="login__show"><input type="checkbox" data-show-password />{t('login.showPassword')}</label>
+    <ul id="signup-rules" class="login__rules plain" aria-label={t('login.rules')} data-rules>
+      {rules.map((r) => <li data-rule={r}>{t(`login.rule.${r}` as UIKey)}</li>)}
+    </ul>
+    <p class="login__msg" data-msg role="alert" hidden></p>
+    <button type="submit" class="login__btn login__btn--primary gloss press">{t('login.signupSubmit')}</button>
     <p
       class="login__legal"
       set:html={t('login.legal', {
@@ -50,166 +102,247 @@ const t = useTranslations(lang);
         privacy: `<a href="/${lang}/privacy/">${t('login.legalPrivacy')}</a>`,
       })}
     />
+  </form>
+
+  <!-- Şifremi unuttum -->
+  <form class="login__form" data-step="forgot" novalidate hidden>
+    <h2 class="display login__title">{t('login.forgotTitle')}</h2>
+    <p class="login__text">{t('login.forgotText')}</p>
+    <label class="login__label" for="forgot-email">{t('login.email')}</label>
+    <input id="forgot-email" name="email" type="email" required autocomplete="email" />
+    <p class="login__msg" data-msg role="alert" hidden></p>
+    <button type="submit" class="login__btn login__btn--primary gloss press">{t('login.forgotSubmit')}</button>
+    <button type="button" class="login__link" data-go="signin">{t('login.back')}</button>
+  </form>
+
+  <!-- Yeni şifre (sıfırlama bağlantısıyla gelince) -->
+  <form class="login__form" data-step="recovery" novalidate hidden>
+    <h2 class="display login__title">{t('login.recoveryTitle')}</h2>
+    <label class="login__label" for="recovery-password">{t('login.newPassword')}</label>
+    <input
+      id="recovery-password"
+      name="password"
+      type="password"
+      required
+      autocomplete="new-password"
+      aria-describedby="recovery-rules"
+      data-password
+      data-rules-input
+    />
+    <label class="login__show"><input type="checkbox" data-show-password />{t('login.showPassword')}</label>
+    <ul id="recovery-rules" class="login__rules plain" aria-label={t('login.rules')} data-rules>
+      {rules.map((r) => <li data-rule={r}>{t(`login.rule.${r}` as UIKey)}</li>)}
+    </ul>
+    <p class="login__msg" data-msg role="alert" hidden></p>
+    <button type="submit" class="login__btn login__btn--primary gloss press">{t('login.recoverySubmit')}</button>
+  </form>
+
+  <!-- Doğrulama maili gönderildi -->
+  <div class="login__form" data-step="check" hidden>
+    <h2 class="display login__title">{t('login.checkTitle')}</h2>
+    <p class="login__text" data-check-text data-template={t('login.checkText')}></p>
   </div>
 
-  <form data-step="username" class="login__user" hidden>
-    <h2 class="display login__title">{t('user.title')}</h2>
-    <p class="login__text">{t('user.text')}</p>
-    <label class="login__label" for="login-username">{t('user.label')}</label>
-    <input
-      id="login-username"
-      name="username"
-      required
-      minlength="3"
-      maxlength="20"
-      pattern="[a-z0-9_]{3,20}"
-      autocomplete="username"
-      autocapitalize="none"
-      spellcheck="false"
-    />
-    <p class="login__msg login__msg--error" data-user-msg role="alert" hidden></p>
-    <div class="login__row">
-      <button type="submit" class="login__btn login__btn--primary gloss press">{t('user.save')}</button>
-      <button type="button" class="login__btn press" data-login-close>{t('user.later')}</button>
-    </div>
-    <template data-user-errors>
-      <span data-code="taken">{t('user.taken')}</span>
-      <span data-code="invalid">{t('user.invalid')}</span>
-      <span data-code="other">{t('login.error')}</span>
-    </template>
-  </form>
-  <template data-login-error>{t('login.error')}</template>
-  <template data-login-sent>{t('login.sent')}</template>
+  <template data-texts>
+    {errors.map((code) => <span data-code={code}>{t(`login.err.${code}` as UIKey)}</span>)}
+    <span data-code="forgot_sent">{t('login.forgotSent')}</span>
+    <span data-code="recovery_done">{t('login.recoveryDone')}</span>
+    <span data-code="username_free">{t('login.usernameFree')}</span>
+  </template>
 </dialog>
 
 <script>
   import {
-    claimUsername,
+    isUsernameAvailable,
     onAccount,
-    signInWithEmail,
-    signInWithProvider,
+    onPasswordRecovery,
+    PASSWORD_RULES,
+    requestPasswordReset,
+    signIn,
+    signUp,
+    updatePassword,
     USERNAME_RE,
-    type Provider,
   } from '../lib/client/account';
   import { onAchievementsChange, unsavedCount } from '../lib/client/achievements';
 
+  type Step = 'signin' | 'signup' | 'forgot' | 'recovery' | 'check';
+
   const dialog = document.querySelector<HTMLDialogElement>('[data-login]');
   if (dialog) {
-    const signin = dialog.querySelector<HTMLElement>('[data-step="signin"]')!;
-    const userForm = dialog.querySelector<HTMLFormElement>('[data-step="username"]')!;
-    const msg = dialog.querySelector<HTMLElement>('[data-login-msg]')!;
+    const steps = [...dialog.querySelectorAll<HTMLElement>('[data-step]')];
+    const tabs = dialog.querySelector<HTMLElement>('[data-tabs]')!;
     const unsaved = dialog.querySelector<HTMLElement>('[data-login-unsaved]')!;
-    const userMsg = dialog.querySelector<HTMLElement>('[data-user-msg]')!;
-    const userInput = userForm.querySelector<HTMLInputElement>('input')!;
-    const tpl = (sel: string) => dialog.querySelector<HTMLTemplateElement>(sel)!.content.textContent?.trim() ?? '';
-    const userError = (code: string) => {
-      const list = dialog.querySelector<HTMLTemplateElement>('[data-user-errors]')!.content;
-      return (list.querySelector(`[data-code="${code}"]`) ?? list.querySelector('[data-code="other"]'))?.textContent ?? '';
-    };
-
+    const stepEl = (name: Step) => steps.find((el) => el.dataset.step === name)!;
+    const text = (code: string) =>
+      dialog.querySelector<HTMLTemplateElement>('[data-texts]')!.content.querySelector(`[data-code="${code}"]`)
+        ?.textContent ?? '';
+    let current: Step = 'signin';
     let signedIn = false;
-    let needsUsername = false;
-    let askedUsername = false;
 
     const renderUnsaved = () => {
       const n = unsavedCount();
-      unsaved.hidden = n === 0;
+      unsaved.hidden = n === 0 || signedIn;
       unsaved.textContent = (dialog.dataset.unsavedText ?? '').replace('{n}', String(n));
     };
 
-    const show = (step: 'signin' | 'username') => {
-      signin.hidden = step !== 'signin';
-      userForm.hidden = step !== 'username';
-      msg.hidden = true;
-      userMsg.hidden = true;
+    const message = (form: HTMLElement, code: string | null, ok = false) => {
+      const el = form.querySelector<HTMLElement>('[data-msg]')!;
+      el.hidden = !code;
+      el.textContent = code ? text(code) : '';
+      el.classList.toggle('login__msg--ok', ok);
+    };
+
+    const show = (step: Step) => {
+      current = step;
+      steps.forEach((el) => (el.hidden = el.dataset.step !== step));
+      tabs.hidden = step !== 'signin' && step !== 'signup';
+      tabs.querySelectorAll<HTMLElement>('[data-tab]').forEach((tab) => {
+        const on = tab.dataset.tab === step;
+        tab.setAttribute('aria-selected', String(on));
+        tab.tabIndex = on ? 0 : -1;
+      });
+      steps.forEach((el) => el.querySelector('[data-msg]') && message(el, null));
       renderUnsaved();
       if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
       if (!dialog.open) dialog.showModal();
-    };
-
-    const open = () => {
-      if (signedIn && !needsUsername) return;
-      show(signedIn ? 'username' : 'signin');
+      stepEl(step).querySelector<HTMLInputElement>('input:not([type="checkbox"])')?.focus();
     };
 
     document.addEventListener('click', (e) => {
       const target = e.target as Element | null;
-      if (target?.closest('[data-login-open]')) {
+      const opener = target?.closest<HTMLElement>('[data-login-open]');
+      if (opener) {
         e.preventDefault();
-        open();
+        if (!signedIn) show(opener.dataset.loginOpen === 'signup' ? 'signup' : 'signin');
       } else if (target?.closest('[data-login-close]')) {
         dialog.close();
       }
     });
-    // Pencerenin dışına (arka plana) tıklayınca kapan.
     dialog.addEventListener('click', (e) => {
-      if (e.target === dialog) dialog.close();
+      if (e.target === dialog) dialog.close(); // arka plana tıklama
+    });
+    tabs.addEventListener('click', (e) => {
+      const tab = (e.target as Element).closest<HTMLElement>('[data-tab]');
+      if (tab) show(tab.dataset.tab as Step);
+    });
+    tabs.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      show(current === 'signin' ? 'signup' : 'signin');
+      tabs.querySelector<HTMLElement>(`[data-tab="${current}"]`)?.focus();
+    });
+    dialog.querySelectorAll<HTMLElement>('[data-go]').forEach((btn) =>
+      btn.addEventListener('click', () => show(btn.dataset.go as Step)),
+    );
+
+    // Şifreyi göster
+    dialog.querySelectorAll<HTMLInputElement>('[data-show-password]').forEach((box) =>
+      box.addEventListener('change', () => {
+        const input = box.closest('form')!.querySelector<HTMLInputElement>('[data-password]')!;
+        input.type = box.checked ? 'text' : 'password';
+      }),
+    );
+
+    // Canlı şifre kuralları
+    dialog.querySelectorAll<HTMLInputElement>('[data-rules-input]').forEach((input) => {
+      const list = input.closest('form')!.querySelector<HTMLElement>('[data-rules]')!;
+      const render = () =>
+        PASSWORD_RULES.forEach((rule) => {
+          list.querySelector<HTMLElement>(`[data-rule="${rule.id}"]`)!.classList.toggle('is-ok', rule.test(input.value));
+        });
+      input.addEventListener('input', render);
+      input.closest('form')!.addEventListener('reset', () => setTimeout(render));
+      render();
     });
 
-    dialog.querySelectorAll<HTMLButtonElement>('[data-provider]').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        btn.disabled = true;
-        const error = await signInWithProvider(btn.dataset.provider as Provider);
-        if (error) {
-          btn.disabled = false;
-          msg.textContent = tpl('[data-login-error]');
-          msg.hidden = false;
-        }
+    // Kullanıcı adı: küçük harf + anlık "alınmış mı" kontrolü
+    const usernameInput = dialog.querySelector<HTMLInputElement>('[data-username]')!;
+    const usernameStatus = dialog.querySelector<HTMLElement>('[data-username-status]')!;
+    let usernameTimer = 0;
+    const setStatus = (code: string | null, cls = '') => {
+      usernameStatus.textContent = code ? text(code) : (usernameStatus.dataset.hint ?? '');
+      usernameStatus.className = `login__hint ${cls}`;
+    };
+    usernameInput.addEventListener('input', () => {
+      usernameInput.value = usernameInput.value.toLowerCase().replace(/\s/g, '');
+      clearTimeout(usernameTimer);
+      const name = usernameInput.value;
+      if (name.length < 3) return setStatus(null);
+      if (!USERNAME_RE.test(name)) return setStatus('invalid_username', 'is-error');
+      usernameTimer = window.setTimeout(async () => {
+        const free = await isUsernameAvailable(name);
+        if (usernameInput.value !== name) return;
+        setStatus(free ? 'username_free' : 'username_taken', free ? 'is-ok' : 'is-error');
+      }, 400);
+    });
+
+    const busy = async (form: HTMLFormElement, fn: () => Promise<void>) => {
+      const btn = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+      btn.disabled = true;
+      try {
+        await fn();
+      } finally {
+        btn.disabled = false;
+      }
+    };
+    const field = (form: HTMLFormElement, name: string, trim = true) => {
+      const value = new FormData(form).get(name)?.toString() ?? '';
+      return trim ? value.trim() : value;
+    };
+
+    stepEl('signin').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const form = e.currentTarget as HTMLFormElement;
+      void busy(form, async () => {
+        const error = await signIn(field(form, 'email'), field(form, 'password', false));
+        if (error) return message(form, error);
+        form.reset();
+        dialog.close();
       });
     });
 
-    const emailForm = dialog.querySelector<HTMLFormElement>('[data-email-form]')!;
-    emailForm.addEventListener('submit', async (e) => {
+    stepEl('signup').addEventListener('submit', (e) => {
       e.preventDefault();
-      const submit = emailForm.querySelector<HTMLButtonElement>('button[type="submit"]')!;
-      const email = new FormData(emailForm).get('email')?.toString().trim() ?? '';
-      submit.disabled = true;
-      const error = await signInWithEmail(email);
-      submit.disabled = false;
-      msg.textContent = error ? tpl('[data-login-error]') : tpl('[data-login-sent]');
-      msg.classList.toggle('login__msg--error', Boolean(error));
-      msg.hidden = false;
-      if (!error) emailForm.reset();
+      const form = e.currentTarget as HTMLFormElement;
+      const email = field(form, 'email');
+      void busy(form, async () => {
+        const { error, confirm } = await signUp(field(form, 'username'), email, field(form, 'password', false));
+        if (error) return message(form, error);
+        form.reset();
+        setStatus(null);
+        if (!confirm) return dialog.close();
+        const check = stepEl('check').querySelector<HTMLElement>('[data-check-text]')!;
+        check.textContent = (check.dataset.template ?? '').replace('{email}', email);
+        show('check');
+      });
     });
 
-    userInput.addEventListener('input', () => {
-      userInput.value = userInput.value.toLowerCase().replace(/\s/g, '');
-      userMsg.hidden = true;
-    });
-    userForm.addEventListener('submit', async (e) => {
+    stepEl('forgot').addEventListener('submit', (e) => {
       e.preventDefault();
-      const name = userInput.value.trim();
-      const submit = userForm.querySelector<HTMLButtonElement>('button[type="submit"]')!;
-      let error = 'invalid';
-      if (USERNAME_RE.test(name)) {
-        submit.disabled = true;
-        error = (await claimUsername(name)) ?? '';
-        submit.disabled = false;
-      }
-      if (error) {
-        userMsg.textContent = userError(error === 'taken' || error === 'invalid' ? error : 'other');
-        userMsg.hidden = false;
-        return;
-      }
-      dialog.close();
+      const form = e.currentTarget as HTMLFormElement;
+      void busy(form, async () => {
+        const error = await requestPasswordReset(field(form, 'email'));
+        message(form, error ?? 'forgot_sent', !error);
+      });
     });
 
-    onAccount(({ user, profile }) => {
+    stepEl('recovery').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const form = e.currentTarget as HTMLFormElement;
+      void busy(form, async () => {
+        const error = await updatePassword(field(form, 'password', false));
+        if (error) return message(form, error);
+        form.reset();
+        message(form, 'recovery_done', true);
+        setTimeout(() => dialog.close(), 1500);
+      });
+    });
+
+    onPasswordRecovery(() => show('recovery'));
+    onAccount(({ user }) => {
       signedIn = Boolean(user);
-      needsUsername = Boolean(user && profile && !profile.username);
-      // Başka sekmede (e-posta bağlantısı) giriş yapıldıysa açık giriş penceresini kapat.
-      if (signedIn && dialog.open && !signin.hidden) dialog.close();
-      // İlk girişte kullanıcı adı bir kez sorulur (sayfa başına); "Sonra" denirse header'dan tekrar açılır.
-      if (needsUsername && !askedUsername) {
-        askedUsername = true;
-        const suggestion = (user?.user_metadata?.user_name ?? user?.email?.split('@')[0] ?? '')
-          .toString()
-          .toLowerCase()
-          .replace(/[^a-z0-9_]/g, '')
-          .slice(0, 20);
-        userInput.value = suggestion;
-        show('username');
-      }
+      // Doğrulama bağlantısı başka sekmede açıldıysa bu sekme de oturumu alır: pencereyi kapat.
+      if (signedIn && dialog.open && current !== 'recovery') dialog.close();
+      renderUnsaved();
     });
     onAchievementsChange(renderUnsaved);
   }
@@ -230,6 +363,9 @@ const t = useTranslations(lang);
     background: rgba(7, 11, 24, 0.75);
     backdrop-filter: blur(3px);
   }
+  .login [hidden] {
+    display: none !important;
+  }
   .login__close {
     position: absolute;
     top: 14px;
@@ -248,18 +384,48 @@ const t = useTranslations(lang);
     color: var(--text);
     background: rgba(243, 234, 216, 0.06);
   }
+  .login__tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    margin: 12px 0 4px;
+    padding: 4px;
+    background: var(--bg);
+    border: 1px solid var(--line-strong);
+    border-radius: 14px;
+  }
+  .login__tabs button {
+    min-height: 42px;
+    font: inherit;
+    font-weight: 800;
+    font-size: 15px;
+    color: var(--text-3);
+    background: transparent;
+    border: 0;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  .login__tabs button[aria-selected='true'] {
+    color: var(--on-accent);
+    background: var(--text);
+  }
+  .login__form {
+    display: flex;
+    flex-direction: column;
+  }
   .login__title {
-    margin: 6px 0 10px;
-    font-size: 28px;
+    margin: 10px 0 8px;
+    font-size: 26px;
     line-height: 1.1;
   }
   .login__text {
+    margin-top: 10px;
     color: var(--text-2);
     font-size: 15px;
     line-height: 1.55;
   }
   .login__unsaved {
-    margin-top: 14px;
+    margin-top: 12px;
     padding: 12px 14px;
     font-size: 14px;
     font-weight: 700;
@@ -269,51 +435,12 @@ const t = useTranslations(lang);
     border: 1px solid rgba(255, 107, 44, 0.35);
     border-radius: 12px;
   }
-  .login__providers {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-top: 20px;
+  .login__label {
+    margin: 16px 0 6px;
+    font-weight: 700;
+    font-size: 14px;
   }
-  .login__btn {
-    min-height: 48px;
-    padding: 0 20px;
-    font: inherit;
-    font-weight: 800;
-    font-size: 15px;
-    color: var(--text);
-    background: var(--surface-2);
-    border: 1px solid var(--line-btn);
-    border-radius: 999px;
-    cursor: pointer;
-  }
-  .login__btn:hover {
-    border-color: var(--line-btn-2);
-  }
-  .login__btn:disabled {
-    opacity: 0.6;
-    cursor: progress;
-  }
-  .login__btn--primary {
-    color: var(--on-accent);
-    background: var(--accent);
-    border-color: transparent;
-  }
-  .login__email {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-top: 18px;
-  }
-  .login__or {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    text-align: center;
-    color: var(--text-4);
-  }
-  .login input {
+  .login input:not([type='checkbox']) {
     min-height: 48px;
     padding: 0 16px;
     font: inherit;
@@ -327,36 +454,112 @@ const t = useTranslations(lang);
     outline: 3px solid var(--led);
     outline-offset: 2px;
   }
+  .login__show {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--text-3);
+    cursor: pointer;
+  }
+  .login__show input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent);
+  }
+  .login__hint {
+    margin-top: 6px;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--text-4);
+  }
+  .login__hint.is-ok {
+    color: var(--accent-alt-1);
+  }
+  .login__hint.is-error {
+    color: var(--accent-alt-3);
+  }
+  .login__rules {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 12px;
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--text-4);
+  }
+  .login__rules li::before {
+    content: '✗ ';
+    color: var(--accent-alt-3);
+  }
+  .login__rules li.is-ok {
+    color: var(--text-2);
+  }
+  .login__rules li.is-ok::before {
+    content: '✓ ';
+    color: var(--accent-alt-1);
+  }
+  .login__btn {
+    min-height: 48px;
+    margin-top: 18px;
+    padding: 0 20px;
+    font: inherit;
+    font-weight: 800;
+    font-size: 15px;
+    color: var(--text);
+    background: var(--surface-2);
+    border: 1px solid var(--line-btn);
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .login__btn:disabled {
+    opacity: 0.6;
+    cursor: progress;
+  }
+  .login__btn--primary {
+    color: var(--on-accent);
+    background: var(--accent);
+    border-color: transparent;
+  }
+  .login__link {
+    align-self: center;
+    margin-top: 12px;
+    padding: 6px;
+    font: inherit;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-3);
+    background: none;
+    border: 0;
+    cursor: pointer;
+  }
+  .login__link:hover {
+    color: var(--text);
+    text-decoration: underline;
+  }
   .login__msg {
     margin-top: 14px;
     font-size: 14px;
     line-height: 1.5;
-    color: var(--accent-alt-1);
-  }
-  .login__msg--error {
     color: var(--accent-alt-3);
   }
+  .login__msg--ok {
+    color: var(--accent-alt-1);
+  }
   .login__legal {
-    margin-top: 16px;
+    margin-top: 14px;
     font-size: 12px;
     color: var(--text-4);
   }
   .login__legal :global(a) {
     color: var(--text-3);
   }
-  .login__user {
-    display: flex;
-    flex-direction: column;
-  }
-  .login__label {
-    margin: 18px 0 6px;
-    font-weight: 700;
-    font-size: 14px;
-  }
-  .login__row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 18px;
+  @media (max-width: 420px) {
+    .login {
+      padding: 22px 18px;
+    }
+    .login__rules {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

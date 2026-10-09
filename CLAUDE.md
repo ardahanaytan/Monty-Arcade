@@ -32,6 +32,10 @@ Kendi yaptığım küçük HTML5 oyunlarının yayınlandığı statik Astro sit
 - Tablolara istemciden doğrudan yazma yok; yazma RPC'lerle (`unlock_achievement`, `merge_guest_achievements`, `delete_my_account`).
   "Automatically expose new tables" kapalı: yeni tabloya `grant` ve RLS kuralını açıkça yaz.
 - Oyun eklenince / başarım listesi değişince: `npm run sync:achievements` çıktısını veritabanında çalıştır.
+- Giriş: sadece e-posta + şifre (OAuth yok). Kayıtta kullanıcı adı `signUp` metadata'sıyla gelir; profil tetikleyicisi
+  (`private.handle_new_user`) geçersiz/alınmış adda kaydı reddeder. Şifre kuralı (8+, büyük/küçük harf, rakam, özel karakter)
+  hem `PASSWORD_RULES` (`src/lib/client/account.ts`) hem Supabase paneli "Password requirements" ayarında olmalı.
+  Doğrulama ve şifre sıfırlama mailleri özel SMTP ile gider.
 - `.env` (git'te yok): `PUBLIC_SUPABASE_URL`, `PUBLIC_SUPABASE_PUBLISHABLE_KEY` (herkese açık değerler) ve
   `SUPABASE_DB_PASSWORD` (gizli; site kullanmaz, okuma). Aynı iki `PUBLIC_` değeri Vercel ortam değişkenlerinde de olmalı.
 

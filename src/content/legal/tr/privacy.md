@@ -18,8 +18,9 @@ hangi verilerin tutulduğunu sade bir dille anlatır. Mümkün olan en az veriyi
 
 Giriş yaptığında şu bilgiler tutulur:
 
-- **Hesap:** e-posta adresin ve giriş yöntemin (ör. GitHub). E-posta adresin hiçbir yerde gösterilmez.
-- **Profil:** seçtiğin kullanıcı adı, giriş sağlayıcısından gelen görünen ad ve profil fotoğrafı bağlantısı, katılma tarihi.
+- **Hesap:** e-posta adresin ve şifren. E-posta adresin hiçbir yerde gösterilmez. Şifren Supabase'te geri
+  çözülemeyecek şekilde şifrelenmiş (hash) olarak tutulur; ben dahil kimse göremez.
+- **Profil:** seçtiğin kullanıcı adı ve katılma tarihi.
 - **Başarımlar:** hangi oyunda hangi başarımı ne zaman açtığın, oynadığın oyunlar ve vitrine koyduğun rozetler.
 
 **Profilin ve başarımların herkese açıktır.** Profil sayfan (`/u/kullanıcıadı`) giriş yapmayan ziyaretçiler dahil
@@ -31,7 +32,8 @@ Oturumunun açık kalması için gerekli giriş anahtarı tarayıcında (`localS
 
 - **Supabase** (veritabanı ve giriş): veriler Avrupa Birliği'nde, Frankfurt'taki sunucularda tutulur.
 - **Vercel** (barındırma): site Vercel üzerinden sunulur; Vercel, hizmeti çalıştırmak için standart erişim kayıtları tutabilir.
-- **Giriş sağlayıcısı** (ör. GitHub): giriş yaparken onların ekranını kullanırsın; bize sadece yukarıdaki profil bilgilerini iletirler.
+- **E-posta servisi:** hesap doğrulama ve şifre sıfırlama mailleri bir e-posta gönderim servisi üzerinden gönderilir;
+  bu servis sadece e-posta adresini ve mailin içeriğini görür.
 
 Sitede reklam, analitik ya da takip çerezi yok. Verilerin satılmaz ve kimseyle paylaşılmaz.
 

@@ -53,10 +53,8 @@ const icons = [...new Set(catalog.flatMap((g) => g.achievements.map((a) => a.ico
       <template data-messages>
         <span data-key="notFound">{t('profile.notFound')}</span>
         <span data-key="signedOut">{t('profile.signedOut')}</span>
-        <span data-key="pickUsername">{t('profile.pickUsername')}</span>
         <span data-key="error">{t('profile.error')}</span>
         <span data-key="login">{t('nav.login')}</span>
-        <span data-key="pick">{t('profile.pick')}</span>
       </template>
     </section>
 
@@ -187,7 +185,7 @@ const icons = [...new Set(catalog.flatMap((g) => g.achievements.map((a) => a.ico
     const view = (name: 'loading' | 'message' | 'profile') =>
       root.querySelectorAll<HTMLElement>('[data-view]').forEach((el) => (el.hidden = el.dataset.view !== name));
 
-    const message = (key: string, action?: 'login' | 'pick') => {
+    const message = (key: string, action?: 'login') => {
       $('[data-message]').textContent = msgText(key);
       const btn = $('[data-message-action]');
       btn.hidden = !action;
@@ -208,15 +206,10 @@ const icons = [...new Set(catalog.flatMap((g) => g.achievements.map((a) => a.ico
     await whenAccountReady();
 
     if (!username) {
-      const { user, profile } = getAccount();
-      if (!user) {
+      const { profile } = getAccount();
+      if (!profile?.username) {
         message('signedOut', 'login');
         // Bu sayfada giriş yapılırsa profiline geç.
-        onAccount((s) => s.profile?.username && location.replace(profileUrl(lang, s.profile.username)));
-        return;
-      }
-      if (!profile?.username) {
-        message('pickUsername', 'pick');
         onAccount((s) => s.profile?.username && location.replace(profileUrl(lang, s.profile.username)));
         return;
       }

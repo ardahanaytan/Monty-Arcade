@@ -21,12 +21,11 @@ export interface AccountState {
   profile: Profile | null;
 }
 
-export type Provider = 'github' | 'google' | 'discord';
-
 export const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
 
 let state: AccountState = { ready: false, user: null, profile: null };
 const listeners = new Set<(s: AccountState) => void>();
+const recoveryListeners = new Set<() => void>();
 let readyResolve: () => void;
 const readyPromise = new Promise<void>((r) => (readyResolve = r));
 
@@ -65,10 +64,11 @@ export async function refreshProfile(): Promise<void> {
 if (supabase) {
   const client = supabase;
   let lastUserId: string | null | undefined;
-  client.auth.onAuthStateChange((_event, session) => {
+  client.auth.onAuthStateChange((event, session) => {
     const user = session?.user ?? null;
     // Supabase uyarısı: bu geri çağrının içinde başka Supabase çağrısını beklemek kilitlenebilir.
     setTimeout(async () => {
+      if (event === 'PASSWORD_RECOVERY') recoveryListeners.forEach((fn) => fn());
       if (user?.id === lastUserId && state.ready) {
         set({ user }); // jeton yenilendi; profil aynı
         return;
@@ -84,41 +84,112 @@ if (supabase) {
   readyResolve!();
 }
 
-/** Giriş sonrası aynı sayfaya dön (adres çubuğundaki ?code vb. hariç). */
+/** Şifre sıfırlama bağlantısıyla gelindiğinde (yeni şifre adımı). */
+export function onPasswordRecovery(fn: () => void): void {
+  recoveryListeners.add(fn);
+}
+
+/** Şifre kuralları; Supabase panelindeki "Password requirements" ile aynı olmalı. */
+export const PASSWORD_RULES = [
+  { id: 'length', test: (s: string) => s.length >= 8 },
+  { id: 'upper', test: (s: string) => /[A-Z]/.test(s) },
+  { id: 'lower', test: (s: string) => /[a-z]/.test(s) },
+  { id: 'digit', test: (s: string) => /[0-9]/.test(s) },
+  { id: 'symbol', test: (s: string) => /[^A-Za-z0-9]/.test(s) },
+] as const;
+
+export const isStrongPassword = (s: string) => PASSWORD_RULES.every((r) => r.test(s));
+
+export type AuthErrorCode =
+  | 'email_taken'
+  | 'username_taken'
+  | 'invalid_username'
+  | 'weak_password'
+  | 'invalid_credentials'
+  | 'email_not_confirmed'
+  | 'rate_limited'
+  | 'same_password'
+  | 'other';
+
+function authError(error: { code?: string; message?: string } | null): AuthErrorCode | null {
+  if (!error) return null;
+  switch (error.code) {
+    case 'user_already_exists':
+    case 'email_exists':
+      return 'email_taken';
+    case 'weak_password':
+      return 'weak_password';
+    case 'invalid_credentials':
+      return 'invalid_credentials';
+    case 'email_not_confirmed':
+      return 'email_not_confirmed';
+    case 'same_password':
+      return 'same_password';
+    case 'over_email_send_rate_limit':
+    case 'over_request_rate_limit':
+      return 'rate_limited';
+  }
+  // Profil tetikleyicisinin hataları Supabase Auth'tan "Database error saving new user" olarak döner.
+  if (/database error/i.test(error.message ?? '')) return 'username_taken';
+  return 'other';
+}
+
+/** Doğrulama / sıfırlama bağlantısı aynı sayfaya dönsün (adres çubuğundaki ?code vb. hariç). */
 function returnUrl(): string {
   const url = new URL(location.href);
   url.search = '';
+  url.hash = '';
   return url.href;
 }
 
-export async function signInWithProvider(provider: Provider): Promise<string | null> {
-  if (!supabase) return 'disabled';
-  const { error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo: returnUrl() } });
-  return error?.message ?? null;
+export async function isUsernameAvailable(name: string): Promise<boolean> {
+  if (!supabase || !USERNAME_RE.test(name)) return false;
+  const { data } = await supabase.rpc('username_available', { p_name: name });
+  return data === true;
 }
 
-export async function signInWithEmail(email: string): Promise<string | null> {
-  if (!supabase) return 'disabled';
-  const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: returnUrl() } });
-  return error?.message ?? null;
+/** Kayıt. Başarılıysa `confirm: true` → doğrulama maili gönderildi; false → oturum hemen açıldı. */
+export async function signUp(
+  username: string,
+  email: string,
+  password: string,
+): Promise<{ error: AuthErrorCode | null; confirm: boolean }> {
+  if (!supabase) return { error: 'other', confirm: false };
+  if (!USERNAME_RE.test(username)) return { error: 'invalid_username', confirm: false };
+  if (!isStrongPassword(password)) return { error: 'weak_password', confirm: false };
+  if (!(await isUsernameAvailable(username))) return { error: 'username_taken', confirm: false };
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { data: { username }, emailRedirectTo: returnUrl() },
+  });
+  if (error) return { error: authError(error), confirm: false };
+  // E-posta doğrulaması açıkken kayıtlı bir adres hata vermez, kimliksiz bir kullanıcı döner.
+  if (data.user && data.user.identities?.length === 0) return { error: 'email_taken', confirm: false };
+  return { error: null, confirm: !data.session };
+}
+
+export async function signIn(email: string, password: string): Promise<AuthErrorCode | null> {
+  if (!supabase) return 'other';
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  return authError(error);
+}
+
+export async function requestPasswordReset(email: string): Promise<AuthErrorCode | null> {
+  if (!supabase) return 'other';
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: returnUrl() });
+  return authError(error);
+}
+
+export async function updatePassword(password: string): Promise<AuthErrorCode | null> {
+  if (!supabase) return 'other';
+  if (!isStrongPassword(password)) return 'weak_password';
+  const { error } = await supabase.auth.updateUser({ password });
+  return authError(error);
 }
 
 export async function signOut(): Promise<void> {
   await supabase?.auth.signOut();
-}
-
-/** Kullanıcı adını bir kez seç. Hata kodu: 'invalid' | 'taken' | 'locked' | diğer mesaj. */
-export async function claimUsername(name: string): Promise<string | null> {
-  if (!supabase || !state.user) return 'disabled';
-  if (!USERNAME_RE.test(name)) return 'invalid';
-  const { error } = await supabase.from('profiles').update({ username: name }).eq('id', state.user.id);
-  if (error) {
-    if (error.code === '23505') return 'taken';
-    if (error.message.includes('username_locked')) return 'locked';
-    return error.message;
-  }
-  await refreshProfile();
-  return null;
 }
 
 export async function saveShowcase(items: string[]): Promise<string | null> {

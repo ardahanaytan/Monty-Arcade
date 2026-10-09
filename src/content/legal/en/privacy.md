@@ -18,8 +18,9 @@ data is kept while you use the site. We collect as little as possible.
 
 When you sign in, the following is kept:
 
-- **Account:** your email address and sign-in method (e.g. GitHub). Your email is never shown anywhere.
-- **Profile:** the username you pick, the display name and profile picture link from your sign-in provider, and the date you joined.
+- **Account:** your email address and password. Your email is never shown anywhere. Your password is stored in
+  Supabase as an irreversible hash; nobody, including me, can see it.
+- **Profile:** the username you pick and the date you joined.
 - **Achievements:** which achievement you unlocked in which game and when, the games you played, and the badges you put in your showcase.
 
 **Your profile and achievements are public.** Your profile page (`/u/username`) can be seen by anyone, including
@@ -31,7 +32,8 @@ The sign-in token that keeps you logged in is stored in your browser (`localStor
 
 - **Supabase** (database and sign-in): data is stored in the European Union, on servers in Frankfurt.
 - **Vercel** (hosting): the site is served by Vercel, which may keep standard access logs to run the service.
-- **Sign-in provider** (e.g. GitHub): you use their screen to sign in; they only pass us the profile details above.
+- **Email service:** account confirmation and password reset emails are sent through an email delivery service; it
+  only sees your email address and the content of the email.
 
 There are no ads, analytics or tracking cookies on the site. Your data is never sold or shared.
 
