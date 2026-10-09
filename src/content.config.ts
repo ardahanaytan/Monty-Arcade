@@ -57,4 +57,14 @@ const devlog = defineCollection({
   }),
 });
 
-export const collections = { games, devlog };
+// Gizlilik politikası ve kullanım koşulları: legal/<dil>/<privacy|terms>.md
+const legal = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/legal' }),
+  schema: z.object({
+    title: z.string(),
+    description: z.string(),
+    updated: z.coerce.date(),
+  }),
+});
+
+export const collections = { games, devlog, legal };

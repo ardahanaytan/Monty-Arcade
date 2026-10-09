@@ -94,10 +94,15 @@ const nav: { id: NavSection; href: string; label: string }[] = [
 
   async function initAccount(account: HTMLElement) {
     // Supabase istemcisi sadece üyelik açıkken yüklensin diye dinamik içe aktarma.
-    const [{ onAccount, profileUrl }, { onAchievementsChange, unsavedCount }] = await Promise.all([
+    const [{ accountsEnabled, onAccount, profileUrl }, { onAchievementsChange, unsavedCount }] = await Promise.all([
       import('../lib/client/account'),
       import('../lib/client/achievements'),
     ]);
+    // Supabase ortam değişkenleri yoksa (ör. eksik Vercel ayarı) giriş arayüzü hiç görünmesin.
+    if (!accountsEnabled) {
+      account.hidden = true;
+      return;
+    }
     const lang = account.dataset.lang ?? 'en';
     const loginBtn = account.querySelector<HTMLElement>('[data-login-btn]')!;
     const link = account.querySelector<HTMLAnchorElement>('[data-profile-link]')!;
@@ -218,7 +223,8 @@ const nav: { id: NavSection; href: string; label: string }[] = [
     font-family: inherit;
     cursor: pointer;
   }
-  .login[hidden] {
+  .login[hidden],
+  .account[hidden] {
     display: none;
   }
   .account {

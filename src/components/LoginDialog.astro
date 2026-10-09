@@ -43,7 +43,13 @@ const t = useTranslations(lang);
       <button type="submit" class="login__btn login__btn--primary gloss press">{t('login.send')}</button>
     </form>
     <p class="login__msg" data-login-msg role="status" hidden></p>
-    <p class="login__legal">{t('login.legal')}</p>
+    <p
+      class="login__legal"
+      set:html={t('login.legal', {
+        terms: `<a href="/${lang}/terms/">${t('login.legalTerms')}</a>`,
+        privacy: `<a href="/${lang}/privacy/">${t('login.legalPrivacy')}</a>`,
+      })}
+    />
   </div>
 
   <form data-step="username" class="login__user" hidden>
@@ -334,6 +340,9 @@ const t = useTranslations(lang);
     margin-top: 16px;
     font-size: 12px;
     color: var(--text-4);
+  }
+  .login__legal :global(a) {
+    color: var(--text-3);
   }
   .login__user {
     display: flex;
