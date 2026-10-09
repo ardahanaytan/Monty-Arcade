@@ -4,7 +4,7 @@ Bu dosya, Monty Arcade'de yayınlanacak bir oyunu **yapmak** ve siteye **eklemek
 Yeni bir oyun oturumuna başlarken önce bunu oku. Sitenin genel yapısı için [`README.tr.md`](README.tr.md),
 ilk planlama belgesi için `../MONTY_ARCADE.md` (repo dışında; kısmen eski) var.
 
-> **Durum (v1.1.0):** Site yayında (https://monty-arcade.vercel.app). Dört oyun yayında:
+> **Durum (v1.2.0):** Site yayında (https://monty-arcade.vercel.app). Dört oyun yayında:
 > `monty-satranc`, `kask-kacisi`, `isiklar-sondu`, `pit-stop`. Oyunlar `unlock` mesajlarını gönderiyor ama sitede
 > başarım bildirimi (Monty SDK'nın site tarafı) henüz yazılmadı.
 
