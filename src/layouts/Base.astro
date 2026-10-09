@@ -3,6 +3,9 @@ import Head, { type HeadProps } from '../components/Head.astro';
 import Header, { type NavSection } from '../components/Header.astro';
 import Ticker from '../components/Ticker.astro';
 import Footer from '../components/Footer.astro';
+import LoginDialog from '../components/LoginDialog.astro';
+import AchievementToast from '../components/AchievementToast.astro';
+import { site } from '../config/site';
 import { resolveLangPaths, useTranslations, type Lang } from '../i18n/ui';
 
 interface Props extends Omit<HeadProps, 'langPaths'> {
@@ -32,5 +35,13 @@ const paths = resolveLangPaths(Astro.url.pathname, lang, langPaths);
       <slot />
     </main>
     <Footer lang={lang} />
+    {
+      site.features.accounts && (
+        <>
+          <LoginDialog lang={lang} />
+          <AchievementToast lang={lang} />
+        </>
+      )
+    }
   </body>
 </html>

@@ -1,0 +1,145 @@
+---
+/**
+ * Başarım bildirimi (§11.1): sağ altta kayarak gelen koyu kart, 4 sn sonra kaybolur.
+ * Misafirde "Kaydedilmedi. Üye ol" çağrısı gösterir. Kartlar `src/lib/client/toast.ts` ile eklenir.
+ */
+import Icon from './Icon.astro';
+import { useTranslations, type Lang } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<div class="toasts" data-ach-toasts aria-live="polite" aria-atomic="false"></div>
+
+<template data-ach-toast-tpl>
+  <div class="toast" role="status">
+    <span class="toast__icon"><Icon name="trophy" size={26} /></span>
+    <span class="toast__text">
+      <span class="toast__head">{t('ach.toast')}</span>
+      <span class="toast__name" data-name></span>
+      <span class="toast__sub toast__sub--saved" data-saved>{t('ach.toastSaved')}</span>
+      <span class="toast__sub toast__sub--guest" data-guest>
+        {t('ach.toastGuest')}
+        <button type="button" class="toast__signup" data-login-open>{t('ach.signup')}</button>
+      </span>
+    </span>
+  </div>
+</template>
+
+<style>
+  .toasts {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 2147483000; /* yedek tam ekranın da üstünde */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+    max-width: calc(100vw - 40px);
+    pointer-events: none;
+  }
+  .toasts :global(.toast) {
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 340px;
+    max-width: 100%;
+    padding: 14px 16px;
+    background: var(--bg-deep);
+    border: 1px solid var(--tier, var(--led));
+    border-radius: 14px;
+    box-shadow: var(--shadow-card-hover);
+    animation: toast-in 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  }
+  .toasts :global(.toast.is-leaving) {
+    animation: toast-out 0.3s ease forwards;
+  }
+  .toasts :global(.toast__icon) {
+    flex: none;
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    color: var(--tier, var(--led));
+    background: var(--surface-3);
+    border-radius: 12px;
+  }
+  .toasts :global(.toast__text) {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+  .toasts :global(.toast__head) {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--led);
+  }
+  .toasts :global(.toast__name) {
+    font-weight: 800;
+    font-size: 16px;
+    color: var(--text);
+  }
+  .toasts :global(.toast__sub) {
+    font-size: 13px;
+    color: var(--text-3);
+  }
+  .toasts :global(.toast__sub--guest) {
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .toasts :global(.toast__signup) {
+    margin-left: 4px;
+    padding: 2px 10px;
+    font: inherit;
+    font-weight: 800;
+    color: var(--on-accent);
+    background: var(--accent);
+    border: 0;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .toasts :global(.toast__signup:hover) {
+    filter: brightness(1.1);
+  }
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateX(110%);
+    }
+  }
+  @keyframes toast-out {
+    to {
+      opacity: 0;
+      transform: translateX(110%);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .toasts :global(.toast),
+    .toasts :global(.toast.is-leaving) {
+      animation-duration: 0.01s;
+    }
+  }
+  @media (max-width: 560px) {
+    .toasts {
+      right: 12px;
+      left: 12px;
+      bottom: 12px;
+      max-width: none;
+      align-items: stretch;
+    }
+    .toasts :global(.toast) {
+      width: auto;
+    }
+  }
+</style>

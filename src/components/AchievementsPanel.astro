@@ -1,8 +1,8 @@
 ---
 /**
  * v2 — Başarım paneli. `features.accounts` kapalıyken çağıran sayfa bunu render etmez.
- * Şimdilik tüm başarımlar kilitli gösterilir; v2'de açılanlar Supabase'den (girişliyken)
- * veya localStorage'dan (misafir) istemci tarafında işaretlenecek.
+ * Sunucuda hepsi kilitli çizilir; açılanlar (üye: Supabase, misafir: bu oturum) ve nadirlik
+ * yüzdeleri istemci tarafında işaretlenir.
  */
 import Icon from './Icon.astro';
 import { useTranslations, type Lang } from '../i18n/ui';
@@ -20,13 +20,19 @@ const unlocked = 0;
 const tierColor = { common: 'var(--text-3)', rare: 'var(--accent)', legendary: 'var(--led)' } as const;
 ---
 
-<section class="ach" aria-labelledby="ach-title" data-achievements={game.id}>
+<section
+  class="ach"
+  aria-labelledby="ach-title"
+  data-ach-panel={game.id}
+  data-lang={lang}
+  data-rarity-text={t('ach.rarity')}
+>
   <div class="ach__head">
     <h2 id="ach-title" class="subhead">
       <Icon name="trophy" size={20} class="ach__trophy" />
       {t('ach.title')}
     </h2>
-    <span class="ach__count">{unlocked} / {list.length}</span>
+    <span class="ach__count"><span data-ach-count>{unlocked}</span> / {list.length}</span>
   </div>
   <div
     class="ach__bar"
@@ -35,6 +41,7 @@ const tierColor = { common: 'var(--text-3)', rare: 'var(--accent)', legendary: '
     aria-valuemin="0"
     aria-valuemax={list.length}
     aria-valuenow={unlocked}
+    data-ach-bar
   >
     <span style={`width: ${list.length ? (unlocked / list.length) * 100 : 0}%`}></span>
   </div>
@@ -43,12 +50,23 @@ const tierColor = { common: 'var(--text-3)', rare: 'var(--accent)', legendary: '
     {
       list.map((a) =>
         a.hidden ? (
-          <li class="ach__item is-locked" data-ach={a.id}>
+          <li class="ach__item is-locked" data-ach={a.id} style={`--tier: ${tierColor[a.tier]}`}>
             <span class="ach__icon ach__icon--secret">???</span>
             <span class="ach__text">
               <span class="ach__name">{t('ach.hidden')}</span>
               <span class="ach__desc">{t('ach.hiddenText')}</span>
             </span>
+            <template data-reveal>
+              <span class="ach__icon">
+                <Icon name={a.icon} size={22} class="ach__badge" />
+              </span>
+              <span class="ach__text">
+                <span class="ach__name">{a.title[lang]}</span>
+                <span class="ach__desc">{a.description[lang]}</span>
+                <span class="ach__rarity" data-rarity />
+              </span>
+              <span class="ach__tier">{t(`ach.${a.tier}`)}</span>
+            </template>
           </li>
         ) : (
           <li class="ach__item is-locked" data-ach={a.id} style={`--tier: ${tierColor[a.tier]}`}>
@@ -59,6 +77,7 @@ const tierColor = { common: 'var(--text-3)', rare: 'var(--accent)', legendary: '
             <span class="ach__text">
               <span class="ach__name">{a.title[lang]}</span>
               <span class="ach__desc">{a.description[lang]}</span>
+              <span class="ach__rarity" data-rarity />
             </span>
             <span class="ach__tier">{t(`ach.${a.tier}`)}</span>
           </li>
@@ -68,10 +87,63 @@ const tierColor = { common: 'var(--text-3)', rare: 'var(--accent)', legendary: '
   </ul>
 
   <div class="ach__foot">
-    <a href="#">{t('ach.all')}</a>
-    <span>{t('ach.guestNote')}</span>
+    <a href={`/${lang}/u/`} data-ach-all hidden>{t('ach.all')}</a>
+    <button type="button" class="ach__signup" data-login-open data-ach-guest>{t('ach.guestNote')}</button>
   </div>
 </section>
+
+<script>
+  import { onAccount, profileUrl } from '../lib/client/account';
+  import { onAchievementsChange, unlockedIds } from '../lib/client/achievements';
+  import { supabase } from '../lib/client/supabase';
+
+  document.querySelectorAll<HTMLElement>('[data-ach-panel]').forEach((panel) => {
+    const gameId = panel.dataset.achPanel!;
+    const lang = panel.dataset.lang ?? 'en';
+    const items = [...panel.querySelectorAll<HTMLElement>('[data-ach]')];
+    const count = panel.querySelector<HTMLElement>('[data-ach-count]')!;
+    const bar = panel.querySelector<HTMLElement>('[data-ach-bar]')!;
+    const all = panel.querySelector<HTMLAnchorElement>('[data-ach-all]')!;
+    const guest = panel.querySelector<HTMLElement>('[data-ach-guest]')!;
+    const percent = new Intl.NumberFormat(lang, { maximumFractionDigits: 1 });
+    const ratios = new Map<string, number>();
+
+    const render = () => {
+      const ids = unlockedIds(gameId);
+      items.forEach((li) => {
+        const open = ids.has(li.dataset.ach!);
+        li.classList.toggle('is-locked', !open);
+        // Gizli başarım açıldıysa gerçek içeriğini göster.
+        const reveal = li.querySelector<HTMLTemplateElement>('template[data-reveal]');
+        if (open && reveal) li.replaceChildren(reveal.content.cloneNode(true));
+        const ratio = ratios.get(li.dataset.ach!);
+        const rarity = li.querySelector<HTMLElement>('[data-rarity]');
+        if (rarity && ratio) rarity.textContent = (panel.dataset.rarityText ?? '').replace('{p}', percent.format(ratio * 100));
+      });
+      count.textContent = String(ids.size);
+      bar.setAttribute('aria-valuenow', String(ids.size));
+      bar.querySelector('span')!.style.width = `${items.length ? (ids.size / items.length) * 100 : 0}%`;
+    };
+
+    onAccount(({ user, profile }) => {
+      guest.hidden = Boolean(user);
+      all.hidden = !profile?.username;
+      if (profile?.username) all.href = profileUrl(lang, profile.username);
+    });
+    onAchievementsChange(render);
+    render();
+
+    // Nadirlik: "Oyuncuların %4'ü açtı" (gerçek veriden).
+    supabase
+      ?.from('achievement_rarity')
+      .select('achievement_id, ratio')
+      .eq('game_id', gameId)
+      .then(({ data }) => {
+        (data ?? []).forEach((r) => ratios.set(r.achievement_id, r.ratio));
+        render();
+      });
+  });
+</script>
 
 <style>
   .ach {
@@ -206,8 +278,29 @@ const tierColor = { common: 'var(--text-3)', rare: 'var(--accent)', legendary: '
     font-weight: 800;
     font-size: 14px;
   }
-  .ach__foot span {
+  .ach__signup {
+    padding: 0;
+    font: inherit;
+    font-weight: 700;
     font-size: 13px;
+    color: var(--accent);
+    text-align: left;
+    background: none;
+    border: 0;
+    cursor: pointer;
+  }
+  .ach__signup:hover {
+    text-decoration: underline;
+  }
+  .ach__signup[hidden],
+  .ach__foot a[hidden] {
+    display: none;
+  }
+  .ach__rarity {
+    font-size: 12px;
     color: var(--text-4);
+  }
+  .ach__rarity:empty {
+    display: none;
   }
 </style>

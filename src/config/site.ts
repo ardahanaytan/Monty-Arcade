@@ -12,9 +12,11 @@ export const site = {
     email: '',
   },
   features: {
-    accounts: false, // v2: giriş butonu, başarım paneli, kart rozet sayısı
-    achievementsTeaser: true, // v1: "Yakında: Profil & başarımlar" kutusu
+    accounts: true, // v2: giriş butonu, başarım paneli, kart rozet sayısı
+    achievementsTeaser: false, // v1: "Yakında: Profil & başarımlar" kutusu
   },
+  // Giriş yöntemleri (Supabase Auth panelinde de açık olmalı). E-posta sihirli link her zaman var.
+  authProviders: ['github'] as ('github' | 'google' | 'discord')[],
   newBadgeDays: 30, // "YENİ" etiketi kaç gün görünür
 };
 

@@ -4,6 +4,7 @@ import { Image } from 'astro:assets';
 import Icon from './Icon.astro';
 import { formatDate, upper, useTranslations, type Lang } from '../i18n/ui';
 import { playUrl, type Game } from '../lib/content';
+import { site } from '../config/site';
 
 interface Props {
   lang: Lang;
@@ -15,9 +16,22 @@ const t = useTranslations(lang);
 const { title, cover, aspectRatio, sizeMB, releaseDate } = game.data;
 const src = `${playUrl(game)}?lang=${lang}`;
 const ratioLabel = aspectRatio.replace(/\s/g, '').replace('/', ':');
+// v2: oyunun `unlock` mesajlarını doğrulamak ve bildirimde göstermek için başarım listesi.
+const achievements = site.features.accounts
+  ? JSON.stringify(game.data.achievements.map((a) => ({ id: a.id, name: a.title[lang], tier: a.tier })))
+  : undefined;
 ---
 
-<section id="play" class="player" aria-label={t('a11y.game')} data-player data-src={src} data-title={title[lang]}>
+<section
+  id="play"
+  class="player"
+  aria-label={t('a11y.game')}
+  data-player
+  data-src={src}
+  data-title={title[lang]}
+  data-game-id={game.id}
+  data-achievements={achievements}
+>
   <div class="player__bar">
     <span class="player__brand"><span class="player__dot" aria-hidden="true"></span>{t('game.player')}</span>
     <span class="player__ratio">{ratioLabel}</span>
@@ -188,7 +202,7 @@ const ratioLabel = aspectRatio.replace(/\s/g, '').replace('/', ':');
     document.addEventListener('webkitfullscreenchange', onFsChange);
     if (location.hash === '#play') startBtn.focus({ preventScroll: true });
 
-    // Monty SDK (v1.5): oyun hazır olduğunu bildirirse ses butonu görünür.
+    // Monty SDK: oyun hazır olduğunu bildirirse ses butonu görünür.
     window.addEventListener('message', (event) => {
       if (event.origin !== location.origin || !iframe || event.source !== iframe.contentWindow) return;
       const data = event.data;
@@ -198,8 +212,28 @@ const ratioLabel = aspectRatio.replace(/\s/g, '').replace('/', ':');
         soundBtn.hidden = false;
         // Oyun her yüklendiğinde (yeniden başlatma dahil) mevcut ses durumunu öğrensin.
         if (muted) sendMute();
+      } else if (data.type === 'unlock') {
+        void onUnlock(data.gameId, data.achievementId);
       }
     });
+    // v2: başarım aç (üye: hesaba, misafir: sadece bu oturuma) ve bildirim göster.
+    const achievements: { id: string; name: string; tier: 'common' | 'rare' | 'legendary' }[] = root.dataset
+      .achievements
+      ? JSON.parse(root.dataset.achievements)
+      : [];
+    async function onUnlock(gameId: unknown, achievementId: unknown) {
+      const ownId = root.dataset.gameId;
+      if (!ownId || gameId !== ownId) return;
+      const meta = achievements.find((a) => a.id === achievementId);
+      if (!meta) return; // bilgi dosyasında olmayan başarımı yok say
+      const [{ unlock }, { showAchievementToast }] = await Promise.all([
+        import('../lib/client/achievements'),
+        import('../lib/client/toast'),
+      ]);
+      const result = await unlock(ownId, meta.id);
+      if (result !== 'duplicate') showAchievementToast({ name: meta.name, tier: meta.tier, result });
+    }
+
     soundBtn.addEventListener('click', () => {
       muted = !muted;
       try {
