@@ -103,7 +103,7 @@ sekme gizlenince `pause` olayı ve WebAudio ile dosyasız sesler (`kit.sound.ton
 Yeni bir oyuna başlarken `kit.js` ve `fonts.css` + `fonts/` klasörünü bu oyunlardan birinden kopyala.
 Kiti değiştirirsen değişikliği diğer kopyalara da uygula.
 
-### Gelecek: Monty SDK (v1.5 — henüz YOK)
+### Gelecek: Monty SDK (site tarafı v2'de — henüz YOK)
 
 İlk oyunlarla birlikte `public/sdk/monty.js` yazılacak. Oyunlar `<script src="/sdk/monty.js"></script>` ile ekleyip şunları kullanacak:
 
@@ -118,8 +118,9 @@ Monty.lang;                         // 'tr' | 'en'
 
 Mesaj biçimi: `{ source: 'monty-sdk', v: 1, type: 'unlock', gameId, achievementId }`. Site tarafında yapılacaklar:
 `achievementId` oyunun bilgi dosyasındaki listede yoksa yok say; daha önce açıldıysa tekrar bildirme; açıldıysa sağ altta
-"Başarım açıldı!" bildirimi (toast) göster ve `localStorage`'a `monty:ach:<gameId>` → `[{ id, unlockedAt }]` olarak yaz.
-v2'de bu kayıtlar Supabase'e taşınacak. SDK site dışında sessizce hiçbir şey yapmamalı.
+"Başarım açıldı!" bildirimi (toast) göster. Başarımlar **yalnızca üyelerde kalıcıdır** (Supabase); misafirin başarımları
+sadece o oturumda tutulur ve toast'ta "Kaydedilmedi — üye ol, kaybolmasın" yazar. Bu bilinçli bir üyelik teşviki;
+misafir başarımlarını `localStorage`'a kalıcı yazma. Ayrıntı: `../MONTY_ARCADE.md` §11.2. SDK site dışında sessizce hiçbir şey yapmamalı.
 
 **İlk oyunu yaparken:** SDK'yı yazmak ilk oyunun işinin bir parçası. O zamana kadar oyunda başarımları
 `Monty.unlock(...)` çağrılarıyla tasarlamak ve SDK'yı bu dosyadaki tasarıma göre yazmak yeterli.

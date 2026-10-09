@@ -232,8 +232,8 @@ Lighthouse (mobile, measured locally): **Performance 97–99 · Accessibility 10
 ## 🛣️ Roadmap
 
 - [x] **v1: the site itself.** Design system, TR/EN, game and devlog collections, player, SEO, accessibility
-- [ ] **v1.5: first games.** First 2–3 games, "Game of the week" hero, Monty SDK (achievements stored locally)
-- [ ] **v2: accounts & achievements.** Sign-in (Supabase), public profiles, Steam-style achievements with rarity, badge showcase
+- [x] **v1.5: first games.** Four games, "Game of the week" hero, games already send achievement calls (v1.1.0)
+- [ ] **v2: accounts & achievements.** Sign-in (Supabase), public profiles, Steam-style achievements with rarity, badge showcase. Achievements are saved for members only; guests see them for the current session and are invited to sign up
 
 ## 👤 Author
 

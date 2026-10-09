@@ -239,8 +239,8 @@ Lighthouse (mobil, yerel ölçüm): **Performance 97–99 · Accessibility 100 �
 ## 🛣️ Yol haritası
 
 - [x] **v1: sitenin kendisi.** Tasarım sistemi, TR/EN, oyun ve devlog koleksiyonları, oynatıcı, SEO, erişilebilirlik
-- [ ] **v1.5: ilk oyunlar.** İlk 2–3 oyun, "Haftanın oyunu" hero'su, Monty SDK (başarımlar tarayıcıda saklanır)
-- [ ] **v2: üyelik ve başarımlar.** Giriş (Supabase), herkese açık profiller, nadirlik yüzdeli Steam tarzı başarımlar, rozet vitrini
+- [x] **v1.5: ilk oyunlar.** Dört oyun, "Haftanın oyunu" hero'su, oyunlar başarım çağrılarını şimdiden yapıyor (v1.1.0)
+- [ ] **v2: üyelik ve başarımlar.** Giriş (Supabase), herkese açık profiller, nadirlik yüzdeli Steam tarzı başarımlar, rozet vitrini. Başarımlar yalnızca üyelerde kalıcı; misafir o oturumda görür ve üye olmaya davet edilir
 
 ## 👤 Geliştirici
 
