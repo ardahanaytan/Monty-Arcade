@@ -9,17 +9,20 @@
     "preview": "astro preview --port 2607",
     "astro": "astro",
     "og": "node scripts/og-default.mjs",
-    "check": "astro check"
+    "check": "astro check",
+    "sync:achievements": "node scripts/sync-achievements.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.4",
     "@fontsource-variable/archivo": "^5.3.0",
     "@fontsource/space-mono": "^5.3.0",
+    "@supabase/supabase-js": "^2.117.3",
     "astro": "^7.3.5"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "yaml": "^2.9.1"
   },
   "description": "Monty Arcade — small browser games and a devlog. The flash game portals of the 2000s, rebuilt for today's web.",
   "author": "Ardahan Aytan (https://github.com/ardahanaytan)",
