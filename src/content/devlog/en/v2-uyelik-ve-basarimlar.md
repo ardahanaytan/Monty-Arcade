@@ -59,7 +59,7 @@ With accounts, the data the site keeps has changed too, so I added a **Privacy p
 ## What changed?
 
 - There's a **Sign in** button at the top right; once you're signed in, your username takes its place and links to your profile.
-- The "Coming soon: profiles & achievement badges" box on the home page is gone, because it's not coming soon anymore.
+- The "Coming soon" box on the home page no longer teases profiles and badges (they're here). Now it teases the next game: **a new game drops every Friday**, and the box shows the date of the next one.
 - Game cards show how many achievements each game has.
 - The site is still fast. The account part doesn't hold up page loading; it loads in the background.
 

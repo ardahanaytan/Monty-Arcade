@@ -1,0 +1,143 @@
+---
+/**
+ * Ana sayfa yan sütunu: "YAKINDA — Her cuma yeni oyun" kutusu.
+ * Hafta şeridinde cuma damalı bayrakla işaretli; "sıradaki yarış" tarihi tarayıcıda hesaplanır
+ * (site statik olduğu için build tarihi kullanılamaz). JS yoksa "HER CUMA PİTTE" yazar.
+ */
+import Icon from './Icon.astro';
+import { locales, useTranslations, type Lang } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const days = t('weekly.days').split(',');
+const FRIDAY = 4; // days dizisinde (pazartesiden başlayarak) cuma
+---
+
+<section
+  class="weekly"
+  aria-labelledby="weekly-title"
+  data-weekly
+  data-locale={locales[lang]}
+  data-next={t('weekly.next')}
+  data-today={t('weekly.today')}
+>
+  <span class="weekly__badge">{t('weekly.badge')}</span>
+  <h2 id="weekly-title" class="subhead">{t('weekly.title')}</h2>
+  <p>{t('weekly.text')}</p>
+  <ol class="weekly__days plain" aria-hidden="true">
+    {
+      days.map((day, i) => (
+        <li class:list={{ 'is-race': i === FRIDAY }}>
+          {i === FRIDAY && <Icon name="flag" size={16} />}
+          <span>{day}</span>
+        </li>
+      ))
+    }
+  </ol>
+  <p class="weekly__next" data-weekly-next>{t('weekly.every')}</p>
+</section>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-weekly]').forEach((box) => {
+    const out = box.querySelector<HTMLElement>('[data-weekly-next]');
+    if (!out) return;
+    const now = new Date();
+    const daysUntilFriday = (5 - now.getDay() + 7) % 7; // getDay: 0 = pazar, 5 = cuma
+    if (daysUntilFriday === 0) {
+      out.textContent = box.dataset.today ?? '';
+      out.classList.add('is-today');
+      return;
+    }
+    const friday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + daysUntilFriday);
+    const locale = box.dataset.locale ?? 'en-US';
+    const date = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'long', weekday: 'long' }).format(friday);
+    out.textContent = (box.dataset.next ?? '{date}').replace('{date}', date.toLocaleUpperCase(locale));
+  });
+</script>
+
+<style>
+  .weekly {
+    background: var(--surface);
+    border: 1px solid var(--line-2);
+    border-radius: 18px;
+    padding: 22px;
+  }
+  .weekly__badge {
+    display: inline-block;
+    margin-bottom: 10px;
+    padding: 3px 8px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    color: var(--on-accent);
+    background: var(--led);
+    border-radius: 4px;
+  }
+  h2 {
+    margin-bottom: 6px;
+    font-size: 21px;
+    line-height: 1.2;
+  }
+  p {
+    margin-bottom: 16px;
+    font-size: 14px;
+    color: var(--text-3);
+  }
+  .weekly__days {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+  .weekly__days li {
+    aspect-ratio: 3 / 4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    padding-bottom: 8px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.04em;
+    color: var(--text-4);
+    background: var(--surface-3);
+    border-radius: 8px;
+  }
+  .weekly__days li.is-race {
+    position: relative;
+    overflow: hidden;
+    color: var(--on-accent);
+    background: var(--accent);
+    box-shadow: 0 6px 16px var(--accent-glow);
+  }
+  /* Cuma hücresinin üstünde küçük damalı şerit */
+  .weekly__days li.is-race::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 8px;
+    background: repeating-conic-gradient(var(--on-accent) 0% 25%, var(--text) 0% 50%) 0 0 / 8px 8px;
+  }
+  .weekly__next {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--led);
+    text-shadow: 0 0 8px rgba(255, 194, 61, 0.35);
+  }
+  .weekly__next.is-today {
+    color: var(--accent);
+    text-shadow: 0 0 8px var(--accent-glow);
+  }
+</style>

@@ -32,7 +32,7 @@ doğrudan Supabase'e (Auth + Postgres REST) bağlanır. Sunucu kodu / API route'
 | `src/components/AchievementsPanel.astro` | Oyun sayfasındaki panel: açılanlar, gizli başarımların açılınca görünmesi, sayaç, nadirlik yüzdesi (`achievement_rarity`). |
 | `src/pages/[lang]/u/index.astro` | Sürücü profili (statik kabuk + istemcide veri). |
 | `src/pages/[lang]/[legal].astro` + `src/content/legal/{tr,en}/{privacy,terms}.md` | Gizlilik politikası ve kullanım koşulları. |
-| `src/config/site.ts` | `features.accounts: true` (v2 açık), `achievementsTeaser: false`. |
+| `src/config/site.ts` | `features.accounts: true` (v2 açık), `weeklyBox: true` (ana sayfadaki "Her cuma yeni oyun" kutusu). |
 | `vercel.json` | `rewrites`: `/:lang(tr\|en)/u/:name` → `/:lang/u/` (profil adresleri). |
 | `supabase/migrations/*.sql` | Veritabanının tek doğru kaynağı (sıralı). |
 | `scripts/sync-achievements.mjs` | Oyun bilgi dosyalarından `achievements` tablosu için SQL üretir (`npm run sync:achievements`). |

@@ -7,7 +7,7 @@ import GameGrid from '../../components/GameGrid.astro';
 import SectionHeader from '../../components/SectionHeader.astro';
 import PostRow from '../../components/PostRow.astro';
 import DriverCard from '../../components/DriverCard.astro';
-import V2Teaser from '../../components/V2Teaser.astro';
+import WeeklyBox from '../../components/WeeklyBox.astro';
 import { site } from '../../config/site';
 import { getStaticLangPaths, useTranslations, type Lang } from '../../i18n/ui';
 import { getFeatured, getGames, getPosts } from '../../lib/content';
@@ -51,7 +51,7 @@ const featured = getFeatured(games);
 
       <aside class="split__side side">
         <DriverCard lang={lang} />
-        {site.features.achievementsTeaser && <V2Teaser lang={lang} />}
+        {site.features.weeklyBox && <WeeklyBox lang={lang} />}
       </aside>
     </div>
   </div>

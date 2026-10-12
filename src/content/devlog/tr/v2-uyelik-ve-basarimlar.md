@@ -59,7 +59,7 @@ Profilini istediğin kişiyle paylaşabilirsin. Kendi profilinden çıkış yapa
 ## Neler değişti?
 
 - Sağ üstte **Giriş yap** butonu var; giriş yapınca yerinde kullanıcı adın duruyor ve profiline gidiyor.
-- Ana sayfadaki "Yakında: Profil ve başarım rozetleri" kutusu kalktı, çünkü artık yakında değil.
+- Ana sayfadaki "Yakında" kutusu artık profil ve rozetleri değil (onlar geldi), bir sonraki oyunu müjdeliyor: **her cuma yeni bir oyun** çıkıyor ve kutu sıradaki cumanın tarihini gösteriyor.
 - Oyun kartlarında her oyunun kaç başarımı olduğu görünüyor.
 - Site hâlâ hızlı. Üyelik kısmı sayfa açılışını bekletmiyor; arka planda yükleniyor.
 

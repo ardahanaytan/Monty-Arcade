@@ -215,7 +215,7 @@ export const site = {
   links: { github, linkedin, itch, kofi, email },   // boş olanlar gizlenir
   features: {
     accounts: true,             // v2: giriş, başarım paneli ve bildirimi, profil, kart rozet sayısı
-    achievementsTeaser: false,  // "Yakında: Profil & başarımlar" kutusu (v1)
+    weeklyBox: true,            // "Yakında: Her cuma yeni oyun" kutusu
   },
   newBadgeDays: 30,
 };

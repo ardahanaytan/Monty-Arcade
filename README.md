@@ -213,7 +213,7 @@ export const site = {
   links: { github, linkedin, itch, kofi, email },   // empty links are hidden
   features: {
     accounts: true,             // v2: sign-in, achievement panel and toasts, profiles, badge counts
-    achievementsTeaser: false,  // "Coming soon: profiles & achievements" box (v1)
+    weeklyBox: true,            // "Coming soon: a new game every Friday" box
   },
   newBadgeDays: 30,
 };

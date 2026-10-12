@@ -13,7 +13,7 @@ export const site = {
   },
   features: {
     accounts: true, // v2: giriş butonu, başarım paneli, kart rozet sayısı
-    achievementsTeaser: false, // v1: "Yakında: Profil & başarımlar" kutusu
+    weeklyBox: true, // ana sayfa yan sütunu: "YAKINDA — Her cuma yeni oyun" kutusu
   },
   newBadgeDays: 30, // "YENİ" etiketi kaç gün görünür
 };
