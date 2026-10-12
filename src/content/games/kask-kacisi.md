@@ -22,6 +22,7 @@ featured: false
 aspectRatio: "16/9"
 sizeMB: 0.3
 mobile: true
+relatedPosts: [dort-test-oyunu]
 achievements:
   - id: first-100
     title: { tr: "Isınma Turu", en: "Warm-up Lap" }

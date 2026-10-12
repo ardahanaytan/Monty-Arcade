@@ -13,7 +13,8 @@ Kendi yaptığım küçük HTML5 oyunlarının yayınlandığı statik Astro sit
   `git log v1.2.0..HEAD` ile görülür, `features.accounts = true`. Kullanıcı yayından önce bazı şeyler geliştirecek.
 - Supabase, Brevo SMTP ve Vercel ortam değişkenleri kuruldu; kullanıcı kayıt → doğrulama → giriş akışını kendi
   mailiyle denedi, çalışıyor. Ayrıntılar ve panel ayarları: [`ACCOUNTS.md`](ACCOUNTS.md) §5.
-- **v2.0.0 yayını** (kullanıcı "yayınla" deyince): `npm run check` + `npm run build` temiz → `package.json`'ı
+- **v2.0.0 yayını** (kullanıcı "yayınla" deyince): v2 devlog yazısının (`src/content/devlog/{tr,en}/v2-uyelik-ve-basarimlar.md`)
+  `date` alanını yayın gününe çek (dört oyun yazısından sonra gelmeli) → `npm run check` + `npm run build` temiz → `package.json`'ı
   `npm version 2.0.0 --no-git-tag-version` ile güncelle → GAMES.md durum notu + README yol haritasında v2 [x] → commit → `git tag -a v2.0.0`
   → `main` + etiketi push → canlıda `/tr/` giriş butonu, bir oyunda başarım toast'ı ve `/tr/u/<ad>` kontrolü.
 - Proje bir öğrenme / hobi projesi: **sadece ücretsiz servisler** (alan adı, ücretli plan önerme; gerekirse ödünleşimi bir kez söyle).

@@ -16,6 +16,7 @@ featured: false
 aspectRatio: "16/9"
 sizeMB: 0.3
 mobile: true
+relatedPosts: [dort-test-oyunu]
 achievements:
   - id: first-start
     title: { tr: "İlk Start", en: "First Start" }

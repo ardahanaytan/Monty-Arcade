@@ -22,6 +22,7 @@ featured: true
 aspectRatio: "16/9"
 sizeMB: 0.5
 mobile: true
+relatedPosts: [dort-test-oyunu]
 achievements:
   - id: easy-win
     title: { tr: "İlk Galibiyet", en: "First Win" }

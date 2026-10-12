@@ -18,6 +18,7 @@ featured: false
 aspectRatio: "16/9"
 sizeMB: 0.3
 mobile: true
+relatedPosts: [dort-test-oyunu]
 achievements:
   - id: first-stop
     title: { tr: "İlk Pit", en: "First Stop" }
