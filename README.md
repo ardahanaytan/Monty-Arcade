@@ -61,7 +61,7 @@ takes that spirit and pairs it with a modern, fast, mobile-friendly web.
 | 📰 **Devlog** | Markdown posts with reading time, previous/next links and a related game card. |
 | 📺 **Flash-era details** | LED ticker, checkered flags, speed lines, glossy buttons, 88×31 badges and a "DNF" 404 page. All kept subtle. |
 | ♿ **Accessible** | Skip link, visible focus, 44 px touch targets, `prefers-reduced-motion`, semantic HTML, screen-reader labels. |
-| 🏆 **Ready for v2** | Achievement schema, achievement panel and sign-in slots already built, hidden behind a feature flag. |
+| 🏆 **Achievements & profiles** | Steam-style achievements (rarity percentages, hidden achievements), email + password accounts and public driver profiles. Achievements are saved for members only; guests see them for the session and are invited to sign up. Details (TR): [`ACCOUNTS.md`](ACCOUNTS.md). |
 
 ## 🧰 Tech stack
 
@@ -71,6 +71,7 @@ takes that spirit and pairs it with a modern, fast, mobile-friendly web.
 - **Vanilla JS** only where needed (filter/search, player, language memory): about 3 KB on the home page
 - **Self-hosted fonts** via Fontsource: Archivo (variable, `wdth` + `wght`) and Space Mono
 - **@astrojs/sitemap**, plus `robots.txt` and Open Graph tags generated from one config file
+- **[Supabase](https://supabase.com)** (Auth + Postgres with RLS) for accounts, profiles and achievements. The site stays static; the browser talks to Supabase directly
 
 ## 🚀 Getting started
 
@@ -90,6 +91,10 @@ npm run dev
 | `npm run preview` | Serves `dist/` at `http://localhost:2607` |
 | `npm run check` | Type-checks the project (`astro check`) |
 | `npm run og` | Regenerates the social share image `public/og-default.png` |
+| `npm run sync:achievements` | Generates the Supabase SQL for the achievements in the game info files |
+
+For account features, copy `.env.example` to `.env` and fill in your Supabase project URL and publishable key.
+Without them the site runs in guest-only mode.
 
 ## 🗺️ Project structure
 
@@ -97,16 +102,19 @@ npm run dev
 src/
 ├─ config/site.ts          site name, links, feature flags (most settings live here)
 ├─ i18n/ui.ts              every UI string (TR/EN) and tag labels
-├─ content.config.ts       content schemas: games, devlog
+├─ content.config.ts       content schemas: games, devlog, legal pages
 ├─ content/
 │  ├─ games/<slug>.md      game info files (+ covers/)
-│  └─ devlog/{tr,en}/      devlog posts
-├─ components/             Header, Ticker, GameGrid, GameCard, Player, MontyHelmet…
+│  ├─ devlog/{tr,en}/      devlog posts
+│  └─ legal/{tr,en}/       privacy policy, terms of use
+├─ components/             Header, Ticker, GameGrid, GameCard, Player, LoginDialog, AchievementsPanel…
 ├─ layouts/                Base (page shell), Prose (long-form text)
-├─ pages/                  /, /[lang]/, /[lang]/games/[slug]/, /[lang]/devlog/…, /[lang]/about/, 404
+├─ lib/client/             browser side: Supabase client, session, achievement store, toasts
+├─ pages/                  /, /[lang]/, games/[slug]/, devlog/…, about/, u/ (profile), privacy/, terms/, 404
 └─ styles/                 tokens.css, global.css, fonts.css
 public/
 └─ play/<slug>/            game builds, served in an iframe
+supabase/migrations/       database schema (tables, RLS, RPCs)
 ```
 
 ## 🕹️ Adding a game
@@ -152,7 +160,7 @@ home hero and sitemap all update on the next build. A game can read its language
 | `sizeMB`, `mobile` | number, boolean | Shown in the spec sheet |
 | `playUrl` | string | Default `/play/<slug>/index.html` |
 | `relatedPosts` | string list | Devlog slugs (or set `game: <slug>` in a post) |
-| `achievements` | list | Ready for v1.5/v2: `id`, `title`, `description`, `icon`, `tier`, `hidden` |
+| `achievements` | list | `id`, `title`, `description`, `icon`, `tier`, `hidden`; after changes run `npm run sync:achievements` |
 | `draft` | boolean | Visible only in `npm run dev`; files are stripped from `dist/` |
 
 </details>
@@ -204,8 +212,8 @@ export const site = {
   url: 'https://monty-arcade.vercel.app',   // canonical, hreflang, sitemap and robots are generated from this
   links: { github, linkedin, itch, kofi, email },   // empty links are hidden
   features: {
-    accounts: false,            // v2: sign-in, achievements panel, badge counts
-    achievementsTeaser: true,   // "Coming soon: profiles & achievements" box
+    accounts: true,             // v2: sign-in, achievement panel and toasts, profiles, badge counts
+    achievementsTeaser: false,  // "Coming soon: profiles & achievements" box (v1)
   },
   newBadgeDays: 30,
 };
@@ -215,7 +223,8 @@ export const site = {
 
 The output is fully static (`dist/`). Build command `npm run build`, output directory `dist`.
 
-- **Vercel:** cache headers come from [`vercel.json`](vercel.json).
+- **Vercel:** cache headers and the profile URL rewrite come from [`vercel.json`](vercel.json).
+  Environment variables: `PUBLIC_SUPABASE_URL`, `PUBLIC_SUPABASE_PUBLISHABLE_KEY` (public values).
 - **Cloudflare Pages:** cache headers come from [`public/_headers`](public/_headers).
 
 Hashed assets are cached for a year (`immutable`), game files for a day with `stale-while-revalidate`.

@@ -3,8 +3,20 @@
 Kendi yaptığım küçük HTML5 oyunlarının yayınlandığı statik Astro sitesi + devlog. TR/EN. Canlı: https://monty-arcade.vercel.app
 
 - **Oyun yapma / ekleme işi için önce [`GAMES.md`](GAMES.md) dosyasını oku.**
+- **Üyelik, giriş, profil, başarım ya da Supabase işi için önce [`ACCOUNTS.md`](ACCOUNTS.md) dosyasını oku.**
 - Site yapısı, komutlar, içerik şemaları: [`README.tr.md`](README.tr.md).
 - İlk planlama ve tasarım spesifikasyonu: `../MONTY_ARCADE.md` (repo dışında; kod yazılmadan önce yazıldı, bazı yerleri eski).
+
+## Şu anki durum (2026-10-12)
+
+- **Canlıda v1.2.0** (4 oyun, üyelik yok). **v2 (üyelik + başarımlar + profil) yerelde bitti ama push edilmedi:**
+  `git log v1.2.0..HEAD` ile görülür, `features.accounts = true`. Kullanıcı yayından önce bazı şeyler geliştirecek.
+- Supabase, Brevo SMTP ve Vercel ortam değişkenleri kuruldu; kullanıcı kayıt → doğrulama → giriş akışını kendi
+  mailiyle denedi, çalışıyor. Ayrıntılar ve panel ayarları: [`ACCOUNTS.md`](ACCOUNTS.md) §5.
+- **v2.0.0 yayını** (kullanıcı "yayınla" deyince): `npm run check` + `npm run build` temiz → `package.json`'ı
+  `npm version 2.0.0 --no-git-tag-version` ile güncelle → GAMES.md durum notu + README yol haritasında v2 [x] → commit → `git tag -a v2.0.0`
+  → `main` + etiketi push → canlıda `/tr/` giriş butonu, bir oyunda başarım toast'ı ve `/tr/u/<ad>` kontrolü.
+- Proje bir öğrenme / hobi projesi: **sadece ücretsiz servisler** (alan adı, ücretli plan önerme; gerekirse ödünleşimi bir kez söyle).
 
 ## Kurallar
 
@@ -24,20 +36,17 @@ Kendi yaptığım küçük HTML5 oyunlarının yayınlandığı statik Astro sit
   `package.json` sürümünü eşitle. Emin değilsen sor.
 - `main`'e her push Vercel'de otomatik yayına çıkar.
 
-## Supabase (v2)
+## Supabase (v2) — kısa özet (ayrıntı: ACCOUNTS.md)
 
-- Proje: `Monty-Arcade` (ref `ducvcbfbjmthorqglxqt`, Frankfurt), org "Monty Arcade". Claude Code'da Supabase MCP ile erişilir.
-- Şema değişikliği: önce `supabase/migrations/<zaman>_<ad>.sql` dosyasını yaz, sonra aynı SQL'i MCP `apply_migration` ile uygula,
-  ardından `get_advisors` (security + performance) çalıştır.
-- Tablolara istemciden doğrudan yazma yok; yazma RPC'lerle (`unlock_achievement`, `merge_guest_achievements`, `delete_my_account`).
-  "Automatically expose new tables" kapalı: yeni tabloya `grant` ve RLS kuralını açıkça yaz.
+- Proje ref `ducvcbfbjmthorqglxqt` (Frankfurt, ücretsiz). Claude Code'da Supabase MCP ile erişilir.
+- Şema değişikliği: `supabase/migrations/<zaman>_<ad>.sql` yaz → MCP `apply_migration` → `get_advisors`.
+  "Automatically expose new tables" kapalı: yeni tabloya `grant` + RLS'yi açıkça yaz. Tablolara istemciden yazma yok, RPC var.
+- Giriş sadece e-posta + şifre (OAuth yok); kullanıcı adı kayıtta, sonra değişmez. Şifre kuralı hem `PASSWORD_RULES`
+  hem Supabase panelinde. Mailler Brevo SMTP ile.
 - Oyun eklenince / başarım listesi değişince: `npm run sync:achievements` çıktısını veritabanında çalıştır.
-- Giriş: sadece e-posta + şifre (OAuth yok). Kayıtta kullanıcı adı `signUp` metadata'sıyla gelir; profil tetikleyicisi
-  (`private.handle_new_user`) geçersiz/alınmış adda kaydı reddeder. Şifre kuralı (8+, büyük/küçük harf, rakam, özel karakter)
-  hem `PASSWORD_RULES` (`src/lib/client/account.ts`) hem Supabase paneli "Password requirements" ayarında olmalı.
-  Doğrulama ve şifre sıfırlama mailleri özel SMTP ile gider.
-- `.env` (git'te yok): `PUBLIC_SUPABASE_URL`, `PUBLIC_SUPABASE_PUBLISHABLE_KEY` (herkese açık değerler) ve
-  `SUPABASE_DB_PASSWORD` (gizli; site kullanmaz, okuma). Aynı iki `PUBLIC_` değeri Vercel ortam değişkenlerinde de olmalı.
+- Canlı veritabanında test verisi bırakma; SQL testlerinden sonra sahte kullanıcıyı sil.
+- `.env` (git'te yok): iki `PUBLIC_SUPABASE_*` değeri + `SUPABASE_DB_PASSWORD` (gizli; okuma). `PUBLIC_` değerleri
+  Vercel'de de tanımlı.
 
 ## Komutlar
 

@@ -61,7 +61,7 @@ hızlı, telefonda da çalışan modern bir web'le birleştiriyor.
 | 📰 **Devlog** | Okuma süresi, önceki/sonraki yazı linkleri ve ilgili oyun kartı olan Markdown yazılar. |
 | 📺 **Flash dönemi detayları** | LED ticker, damalı bayraklar, hız çizgileri, parlak butonlar, 88×31 rozetler ve "DNF" 404 sayfası. Hepsi ölçülü. |
 | ♿ **Erişilebilir** | "İçeriğe atla" linki, görünür odak, 44 px dokunma hedefleri, `prefers-reduced-motion`, anlamsal HTML, ekran okuyucu etiketleri. |
-| 🏆 **v2'ye hazır** | Başarım şeması, başarım paneli ve giriş alanları şimdiden yazıldı; bir özellik bayrağının arkasında gizli. |
+| 🏆 **Başarımlar ve profiller** | Steam tarzı başarımlar (nadirlik yüzdesi, gizli başarımlar), e-posta + şifreyle üyelik ve herkese açık sürücü profili. Başarımlar yalnızca üyelerde kalıcı; misafir o oturumda görür ve üye olmaya davet edilir. Ayrıntı: [`ACCOUNTS.md`](ACCOUNTS.md). |
 
 ## 🧰 Teknolojiler
 
@@ -71,6 +71,7 @@ hızlı, telefonda da çalışan modern bir web'le birleştiriyor.
 - **Saf JS**, sadece gereken yerlerde (filtre/arama, oynatıcı, dil hafızası): ana sayfada yaklaşık 3 KB
 - **Siteyle birlikte barındırılan fontlar** (Fontsource): Archivo (değişken, `wdth` + `wght`) ve Space Mono
 - **@astrojs/sitemap**; `robots.txt` ve Open Graph etiketleri tek bir ayar dosyasından üretiliyor
+- **[Supabase](https://supabase.com)** (Auth + Postgres, RLS): üyelik, profiller ve başarımlar. Site statik kalır; tarayıcı doğrudan Supabase'e bağlanır
 
 ## 🚀 Başlarken
 
@@ -90,6 +91,10 @@ npm run dev
 | `npm run preview` | `dist/` çıktısını `http://localhost:2607` adresinde sunar |
 | `npm run check` | Tip kontrolü (`astro check`) |
 | `npm run og` | Paylaşım görselini (`public/og-default.png`) yeniden üretir |
+| `npm run sync:achievements` | Oyun bilgi dosyalarındaki başarımlar için Supabase SQL'i üretir |
+
+Üyelik özellikleri için `.env.example` dosyasını `.env` olarak kopyalayıp Supabase proje adresini ve publishable
+anahtarını gir. Bunlar yoksa site üyeliksiz (misafir) modda çalışır.
 
 ## 🗺️ Klasör yapısı
 
@@ -97,16 +102,19 @@ npm run dev
 src/
 ├─ config/site.ts          site adı, linkler, özellik bayrakları (çoğu ayar burada)
 ├─ i18n/ui.ts              tüm arayüz metinleri (TR/EN) ve etiket çevirileri
-├─ content.config.ts       içerik şemaları: oyunlar, devlog
+├─ content.config.ts       içerik şemaları: oyunlar, devlog, yasal sayfalar
 ├─ content/
 │  ├─ games/<slug>.md      oyun bilgi dosyaları (+ covers/)
-│  └─ devlog/{tr,en}/      devlog yazıları
-├─ components/             Header, Ticker, GameGrid, GameCard, Player, MontyHelmet…
+│  ├─ devlog/{tr,en}/      devlog yazıları
+│  └─ legal/{tr,en}/       gizlilik politikası, kullanım koşulları
+├─ components/             Header, Ticker, GameGrid, GameCard, Player, LoginDialog, AchievementsPanel…
 ├─ layouts/                Base (sayfa iskeleti), Prose (uzun metin düzeni)
-├─ pages/                  /, /[lang]/, /[lang]/games/[slug]/, /[lang]/devlog/…, /[lang]/about/, 404
+├─ lib/client/             tarayıcı tarafı: Supabase istemcisi, oturum, başarım deposu, bildirim
+├─ pages/                  /, /[lang]/, games/[slug]/, devlog/…, about/, u/ (profil), privacy/, terms/, 404
 └─ styles/                 tokens.css, global.css, fonts.css
 public/
 └─ play/<slug>/            oyun build'leri (iframe içinde açılır)
+supabase/migrations/       veritabanı şeması (tablolar, RLS, RPC'ler)
 ```
 
 ## 🕹️ Oyun ekleme
@@ -152,7 +160,7 @@ ana sayfa hero'su ve sitemap bir sonraki build'de güncellenir. Oyun dilini `?la
 | `sizeMB`, `mobile` | sayı, boolean | Teknik kartta gösterilir |
 | `playUrl` | metin | Varsayılan `/play/<slug>/index.html` |
 | `relatedPosts` | metin listesi | Devlog slug'ları (ya da yazıda `game: <slug>`) |
-| `achievements` | liste | v1.5/v2 için hazır: `id`, `title`, `description`, `icon`, `tier`, `hidden` |
+| `achievements` | liste | `id`, `title`, `description`, `icon`, `tier`, `hidden`; değişince `npm run sync:achievements` |
 | `draft` | boolean | Sadece `npm run dev`'de görünür; dosyaları `dist/`'ten silinir |
 
 </details>
@@ -206,8 +214,8 @@ export const site = {
   url: 'https://monty-arcade.vercel.app',   // canonical, hreflang, sitemap ve robots buna göre üretilir
   links: { github, linkedin, itch, kofi, email },   // boş olanlar gizlenir
   features: {
-    accounts: false,            // v2: giriş butonu, başarım paneli, kart rozet sayısı
-    achievementsTeaser: true,   // "Yakında: Profil & başarımlar" kutusu
+    accounts: true,             // v2: giriş, başarım paneli ve bildirimi, profil, kart rozet sayısı
+    achievementsTeaser: false,  // "Yakında: Profil & başarımlar" kutusu (v1)
   },
   newBadgeDays: 30,
 };
@@ -222,7 +230,8 @@ export const site = {
 
 Çıktı tamamen statik (`dist/`). Build komutu `npm run build`, çıktı klasörü `dist`.
 
-- **Vercel:** önbellek başlıkları [`vercel.json`](vercel.json) dosyasından gelir.
+- **Vercel:** önbellek başlıkları ve profil adresleri için yeniden yazma kuralı [`vercel.json`](vercel.json) dosyasından gelir.
+  Ortam değişkenleri: `PUBLIC_SUPABASE_URL`, `PUBLIC_SUPABASE_PUBLISHABLE_KEY` (herkese açık değerler).
 - **Cloudflare Pages:** önbellek başlıkları [`public/_headers`](public/_headers) dosyasından gelir.
 
 Hash'li dosyalar bir yıl (`immutable`), oyun dosyaları bir gün (`stale-while-revalidate` ile) önbellekte tutulur.
