@@ -249,7 +249,7 @@ Lighthouse (mobil, yerel ölçüm): **Performance 97–99 · Accessibility 100 �
 
 - [x] **v1: sitenin kendisi.** Tasarım sistemi, TR/EN, oyun ve devlog koleksiyonları, oynatıcı, SEO, erişilebilirlik
 - [x] **v1.5: ilk oyunlar.** Dört oyun, "Haftanın oyunu" hero'su, oyunlar başarım çağrılarını şimdiden yapıyor (v1.1.0)
-- [ ] **v2: üyelik ve başarımlar.** Giriş (Supabase), herkese açık profiller, nadirlik yüzdeli Steam tarzı başarımlar, rozet vitrini. Başarımlar yalnızca üyelerde kalıcı; misafir o oturumda görür ve üye olmaya davet edilir
+- [x] **v2: üyelik ve başarımlar.** Giriş (Supabase), herkese açık profiller, nadirlik yüzdeli Steam tarzı başarımlar, rozet vitrini. Başarımlar yalnızca üyelerde kalıcı; misafir o oturumda görür ve üye olmaya davet edilir
 
 ## 👤 Geliştirici
 

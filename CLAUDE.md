@@ -9,14 +9,12 @@ Kendi yaptığım küçük HTML5 oyunlarının yayınlandığı statik Astro sit
 
 ## Şu anki durum (2026-10-12)
 
-- **Canlıda v1.2.0** (4 oyun, üyelik yok). **v2 (üyelik + başarımlar + profil) yerelde bitti ama push edilmedi:**
-  `git log v1.2.0..HEAD` ile görülür, `features.accounts = true`. Kullanıcı yayından önce bazı şeyler geliştirecek.
+- **Canlıda v2.0.0** (2026-10-12): 4 oyun + üyelik, kalıcı başarımlar, sürücü profilleri (`features.accounts = true`).
+  Ana sayfada "Yakında — Her cuma yeni oyun" kutusu (`weeklyBox`).
 - Supabase, Brevo SMTP ve Vercel ortam değişkenleri kuruldu; kullanıcı kayıt → doğrulama → giriş akışını kendi
   mailiyle denedi, çalışıyor. Ayrıntılar ve panel ayarları: [`ACCOUNTS.md`](ACCOUNTS.md) §5.
-- **v2.0.0 yayını** (kullanıcı "yayınla" deyince): v2 devlog yazısının (`src/content/devlog/{tr,en}/v2-uyelik-ve-basarimlar.md`)
-  `date` alanını yayın gününe çek (dört oyun yazısından sonra gelmeli) → `npm run check` + `npm run build` temiz → `package.json`'ı
-  `npm version 2.0.0 --no-git-tag-version` ile güncelle → GAMES.md durum notu + README yol haritasında v2 [x] → commit → `git tag -a v2.0.0`
-  → `main` + etiketi push → canlıda `/tr/` giriş butonu, bir oyunda başarım toast'ı ve `/tr/u/<ad>` kontrolü.
+- **Sürüm çıkarma kalıbı:** `npm run check` + `npm run build` temiz → `npm version X.Y.Z --no-git-tag-version` → belgelerdeki
+  durum notları → commit → `git tag -a vX.Y.Z` → `main` + etiketi push → canlıda kontrol.
 - Proje bir öğrenme / hobi projesi: **sadece ücretsiz servisler** (alan adı, ücretli plan önerme; gerekirse ödünleşimi bir kez söyle).
 
 ## Kurallar
