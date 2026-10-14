@@ -149,35 +149,56 @@
   );
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // 3 · Kutu ve Kıvılcım — Zindan. Kutu (itme, plakayı tutma, basamak) ve kıvılcım fırlatması.
-  //   Başlangıç ile çıkış arasında 6 karoluk karanlık su: Işık'ın zıplama menzili 5 karo, yani tek başına geçemez.
-  //   Gölge suyun dibinden geçer, karşı kıyıdaki kutuyu sarı plakaya iter (taş kapı kutuyla açık kalır), sonra geri yüzer.
-  //   İkisi birlikte havada çarpışırsa kıvılcım Işık'ı karşı kıyıya fırlatır (Gölge arkadan, ikisi de zıplarken).
-  //   Kapının ardında ikinci bir su (2 karo) ve alçak huzmeli tünel: Işık atlar, Gölge yüzer ve yürür; tünelde zıplayan Gölge yok olur.
+  // 3 · Zindan Labirenti — Zindan. Kutu (itme, plakayı tutma) + kıvılcım fırlatması; üç kat, zikzak labirent.
+  //   ALT KAT (A, soldan sağa): 6 karoluk su (Işık atlayamaz). Gölge dipten yüzer, kutuyu sarı plakaya iter (plaka kapıdan uzak:
+  //     basılı tutan karakter kapıya yetişemez, kutu şart). Işık için tek yol kıvılcım fırlatması: Gölge arkada, ikisi zıplarken çarpar.
+  //     Sarı kapı, ikinci su (2 karo), taş basamaklar ve boşluklu platform: ORTA KATA çıkış.
+  //   ORTA KAT (B, sağdan sola): baş hizasında huzme koridoru (Gölge yürür), kırmızı plaka + kırmızı taş kapı + kırmızı kaldıraç:
+  //     biri plakayı tutarken öbürü kapıdan geçip en batıdaki kaldıracı (geri dönerek) çeker → kapı kalıcı açılır. Sonra batıda basamaklarla ÜST KATA.
+  //   ÜST KAT (C, soldan sağa): alttaki delik, ikinci huzme koridoru; çıkışlar sağ uçta.
+  //   Ölüm yerleri: iki su, iki huzme koridoru, kutunun ve fırlatmanın hatası (Işık suya düşer). Yan çıkmazlar: doğu cep (B) ve C'deki boşluk.
   // ─────────────────────────────────────────────────────────────────────────────
   LEVELS.push(
-    build('kutu-ve-kivilcim', { tr: 'Kutu ve Kıvılcım', en: 'Crate & Spark' }, 'dungeon', (b) => {
+    build('zindan-labirenti', { tr: 'Zindan Labirenti', en: 'Dungeon Maze' }, 'dungeon', (b) => {
       b.frame();
-      b.dependent('light'); // Gölge tek başına yüzüp kapısına varabilir; Işık varamaz
-      b.fill(11, 20, 16, 20, 'w'); // büyük su (6 karo)
-      b.box(19, 19);
-      b.plate(24, 19, 'amber', 'any');
-      b.fill(25, 2, 25, 13); // taş kapının üstü
-      b.sdoor(25, 14, 19, 'amber');
-      b.fill(29, 20, 30, 20, 'w'); // ikinci su (2 karo)
-      b.fill(33, 14, 33, 17); // tünel girişi (2 karolu açıklık)
-      b.fill(34, 14, 38, 16); // tünel tavanı
-      b.beam(39, 17, 'l');
+      b.dependent('light'); // Gölge tek başına kapısına varabilir (plaka/kaldıraç zinciri hariç: ikisi de zorunlu), Işık varamaz
+      // --- döşemeler: B katı (satır 14) ve C katı (satır 8); açıklıklar: B'de 31-36 (doğu), C'de 3-7 (batı)
+      b.fill(1, 14, 30, 14).fill(37, 14, 38, 14);
+      b.fill(1, 8, 2, 8).fill(8, 8, 38, 8);
+      // --- ALT KAT ---
+      b.fill(10, 20, 15, 20, 'w'); // büyük su (6 karo): Işık yalnız fırlatmayla geçer
+      b.box(17, 19);
+      b.plate(19, 19, 'amber');
+      b.fill(20, 19, 20, 19); // engel: kutu burada durur (plakanın üstünde), karakterler üstünden zıplar
+      b.sdoor(27, 15, 19, 'amber'); // plakadan 8 karo uzakta
+      b.fill(29, 20, 30, 20, 'w'); // ikinci su
+      b.fill(32, 18, 33, 19); // basamak (31. sütun zemin: Gölge suyun dibinden buraya çıkar)
+      b.fill(34, 16, 36, 16); // boşluğun altındaki ince platform
+      // --- ORTA KAT ---
+      b.beam(39, 10, 'l'); // doğu duvardan batıya, 25. sütundaki sütuna kadar (başın ~75 px üstü)
+      b.fill(25, 9, 25, 10); // tavandan sarkan sütun: huzmeyi keser, altı (3 karo) geçit
+      b.plate(24, 13, 'red');
+      b.sdoor(17, 9, 13, 'red');
+      b.lever(2, 13, 'red'); // en batıda, çıkış basamaklarının ötesinde: oraya gidip geri dönerek (doğuya geçerek) sağa yatırılır; basamakları kullananlar ona bir daha dokunmaz
+      b.fill(6, 12, 7, 13); // batı basamağı
+      b.fill(3, 10, 4, 10); // üst kata açıklığın altındaki ince platform (5. sütun boş: basamaktan batıya inilebilir)
+      // --- ÜST KAT ---
+      b.beam(39, 5, 'l');
+      b.fill(20, 2, 20, 5); // sütun: huzmeyi keser
+      // toplanabilirler
       b.star(13, 16); // fırlatma yayının üstünde
-      b.star(21, 19);
-      b.star(36, 19);
-      b.feather(13, 20); // büyük suyun dibinde
-      b.feather(22, 19);
-      b.feather(29, 20); // ikinci suyun dibinde
-      b.feather(36, 18); // huzmenin hemen altı (kısa sıçrayış)
-      b.doorShadow(35, 19);
-      b.doorLight(37, 19);
-      b.light(3, 19);
+      b.star(22, 19);
+      b.star(38, 12); // doğu cep (orta kat)
+      b.star(30, 6);
+      b.feather(13, 20); // suyun dibi
+      b.feather(29, 20); // ikinci suyun dibi
+      b.feather(29, 12); // huzme koridorunda
+      b.feather(9, 13);
+      b.feather(33, 6); // huzmenin hemen altı (kısa sıçrayış)
+      b.doorShadow(35, 7);
+      b.doorLight(37, 7);
+      b.fill(1, 17, 3, 17); // Işık'ın başladığı ince platform (altı açık)
+      b.light(2, 16);
       b.shadow(5, 19);
     }),
   );
