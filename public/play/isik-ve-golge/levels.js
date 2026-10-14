@@ -263,6 +263,58 @@
     }),
   );
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 5 · Zindan Sınavı — Zindan bölge sınavı. FARKLI DÜZEN: dört odalı merkez (2×2); hepsi İLERİ/AŞAĞI akar (tırmanış yok).
+  //   Başlangıç sol üstte (SÜ). Çıkışlar sağ altta (SA). İki yol var; ikisi de diğerinin yardımına bağlı (çapraz bağımlılık):
+  //   • Gölge: SÜ'deki kutuyu delikten aşağı iter, kendisi de iner (SA'ya değil SOL ALT'a: SolA). SolA'da kutuyu basamak yapıp ince bir rafa, KARANLIK
+  //     perdenin ardından (yalnız Gölge geçer) çıkar ve kaldıracı çeker → SÜ→SağÜ kapısı (sarı) açılır.
+  //   • Işık: kapıdan SağÜ'ye geçer, deliği atlayıp en sağdaki KANDİLİ yakar → SolA→SA kapısı (mavi) açılır; sonra deliğe atlayıp SA'ya iner.
+  //   • SA: Gölge kapıdan gelir, Işık delikten düşer. 6 karoluk su (Işık için KIVILCIM FIRLATMASI), sonra huzmeli alçak tünel ve çıkışlar.
+  //   Kullanılanlar: su, huzme, perdeler, taş kapı, kaldıraç, kutu, fırlatma, kandil.
+  // ─────────────────────────────────────────────────────────────────────────────
+  LEVELS.push(
+    build('zindan-sinavi', { tr: 'Zindan Sınavı', en: 'Dungeon Trial' }, 'dungeon', (b) => {
+      b.frame();
+      b.dependent('light', 'shadow');
+      // orta döşeme (satır 10-11): delikler SÜ'de 3-5, SağÜ'de 20-23
+      b.fill(1, 10, 2, 11).fill(6, 10, 19, 11).fill(24, 10, 38, 11);
+      // dikey bölme (sütun 16): üstte sarı kapı (satır 6-9), altta mavi kapı (satır 16-19)
+      b.fill(16, 2, 16, 5).fill(16, 10, 16, 11).fill(16, 12, 16, 15);
+      b.sdoor(16, 6, 9, 'amber');
+      b.sdoor(16, 16, 19, 'blue');
+      // --- SOL ÜST ---
+      b.beam(0, 7, 'r'); // batı duvardan doğuya; sütun huzmeyi keser (deliği kapsar)
+      b.fill(7, 2, 7, 7);
+      b.box(9, 9);
+      // --- SOL ALT ---
+      b.fill(8, 19, 8, 19); // engel: kutu burada durur (basamak)
+      b.fill(9, 16, 11, 16); // ince raf (kaldıraç)
+      b.fill(8, 14, 8, 15, 'd'); // karanlık perde: yalnız Gölge geçer
+      b.lever(11, 15, 'amber');
+      b.fill(13, 20, 14, 20, 'w'); // su (2 karo)
+      // --- SAĞ ÜST ---
+      b.lantern(39, 9, 'l', { group: 'blue' }); // doğu duvara gömülü, batıya bakar; Işık yakar
+      // --- SAĞ ALT ---
+      b.fill(25, 20, 30, 20, 'w'); // büyük su (6 karo): Işık için fırlatma
+      b.fill(33, 12, 33, 17); // tünel girişi (2+1 karolu açıklık)
+      b.fill(34, 12, 38, 16); // tünel tavanı
+      b.beam(39, 17, 'l');
+      // toplanabilirler
+      b.star(12, 8);
+      b.star(36, 8);
+      b.star(22, 18);
+      b.star(36, 19);
+      b.feather(13, 20);
+      b.feather(10, 15);
+      b.feather(27, 20);
+      b.feather(36, 18);
+      b.doorShadow(35, 19);
+      b.doorLight(37, 19);
+      b.light(11, 9);
+      b.shadow(13, 9);
+    }),
+  );
+
   const api = { LEVELS, build };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.IVGLevels = api;
