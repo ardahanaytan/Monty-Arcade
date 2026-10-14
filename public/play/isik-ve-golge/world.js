@@ -25,6 +25,8 @@
   const SPARK = { base: 200, perRel: 1.1, max: 640, cooldown: 0.3, hop: 170 };
   const PUSH_MAX = 110; // kutu iterken azami hız (px/sn)
   const BOX = 32;
+  const LANTERN_REACH = 44; // kandile bu kadar yakın olan dokunmuş sayılır (duvara gömülü kandilin önündeki kutunun arkasından da erişilir)
+  const LB = 34; // kandil huzmesinin kalınlığı: karakter boyunda, zıplayarak aşılamaz
   const SDOOR_SPEED = 1.8; // taş kapı: tam açılma ~0,55 sn
   const DOOR_HOLD = 0.55; // ikisi de kapıdayken bölümün bitmesi için bekleme (sn)
 
@@ -58,7 +60,10 @@
       this.list = [this.heroes.light, this.heroes.shadow];
       this.doors = level.doors.map((d) => ({ kind: d.kind, c: d.c, r: d.r, x: d.c * TILE, y: (d.r - 1) * TILE, w: TILE, h: TILE * 2, open: 0 }));
       this.items = level.items.map((it, i) => ({ id: i, kind: it.kind, x: it.c * TILE + TILE / 2, y: it.r * TILE + TILE / 2, taken: false }));
-      this.beams = (level.beams || []).map((b) => this.traceBeam(b));
+      /** Kandil: Işık dokununca yanar, Gölge dokununca söner. Yanıkken dokunduğu yönde ışık huzmesi yayar (Gölge için ölümcül) ve bağlı kapıyı açar. */
+      this.lanterns = (level.lanterns || []).map((l) => ({ ...l, lit: !!l.lit }));
+      this.beamSrc = (level.beams || []).map((b) => ({ ...b, kind: 'static' }));
+      this.beams = [];
       /** Kaldıraç: iki konumlu, kalıcı. 'right' = açık. Karakter hangi yönden içinden geçerse o yöne yatar. */
       this.levers = (level.levers || []).map((l) => ({ ...l, pos: 'left', x: l.c * TILE + TILE / 2 }));
       /** Basınç plakası: üstünde ağırlık olduğu sürece aktif. */
@@ -68,6 +73,7 @@
       this.force = new Set(); // testler: bu gruplar sanki açılmış sayılır
       /** İtilebilir kutu: karakterler iter (yavaş), yerçekimi, plakayı basılı tutar, basamak olur. */
       this.boxes = (level.boxes || []).map((b) => ({ x: b.c * TILE, y: (b.r + 1) * TILE - BOX, w: BOX, h: BOX, vy: 0, onGround: false }));
+      this.updateBeams();
       this.collected = { star: 0, feather: 0 };
       this.total = { star: this.items.filter((i) => i.kind === 'star').length, feather: this.items.filter((i) => i.kind === 'feather').length };
     }
@@ -239,6 +245,7 @@
       for (const h of this.list) this.simulate(h, dt, (inp && inp[h.kind]) || {});
       this.updateBoxes(dt);
       this.triggers(dt);
+      this.updateBeams();
       this.hazards();
       if (this.state === 'dead') return;
       this.sparks(dt);
@@ -359,9 +366,19 @@
         p.down = this.list.some((h) => !h.dead && overlap(h, p.rect)) || this.boxes.some((b) => overlap(b, p.rect));
         if (p.down !== was) this.emit('plate', { x: p.c * TILE + TILE / 2, y: (p.r + 1) * TILE, down: p.down, group: p.group });
       }
+      // kandiller: Işık yakar, Gölge söndürür (yakınlık yeterli)
+      for (const l of this.lanterns) {
+        const zone = { x: l.c * TILE - LANTERN_REACH, y: l.r * TILE - 4, w: TILE + LANTERN_REACH * 2, h: TILE + 8 };
+        const was = l.lit;
+        if (this.heroes.light && !this.heroes.light.dead && overlap(this.heroes.light, zone)) l.lit = true;
+        if (this.heroes.shadow && !this.heroes.shadow.dead && overlap(this.heroes.shadow, zone)) l.lit = false;
+        if (l.lit !== was) this.emit('lantern', { x: l.c * TILE + TILE / 2, y: l.r * TILE + TILE / 2, lit: l.lit });
+      }
       // taş kapılar
       for (const d of this.sdoors) {
-        const on = this.force.has(d.group) || this.levers.some((l) => l.group === d.group && l.pos === 'right') || this.plates.some((p) => p.group === d.group && p.down);
+        const lamps = this.lanterns.filter((l) => l.group === d.group);
+        const lampOn = d.inv ? lamps.length > 0 && lamps.every((l) => !l.lit) : lamps.some((l) => l.lit);
+        const on = this.force.has(d.group) || lampOn || this.levers.some((l) => l.group === d.group && l.pos === 'right') || this.plates.some((p) => p.group === d.group && p.down);
         const was = d.open;
         if (on) d.open = Math.min(1, d.open + dt * SDOOR_SPEED);
         else {
@@ -375,14 +392,68 @@
       }
     }
 
-    // --- Huzme izi: yayıcıdan ilk duvara kadar ---
+    // --- Huzmeler: yayıcıdan ilk duvara / kapalı taş kapıya / kutuya kadar; her adımda yeniden hesaplanır ---
+    rayBlocked(c, r) {
+      if (this.tileAt(c, r) === '#') return true;
+      for (const d of this.sdoors) if (d.c === c && r >= d.r0 && r < d.r0 + this.closedRows(d)) return true;
+      return false;
+    }
+    updateBeams() {
+      const out = [];
+      for (const s of this.beamSrc) out.push(this.traceBeam(s));
+      for (const l of this.lanterns) if (l.lit) {
+        const t = this.traceLantern(l);
+        if (t) out.push(t);
+      }
+      this.beams = out;
+    }
+    /** Kandil huzmesi: kandilin merkezinden başlar, karakter boyunda (zemine hizalı), kutu ve kapalı kapı keser. */
+    traceLantern(l) {
+      const d = { u: [0, -1], d: [0, 1], l: [-1, 0], r: [1, 0] }[l.dir];
+      let c = l.c + d[0];
+      let r = l.r + d[1];
+      while (!this.rayBlocked(c, r)) {
+        c += d[0];
+        r += d[1];
+      }
+      const horiz = d[1] === 0;
+      const ox = l.c * TILE + TILE / 2;
+      const oy = l.r * TILE + TILE / 2;
+      let rect;
+      if (horiz) {
+        const y = (l.r + 1) * TILE - LB;
+        const x1 = d[0] > 0 ? c * TILE : (c + 1) * TILE;
+        let end = x1;
+        for (const b of this.boxes) {
+          if (b.y >= y + LB || b.y + b.h <= y) continue;
+          if (d[0] > 0 && b.x + b.w > ox && b.x < end) end = Math.max(ox, b.x);
+          if (d[0] < 0 && b.x < ox && b.x + b.w > end) end = Math.min(ox, b.x + b.w);
+        }
+        const w = Math.abs(end - ox);
+        if (w < 2) return null;
+        rect = { x: Math.min(ox, end), y, w, h: LB };
+      } else {
+        const x = l.c * TILE + TILE / 2 - LB / 2;
+        const y1 = d[1] > 0 ? r * TILE : (r + 1) * TILE;
+        let end = y1;
+        for (const b of this.boxes) {
+          if (b.x >= x + LB || b.x + b.w <= x) continue;
+          if (d[1] > 0 && b.y + b.h > oy && b.y < end) end = Math.max(oy, b.y);
+          if (d[1] < 0 && b.y < oy && b.y + b.h > end) end = Math.min(oy, b.y + b.h);
+        }
+        const h = Math.abs(end - oy);
+        if (h < 2) return null;
+        rect = { x, y: Math.min(oy, end), w: LB, h };
+      }
+      return { c: l.c, r: l.r, dir: l.dir, ...rect, horiz, lantern: true };
+    }
     traceBeam(b) {
       const d = { u: [0, -1], d: [0, 1], l: [-1, 0], r: [1, 0] }[b.dir];
       let c = b.c + d[0];
       let r = b.r + d[1];
       const c0 = c;
       const r0 = r;
-      while (this.tileAt(c, r) !== '#') {
+      while (!this.rayBlocked(c, r)) {
         c += d[0];
         r += d[1];
       }

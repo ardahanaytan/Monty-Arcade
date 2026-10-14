@@ -205,6 +205,9 @@
         sound.noise(0, 0.5, 160, 1, 0.22, 'lowpass');
         sound.tone(e.open ? 110 : 90, 0, 0.45, 'sine', 0.05, e.open ? 140 : 70);
         G.shake = Math.max(G.shake, 2);
+      } else if (e.type === 'lantern') {
+        burst(e.x, e.y, 12, e.lit ? '#ffe9a8' : '#8c93c8', 100, 0.6, 2.4);
+        sound.tone(e.lit ? 660 : 330, 0, 0.25, 'sine', 0.06, e.lit ? 880 : 200);
       } else if (e.type === 'boxpush') {
         sound.noise(0, 0.05, 300, 1, 0.05, 'lowpass');
       } else if (e.type === 'doorin') {

@@ -19,6 +19,7 @@
     const plates = [];
     const sdoors = [];
     const boxes = [];
+    const lanterns = [];
     let exclusive = false;
     let dependent = [];
     const b = {
@@ -47,16 +48,18 @@
       /** Basınç plakası (c, r: üstüne basılan zemin satırı). */
       plate: (c, r, group, who = 'any') => (plates.push({ c, r, group, who }), b),
       /** Taş kapı: c sütunu, r0..r1 satırları (yukarı kayarak açılır). */
-      sdoor: (c, r0, r1, group) => (sdoors.push({ c, r0, r1, group }), b),
+      sdoor: (c, r0, r1, group, o = {}) => (sdoors.push({ c, r0, r1, group, ...o }), b),
       /** Yardım almadan şu karakterler kapısına varamaz (varsayılan: ikisi); testte kanıtlanır. */
       dependent: (...kinds) => ((dependent = kinds.length ? kinds : ['light', 'shadow']), b),
       /** İtilebilir kutu (c, r: üzerinde durduğu zemin satırı). */
       box: (c, r) => (boxes.push({ c, r }), b),
+      /** Kandil (c, r): Işık yakar, Gölge söndürür. dir: huzme yönü (u|d|l|r). o: { lit (başta yanık), group (bağlı taş kapı) }. Duvara gömülü olabilir. */
+      lantern: (c, r, dir, o = {}) => (lanterns.push({ c, r, dir, ...o }), b),
       star: (c, r) => (items.push({ kind: 'star', c, r }), b),
       feather: (c, r) => (items.push({ kind: 'feather', c, r }), b),
     };
     fn(b);
-    return { id, name, region, cols, rows, tiles: g.map((r) => r.join('')), starts, doors, items, beams, levers, plates, sdoors, boxes, exclusive, dependent };
+    return { id, name, region, cols, rows, tiles: g.map((r) => r.join('')), starts, doors, items, beams, levers, plates, sdoors, boxes, lanterns, exclusive, dependent };
   }
 
   const LEVELS = [];
@@ -200,6 +203,63 @@
       b.fill(1, 17, 3, 17); // Işık'ın başladığı ince platform (altı açık)
       b.light(2, 16);
       b.shadow(5, 19);
+    }),
+  );
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 4 · Kandil Labirenti — Zindan. KANDİL (Işık yakar, Gölge söndürür; huzmesi Gölge'yi yok eder) ve KUTUNUN GÖLGESİ (kutu huzmeyi keser,
+  //   arkası güvenli). Aynı üç katlı zikzak; her kat farklı bir kandil bulmacası.
+  //   ALT KAT: Batıda alçak bir tünel; ucundaki duvara gömülü bekçi kandili (başta yanık) tüneli ölümcül yapar. Tünelin ağzında kutu, ucunda plaka.
+  //     Alçak tavan yüzünden kutunun önüne geçilemez: Gölge kutuyu tünelin ucuna iter, kutunun arkasında gölgelik içinde yürür. Kutu kandile bitişik
+  //     plakaya oturunca taş kapı (plakadan 25 karo uzakta) kalıcı açılır. Kutu şart: plakayı elle tutan karakter kapıya yetişemez.
+  //   ORTA KAT (sağdan sola): L3'teki gibi huzme koridoru, kırmızı plaka + taş kapı + en batıdaki kaldıraç; sonra batıdaki basamaklarla üst kata.
+  //   ÜST KAT (soldan sağa): sonda bekçi kandili (başta yanık, doğu duvara gömülü, batıya bakar) çıkışları kaplar. Önce kaldıraç yeşil taş kapıyı açar
+  //     (kapı kutuyla korunur); Gölge kutuyu 22 karo doğuya, kandile bitişene dek iter (arkası gölgelik) ve kandile yaklaşıp söndürür; sonra çıkışlar.
+  //   Yalnız Gölge'nin yürüyeceği her yer ölümcül olabilir: ışık huzmeleri karakter boyunda, zıplayarak aşılamaz.
+  // ─────────────────────────────────────────────────────────────────────────────
+  LEVELS.push(
+    build('kandil-labirenti', { tr: 'Kandil Labirenti', en: 'Lantern Maze' }, 'dungeon', (b) => {
+      b.frame();
+      b.dependent('light', 'shadow');
+      b.fill(1, 14, 30, 14).fill(37, 14, 38, 14); // B katı (açıklık 31-36)
+      b.fill(1, 8, 2, 8).fill(8, 8, 38, 8); // C katı (açıklık 3-7)
+      // --- ALT KAT ---
+      // Batıda alçak tünel (iç yükseklik 2 karo): ucundaki duvara gömülü bekçi kandili (başta yanık) doğuya bakar, tüneli ölümcül yapar.
+      // Kutu tünelin ağzında: kutu ile alçak tavan yüzünden kimse kutunun önüne geçemez (zıplanamaz); kutu huzmeyi keser (ardı güvenli).
+      b.fill(1, 15, 12, 17); // tünel tavanı
+      b.lantern(0, 19, 'r', { lit: true });
+      b.plate(1, 19, 'amber'); // tünelin en ucunda: kutu kandile bitişik durunca plakaya oturur
+      b.box(12, 19);
+      b.sdoor(26, 15, 19, 'amber'); // ana yol: plakadan 25 karo uzakta, yalnız kutu açık tutar
+      b.fill(28, 20, 29, 20, 'w'); // su (2 karo)
+      b.fill(32, 18, 33, 19); // basamak
+      b.fill(34, 16, 36, 16); // boşluğun altındaki ince platform
+      // --- ORTA KAT --- (L3'tekiyle aynı kurgu)
+      b.beam(39, 10, 'l');
+      b.fill(25, 9, 25, 10);
+      b.plate(24, 13, 'red');
+      b.sdoor(17, 9, 13, 'red');
+      b.lever(2, 13, 'red');
+      b.fill(6, 12, 7, 13);
+      b.fill(3, 10, 4, 10);
+      // --- ÜST KAT ---
+      b.lever(10, 7, 'green');
+      b.box(16, 7);
+      b.sdoor(17, 2, 7, 'green');
+      b.lantern(39, 7, 'l', { lit: true }); // bekçi kandili: doğu duvara gömülü, batıya bakar
+      // toplanabilirler
+      b.star(28, 16); // suyun üstü
+      b.star(38, 12); // doğu cep (orta kat)
+      b.star(30, 6);
+      b.star(20, 19);
+      b.feather(28, 20); // suyun dibi
+      b.feather(29, 12); // huzme koridorunda (kısa sıçrayış)
+      b.feather(9, 13);
+      b.feather(25, 6);
+      b.doorShadow(35, 7);
+      b.doorLight(37, 7);
+      b.light(17, 19);
+      b.shadow(19, 19);
     }),
   );
 

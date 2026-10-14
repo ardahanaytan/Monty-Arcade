@@ -395,6 +395,7 @@
         if (b.horiz) ctx.fillRect(b.x + b.w - u, b.y + b.h / 2 - 1 + Math.sin(i * 3 + t * 9) * 6, 3, 2);
         else ctx.fillRect(b.x + b.w / 2 - 1 + Math.sin(i * 3 + t * 9) * 6, b.y + u, 2, 3);
       }
+      if (b.lantern) continue;
       // yayıcı mercek (duvar karosunda)
       const ex = b.c * TILE + TILE / 2;
       const ey = b.r * TILE + TILE / 2;
@@ -540,6 +541,49 @@
     ctx.fillRect(x + 2, y + 2, b.w - 4, 2);
   }
 
+  // --- Kandil ---
+  function drawLanterns(ctx, w, t) {
+    for (const l of w.lanterns) {
+      const x = l.c * TILE + TILE / 2;
+      const y = l.r * TILE + TILE / 2;
+      const on = l.lit;
+      const fl = on ? 0.85 + Math.sin(t * 9 + l.c) * 0.1 : 0;
+      if (on) glow(ctx, x, y, 70, '255,210,120', 0.55 * fl);
+      // gövde (duvara/zemine monte, huzme yönüne bakan fener)
+      ctx.fillStyle = '#0a0d22';
+      rr(ctx, x - 11, y - 14, 22, 28, 6);
+      ctx.fill();
+      ctx.strokeStyle = on ? 'rgba(255,214,140,.95)' : 'rgba(120,130,190,.8)';
+      ctx.lineWidth = 2;
+      rr(ctx, x - 11, y - 14, 22, 28, 6);
+      ctx.stroke();
+      // alev
+      const fx = x + (l.dir === 'r' ? 4 : l.dir === 'l' ? -4 : 0);
+      const fy = y + (l.dir === 'd' ? 4 : l.dir === 'u' ? -4 : 0);
+      if (on) {
+        ctx.fillStyle = `rgba(255,236,170,${fl})`;
+        ctx.beginPath();
+        ctx.ellipse(fx, fy, 5, 8 + Math.sin(t * 12 + l.c) * 1.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        ctx.fillStyle = 'rgba(120,130,190,.35)';
+        ctx.beginPath();
+        ctx.ellipse(fx, fy, 4, 6, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // yön oku (hangi tarafa ışık verir)
+      ctx.fillStyle = on ? 'rgba(255,214,140,.9)' : 'rgba(150,160,210,.55)';
+      const dx = l.dir === 'r' ? 1 : l.dir === 'l' ? -1 : 0;
+      const dy = l.dir === 'd' ? 1 : l.dir === 'u' ? -1 : 0;
+      ctx.beginPath();
+      ctx.moveTo(x + dx * 18, y + dy * 18);
+      ctx.lineTo(x + dx * 10 - dy * 5, y + dy * 10 + dx * 5);
+      ctx.lineTo(x + dx * 10 + dy * 5, y + dy * 10 - dx * 5);
+      ctx.fill();
+      if (l.group) rune(ctx, l.group, x, y - 26, 5, on ? 0.95 : 0.55);
+    }
+  }
+
   // --- Sahne ---
   function drawScene(ctx, w, cam, t) {
     drawBackground(ctx, w, t);
@@ -548,6 +592,7 @@
     drawTiles(ctx, w, t);
     for (const d of w.doors) drawDoor(ctx, d, t);
     drawBeams(ctx, w, t);
+    drawLanterns(ctx, w, t);
     drawPlates(ctx, w, t);
     drawLevers(ctx, w, t);
     drawSDoors(ctx, w, t);
