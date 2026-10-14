@@ -266,9 +266,11 @@
     const cx = h.x + h.w / 2;
     const base = h.y + h.h; // ayak
     const sq = h.squash;
+    const dp = h.deadP || 0;
     ctx.save();
-    ctx.translate(cx, base);
-    ctx.scale((1 / sq) * 0.6 + 0.4, sq);
+    ctx.globalAlpha = 1 - dp;
+    ctx.translate(cx, base - (light ? 0 : dp * 20));
+    ctx.scale(((1 / sq) * 0.6 + 0.4) * (light ? 1 - dp * 0.5 : 1 + dp * 0.6), sq * (light ? 1 - dp * 0.3 : 1));
     const f = h.face;
     const bob = h.onGround && Math.abs(h.vx) > 8 ? Math.abs(Math.sin(h.walk)) * 2 : 0;
     if (light) {
@@ -341,6 +343,73 @@
     ctx.restore();
   }
 
+
+  // --- Karanlık su: karakterlerin ÜSTÜNE yarı saydam çizilir (içindekiler batmış görünür) ---
+  function drawWater(ctx, w, t) {
+    for (let r = 0; r < w.rows; r++) {
+      for (let c = 0; c < w.cols; c++) {
+        if (w.tiles[r][c] !== 'w') continue;
+        const x = c * TILE;
+        const y = r * TILE;
+        const top = w.tiles[r - 1] && w.tiles[r - 1][c] === 'w' ? 0 : 1;
+        const g = ctx.createLinearGradient(0, y, 0, y + TILE);
+        g.addColorStop(0, top ? 'rgba(46,20,96,.88)' : 'rgba(30,12,70,.86)');
+        g.addColorStop(1, 'rgba(14,6,38,.92)');
+        ctx.fillStyle = g;
+        ctx.fillRect(x, y + (top ? 3 : 0), TILE, TILE - (top ? 3 : 0));
+        if (top) {
+          // yüzey dalgası
+          ctx.fillStyle = 'rgba(160,110,255,.8)';
+          ctx.beginPath();
+          ctx.moveTo(x, y + 4);
+          for (let k = 0; k <= TILE; k += 4) ctx.lineTo(x + k, y + 3 + Math.sin(t * 2.4 + (x + k) * 0.09) * 2);
+          ctx.lineTo(x + TILE, y + 6);
+          ctx.lineTo(x, y + 6);
+          ctx.fill();
+        }
+        // dipteki yavaş kıpırtılar
+        ctx.fillStyle = 'rgba(150,100,255,.16)';
+        const k = ((t * 12 + c * 17 + r * 9) % 28) + 2;
+        ctx.fillRect(x + k, y + 10 + ((c + r) % 3) * 6, 3, 2);
+      }
+    }
+  }
+
+  // --- Sabit ışık huzmesi ---
+  function drawBeams(ctx, w, t) {
+    for (const b of w.beams) {
+      const flick = 0.85 + Math.sin(t * 30) * 0.08;
+      // geniş parıltı
+      const pad = 14;
+      ctx.fillStyle = `rgba(255,224,150,${0.12 * flick})`;
+      ctx.fillRect(b.x - pad, b.y - pad, b.w + pad * 2, b.h + pad * 2);
+      ctx.fillStyle = `rgba(255,236,190,${0.35 * flick})`;
+      ctx.fillRect(b.x - 5, b.y - 5, b.w + 10, b.h + 10);
+      // çekirdek
+      ctx.fillStyle = `rgba(255,252,235,${0.95 * flick})`;
+      ctx.fillRect(b.x + (b.horiz ? 0 : 2), b.y + (b.horiz ? 2 : 0), b.horiz ? b.w : b.w - 4, b.horiz ? b.h - 4 : b.h);
+      // akan kıvılcımlar
+      for (let i = 0; i < Math.floor((b.horiz ? b.w : b.h) / 60); i++) {
+        const u = (((t * 90 + i * 60) % (b.horiz ? b.w : b.h)) + (b.horiz ? b.w : b.h)) % (b.horiz ? b.w : b.h);
+        ctx.fillStyle = 'rgba(255,255,255,.8)';
+        if (b.horiz) ctx.fillRect(b.x + b.w - u, b.y + b.h / 2 - 1 + Math.sin(i * 3 + t * 9) * 6, 3, 2);
+        else ctx.fillRect(b.x + b.w / 2 - 1 + Math.sin(i * 3 + t * 9) * 6, b.y + u, 2, 3);
+      }
+      // yayıcı mercek (duvar karosunda)
+      const ex = b.c * TILE + TILE / 2;
+      const ey = b.r * TILE + TILE / 2;
+      glow(ctx, ex, ey, 40, '255,224,150', 0.5 * flick);
+      ctx.fillStyle = '#0a0d22';
+      ctx.beginPath();
+      ctx.arc(ex, ey, 11, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = `rgba(255,244,210,${flick})`;
+      ctx.beginPath();
+      ctx.arc(ex, ey, 6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
   // --- Sahne ---
   function drawScene(ctx, w, cam, t) {
     drawBackground(ctx, w, t);
@@ -348,13 +417,17 @@
     ctx.translate(cam.x, cam.y);
     drawTiles(ctx, w, t);
     for (const d of w.doors) drawDoor(ctx, d, t);
+    drawBeams(ctx, w, t);
     for (const it of w.items) drawItem(ctx, it, t);
     // Işık'ın çevresine hafif aydınlatma
     const L = w.heroes.light;
     glow(ctx, L.x + L.w / 2, L.y + L.h / 2, 150, '255,210,130', 0.1);
     // pasif çizim sırası: Gölge arkada
-    drawHero(ctx, w.heroes.shadow, t);
-    drawHero(ctx, w.heroes.light, t);
+    for (const h of [w.heroes.shadow, w.heroes.light]) {
+      h.deadP = h.dead ? clamp(w.deadT / 0.9) : 0;
+      drawHero(ctx, h, t);
+    }
+    drawWater(ctx, w, t);
     ctx.restore();
   }
 

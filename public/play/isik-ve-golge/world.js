@@ -41,7 +41,9 @@
       this.rows = level.rows;
       this.tiles = level.tiles.map((r) => r.split(''));
       this.time = 0;
-      this.state = 'play'; // play | won
+      this.state = 'play'; // play | won | dead
+      this.deadT = 0;
+      this.deadCause = null;
       this.stateT = 0;
       this.doorT = 0;
       this.events = [];
@@ -52,6 +54,7 @@
       this.list = [this.heroes.light, this.heroes.shadow];
       this.doors = level.doors.map((d) => ({ kind: d.kind, c: d.c, r: d.r, x: d.c * TILE, y: (d.r - 1) * TILE, w: TILE, h: TILE * 2, open: 0 }));
       this.items = level.items.map((it, i) => ({ id: i, kind: it.kind, x: it.c * TILE + TILE / 2, y: it.r * TILE + TILE / 2, taken: false }));
+      this.beams = (level.beams || []).map((b) => this.traceBeam(b));
       this.collected = { star: 0, feather: 0 };
       this.total = { star: this.items.filter((i) => i.kind === 'star').length, feather: this.items.filter((i) => i.kind === 'feather').length };
     }
@@ -77,6 +80,9 @@
         sparkCD: 0,
         bumpCD: 0,
         landV: 0,
+        dead: false,
+        immune: false, // testler: tehlikelerden etkilenmez
+        wet: false,
       };
     }
 
@@ -126,6 +132,10 @@
     // --- Adım ---
     step(dt, inp) {
       this.time += dt;
+      if (this.state === 'dead') {
+        this.deadT += dt;
+        return;
+      }
       if (this.state === 'won') {
         this.stateT += dt;
         for (const d of this.doors) d.open = Math.min(1, d.open + dt * 3);
@@ -137,6 +147,8 @@
         return;
       }
       for (const h of this.list) this.simulate(h, dt, (inp && inp[h.kind]) || {});
+      this.hazards();
+      if (this.state === 'dead') return;
       this.sparks(dt);
       this.pickups();
       this.doorsStep(dt);
@@ -148,6 +160,8 @@
       const dir = (i.right ? 1 : 0) - (i.left ? 1 : 0);
       if (dir) h.face = dir;
 
+      // karanlık su: Gölge yüzer gibi geçer (yavaş, hafif); Işık için ölümcül (hazards)
+      h.wet = h.kind === 'shadow' && this.tileAt(Math.floor((h.x + h.w / 2) / TILE), Math.floor((h.y + h.h / 2) / TILE)) === 'w';
       // yatay ivme
       if (h.onGround) {
         if (dir === 0) {
@@ -171,8 +185,13 @@
       if (pressed) h.buffer = PHYS.buffer;
       else h.buffer = Math.max(0, h.buffer - dt);
       h.coyote = h.onGround ? PHYS.coyote : Math.max(0, h.coyote - dt);
+      if (h.wet && pressed && !h.onGround) {
+        // yüzeye yakınken suyun dışına sıçra
+        const above = this.tileAt(Math.floor((h.x + h.w / 2) / TILE), Math.floor((h.y + 4) / TILE));
+        if (above !== 'w') h.vy = -PHYS.jumpV * 0.8;
+      }
       if (h.buffer > 0 && (h.onGround || h.coyote > 0)) {
-        h.vy = -PHYS.jumpV;
+        h.vy = h.wet ? -330 : -PHYS.jumpV;
         h.onGround = false;
         h.coyote = 0;
         h.buffer = 0;
@@ -186,7 +205,11 @@
       }
 
       // yerçekimi ve hareket
-      h.vy = Math.min(PHYS.maxFall, h.vy + PHYS.gravity * dt);
+      if (h.wet) {
+        h.vy = Math.min(150, h.vy + PHYS.gravity * 0.3 * dt);
+        if (i.jump) h.vy = Math.max(h.vy - 1700 * dt, -170); // zıplama tuşu: yukarı yüz
+        h.vx = Math.max(-PHYS.maxRun * 0.75, Math.min(PHYS.maxRun * 0.75, h.vx));
+      } else h.vy = Math.min(PHYS.maxFall, h.vy + PHYS.gravity * dt);
       const wasGround = h.onGround;
       const hit = this.moveX(h, h.vx * dt);
       if (hit) {
@@ -212,6 +235,52 @@
       } else h.onGround = false;
       if (h.onGround && Math.abs(h.vx) > 8) h.walk += Math.abs(h.vx) * dt * 0.06;
       h.squash += (1 - h.squash) * Math.min(1, dt * 14);
+    }
+
+    // --- Huzme izi: yayıcıdan ilk duvara kadar ---
+    traceBeam(b) {
+      const d = { u: [0, -1], d: [0, 1], l: [-1, 0], r: [1, 0] }[b.dir];
+      let c = b.c + d[0];
+      let r = b.r + d[1];
+      const c0 = c;
+      const r0 = r;
+      while (this.tileAt(c, r) !== '#') {
+        c += d[0];
+        r += d[1];
+      }
+      const c1 = c - d[0];
+      const r1 = r - d[1];
+      const horiz = d[1] === 0;
+      const x0 = Math.min(c0, c1) * TILE;
+      const y0 = Math.min(r0, r1) * TILE;
+      const len = (Math.abs(c1 - c0) + Math.abs(r1 - r0) + 1) * TILE;
+      const rect = horiz ? { x: x0, y: b.r * TILE + TILE / 2 - 5, w: len, h: 10 } : { x: b.c * TILE + TILE / 2 - 5, y: y0, w: 10, h: len };
+      return { c: b.c, r: b.r, dir: b.dir, ...rect, horiz };
+    }
+
+    // --- Ölümcül tehlikeler ---
+    /** Işık: karanlık su söndürür. Gölge: ışık huzmesi yok eder. */
+    hazards() {
+      for (const h of this.list) {
+        if (h.dead || h.immune) continue;
+        if (h.kind === 'light') {
+          const t = this.tileAt(Math.floor((h.x + h.w / 2) / TILE), Math.floor((h.y + h.h / 2) / TILE));
+          if (t === 'w') this.die(h, 'water');
+        } else {
+          const box = { x: h.x + 3, y: h.y + 3, w: h.w - 6, h: h.h - 6 };
+          for (const b of this.beams) if (overlap(box, b)) this.die(h, 'beam');
+        }
+        if (this.state === 'dead') return;
+      }
+    }
+    die(h, cause) {
+      h.dead = true;
+      h.vx = 0;
+      h.vy = 0;
+      this.state = 'dead';
+      this.deadT = 0;
+      this.deadCause = cause;
+      this.emit('death', { kind: h.kind, cause, x: h.x + h.w / 2, y: h.y + h.h / 2 });
     }
 
     // --- Kıvılcım itmesi: dokunacak kadar yaklaşırlarsa ikisi de geri seker ---

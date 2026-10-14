@@ -14,6 +14,8 @@
     const starts = {};
     const doors = [];
     const items = [];
+    const beams = [];
+    let exclusive = false;
     const b = {
       put(c, r, ch) {
         if (c >= 0 && c < cols && r >= 0 && r < rows) g[r][c] = ch;
@@ -31,11 +33,15 @@
       shadow: (c, r) => ((starts.shadow = { c, r }), b),
       doorLight: (c, r) => (doors.push({ kind: 'light', c, r }), b),
       doorShadow: (c, r) => (doors.push({ kind: 'shadow', c, r }), b),
+      /** Sabit ışık huzmesi: yayıcı (c,r) duvar karosundadır; dir: u|d|l|r. Gölge için ölümcül. */
+      beam: (c, r, dir) => (beams.push({ c, r, dir }), b),
+      /** Bu bölümde kapılar birbirinden ayrılmıştır (karşı karakter diğerinin kapısına ulaşamaz); testte kanıtlanır. */
+      exclusive: () => ((exclusive = true), b),
       star: (c, r) => (items.push({ kind: 'star', c, r }), b),
       feather: (c, r) => (items.push({ kind: 'feather', c, r }), b),
     };
     fn(b);
-    return { id, name, region, cols, rows, tiles: g.map((r) => r.join('')), starts, doors, items };
+    return { id, name, region, cols, rows, tiles: g.map((r) => r.join('')), starts, doors, items, beams, exclusive };
   }
 
   const LEVELS = [];
@@ -49,6 +55,7 @@
   LEVELS.push(
     build('ilk-adimlar', { tr: 'İlk Adımlar', en: 'First Steps' }, 'dungeon', (b) => {
       b.frame();
+      b.exclusive();
       // sol bölge: basamaklar (hepsi 2 karo yükseklik farkı, zıplama ~3,3 karo)
       b.fill(7, 18, 8, 19); // P1 (zemine kadar dolu: altından geçilemez, 2 karo basamak)
       b.fill(3, 16, 5, 16); // P2
@@ -80,6 +87,38 @@
       b.doorShadow(36, 11);
       b.light(2, 19);
       b.shadow(5, 19);
+    }),
+  );
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 2 · Karanlık Sular — Zindan. Karanlık su (Işık söner, Gölge yüzer) ve sabit ışık huzmesi (Gölge yok olur).
+  //   Havuzun üstünde tek tek taşlar: Işık sıçrayarak geçer, Gölge suyun dibinden yürür/yüzer.
+  //   Sağdaki alçak tünelde huzme baş hizasına yakın uzanır: Işık'a zarar vermez; Gölge yürüyerek geçer, yüksek zıplarsa yok olur.
+  //   Çıkışlar: Işık kapısı havuzdan sonraki kıyıda, Gölge kapısı tünelin sonunda.
+  // ─────────────────────────────────────────────────────────────────────────────
+  LEVELS.push(
+    build('karanlik-sular', { tr: 'Karanlık Sular', en: 'Dark Waters' }, 'dungeon', (b) => {
+      b.frame();
+      b.fill(13, 19, 23, 20, 'w'); // karanlık su: zemin oyulmuş, dibi 21. satır (2 karo derin)
+      b.fill(14, 18, 15, 18); // taş A (altı 2 karo açık: Gölge altından yürür)
+      b.fill(19, 18, 20, 18); // taş B
+      // tünel: giriş duvarı (2 karolu açıklık), tavan; huzme 17. satırda sağ duvardan sola uzanır ve giriş duvarında biter
+      b.fill(29, 14, 29, 17);
+      b.fill(30, 14, 38, 16);
+      b.beam(39, 17, 'l');
+      // yıldız tozu (Işık): taşlar arası sıçrayış hatları, bir de tünelin içi
+      b.star(17, 16);
+      b.star(22, 16);
+      b.star(33, 19);
+      // gece tüyü (Gölge): suyun dibi, tünel ve huzmenin hemen altı (kısa sıçrayış ister)
+      b.feather(17, 20);
+      b.feather(22, 20);
+      b.feather(31, 19);
+      b.feather(34, 18);
+      b.doorLight(25, 19);
+      b.doorShadow(37, 19);
+      b.light(2, 19);
+      b.shadow(4, 19);
     }),
   );
 

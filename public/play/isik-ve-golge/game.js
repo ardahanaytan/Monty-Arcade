@@ -184,6 +184,17 @@
         for (const c of [Math.floor(e.x / TILE), Math.floor(e.x / TILE) - 1]) if (w.tileAt(c, r) === e.ch) w.curtainFlash[c] = 1;
         burst(e.x, e.y, 10, e.ch === 'l' ? 'rgba(255,214,130,.9)' : 'rgba(150,100,255,.9)', 90, 0.5, 2);
         sound.tone(120, 0, 0.14, 'sine', 0.07, 70);
+      } else if (e.type === 'death') {
+        const light = e.kind === 'light';
+        burst(e.x, e.y, 30, light ? '#9aa4d8' : '#b79bff', 160, 1.0, 3, 40);
+        if (light) {
+          sound.noise(0, 0.5, 700, 1, 0.22, 'lowpass');
+          sound.tone(520, 0, 0.6, 'sine', 0.06, 90);
+        } else {
+          sound.tone(900, 0, 0.5, 'sawtooth', 0.05, 120);
+          sound.noise(0, 0.25, 4000, 1, 0.12, 'highpass');
+        }
+        G.shake = 7;
       } else if (e.type === 'doorin') {
         sound.tone(e.kind === 'light' ? 660 : 495, 0, 0.3, 'sine', 0.05);
       } else if (e.type === 'won') {
@@ -231,6 +242,7 @@
       handleEvents(w);
       for (const k of Object.keys(w.curtainFlash)) w.curtainFlash[k] = Math.max(0, w.curtainFlash[k] - dt * 3);
       if (w.state === 'won' && w.stateT > 1.1) finish();
+      if (w.state === 'dead' && w.deadT > 1.1) startLevel(G.levelIndex);
     }
   }
 
@@ -340,6 +352,7 @@
     drawHUD(w);
     drawHints(w);
     if (sound.muted) text('♪ ✕', VW / 2, VH - 14, 12, { font: 'mono', color: 'rgba(243,234,216,.5)' });
+    if (w.state === 'dead') veil(Math.min(0.55, w.deadT * 0.6));
     if (w.state === 'won') {
       ctx.fillStyle = `rgba(255,236,200,${Math.min(0.3, w.stateT * 0.3)})`;
       ctx.fillRect(0, 0, VW, VH);
