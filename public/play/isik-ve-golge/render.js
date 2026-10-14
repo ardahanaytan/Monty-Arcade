@@ -410,6 +410,114 @@
     }
   }
 
+
+  // --- Kaldıraç, plaka, taş kapı (aynı gruptakiler aynı renkte rünle işaretlenir) ---
+  const GROUP = { red: '255,106,106', blue: '98,170,255', green: '120,230,150', amber: '255,196,90' };
+  const gcol = (g) => GROUP[g] || '243,234,216';
+  function rune(ctx, g, x, y, s, a = 1) {
+    const rgb = gcol(g);
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.strokeStyle = `rgba(${rgb},${a})`;
+    ctx.fillStyle = `rgba(${rgb},${a})`;
+    ctx.lineWidth = 2;
+    // her grup farklı bir simge: kırmızı üçgen, mavi daire, yeşil kare, amber artı
+    ctx.beginPath();
+    if (g === 'red') {
+      ctx.moveTo(0, -s);
+      ctx.lineTo(s * 0.9, s * 0.7);
+      ctx.lineTo(-s * 0.9, s * 0.7);
+      ctx.closePath();
+    } else if (g === 'blue') ctx.arc(0, 0, s * 0.85, 0, Math.PI * 2);
+    else if (g === 'green') ctx.rect(-s * 0.75, -s * 0.75, s * 1.5, s * 1.5);
+    else {
+      ctx.moveTo(-s, 0);
+      ctx.lineTo(s, 0);
+      ctx.moveTo(0, -s);
+      ctx.lineTo(0, s);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+  function drawSDoors(ctx, w, t) {
+    for (const d of w.sdoors) {
+      const x = d.c * TILE;
+      const y0 = d.r0 * TILE;
+      const full = d.len * TILE;
+      const h = full * (1 - d.open);
+      const rgb = gcol(d.group);
+      // açıkken boşalan oluk
+      ctx.fillStyle = 'rgba(5,7,18,.55)';
+      ctx.fillRect(x + 6, y0, TILE - 12, full);
+      if (h > 1) {
+        const g = ctx.createLinearGradient(x, 0, x + TILE, 0);
+        g.addColorStop(0, '#222a52');
+        g.addColorStop(0.5, '#313c70');
+        g.addColorStop(1, '#222a52');
+        ctx.fillStyle = g;
+        ctx.fillRect(x, y0, TILE, h);
+        ctx.fillStyle = 'rgba(0,0,0,.3)';
+        for (let yy = y0 + 28; yy < y0 + h; yy += 32) ctx.fillRect(x, yy, TILE, 2);
+        ctx.fillStyle = `rgba(${rgb},.85)`;
+        ctx.fillRect(x, y0 + h - 5, TILE, 5);
+        ctx.fillStyle = `rgba(${rgb},.35)`;
+        ctx.fillRect(x - 2, y0, 2, h);
+        ctx.fillRect(x + TILE, y0, 2, h);
+        if (h > 40) rune(ctx, d.group, x + TILE / 2, y0 + Math.min(h - 18, 24), 7, 0.9);
+      }
+      // üstte bağlantı rünü (kapı açıkken de görünür)
+      rune(ctx, d.group, x + TILE / 2, y0 - 8, 5, 0.6 + d.open * 0.4);
+    }
+  }
+  function drawLevers(ctx, w, t) {
+    for (const l of w.levers) {
+      const rgb = gcol(l.group);
+      const x = l.c * TILE + TILE / 2;
+      const y = (l.r + 1) * TILE;
+      const target = l.pos === 'right' ? 0.62 : -0.62;
+      l.a = l.a == null ? target : l.a + (target - l.a) * 0.3;
+      ctx.fillStyle = '#10152e';
+      rr(ctx, x - 12, y - 8, 24, 8, 3);
+      ctx.fill();
+      ctx.strokeStyle = `rgba(${rgb},.9)`;
+      ctx.lineWidth = 2;
+      rr(ctx, x - 12, y - 8, 24, 8, 3);
+      ctx.stroke();
+      ctx.save();
+      ctx.translate(x, y - 8);
+      ctx.rotate(l.a);
+      ctx.strokeStyle = '#cfd6ff';
+      ctx.lineWidth = 4;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(0, -24);
+      ctx.stroke();
+      glow(ctx, 0, -26, 18, rgb, l.pos === 'right' ? 0.6 : 0.25);
+      ctx.fillStyle = `rgb(${rgb})`;
+      ctx.beginPath();
+      ctx.arc(0, -26, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      rune(ctx, l.group, x, y - 52, 5, 0.6);
+    }
+  }
+  function drawPlates(ctx, w, t) {
+    for (const p of w.plates) {
+      const rgb = gcol(p.group);
+      const x = p.c * TILE;
+      const y = (p.r + 1) * TILE;
+      const dn = p.down ? 3 : 0;
+      ctx.fillStyle = '#10152e';
+      ctx.fillRect(x + 1, y - 2, TILE - 2, 2);
+      ctx.fillStyle = p.down ? `rgba(${rgb},.95)` : `rgba(${rgb},.55)`;
+      rr(ctx, x + 3, y - 7 + dn, TILE - 6, 6 - dn + 1, 2);
+      ctx.fill();
+      if (p.down) glow(ctx, x + TILE / 2, y - 6, 40, rgb, 0.45);
+      rune(ctx, p.group, x + TILE / 2, y - 26, 5, p.down ? 0.95 : 0.55);
+    }
+  }
+
   // --- Sahne ---
   function drawScene(ctx, w, cam, t) {
     drawBackground(ctx, w, t);
@@ -418,6 +526,9 @@
     drawTiles(ctx, w, t);
     for (const d of w.doors) drawDoor(ctx, d, t);
     drawBeams(ctx, w, t);
+    drawPlates(ctx, w, t);
+    drawLevers(ctx, w, t);
+    drawSDoors(ctx, w, t);
     for (const it of w.items) drawItem(ctx, it, t);
     // Işık'ın çevresine hafif aydınlatma
     const L = w.heroes.light;

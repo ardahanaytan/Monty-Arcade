@@ -195,6 +195,16 @@
           sound.noise(0, 0.25, 4000, 1, 0.12, 'highpass');
         }
         G.shake = 7;
+      } else if (e.type === 'lever') {
+        burst(e.x, e.y, 8, '#cfd6ff', 90, 0.4, 2);
+        sound.tone(e.pos === 'right' ? 240 : 190, 0, 0.08, 'square', 0.05);
+        sound.noise(0.02, 0.07, 1800, 1, 0.08);
+      } else if (e.type === 'plate') {
+        sound.tone(e.down ? 330 : 250, 0, 0.07, 'square', 0.04);
+      } else if (e.type === 'sdoor') {
+        sound.noise(0, 0.5, 160, 1, 0.22, 'lowpass');
+        sound.tone(e.open ? 110 : 90, 0, 0.45, 'sine', 0.05, e.open ? 140 : 70);
+        G.shake = Math.max(G.shake, 2);
       } else if (e.type === 'doorin') {
         sound.tone(e.kind === 'light' ? 660 : 495, 0, 0.3, 'sine', 0.05);
       } else if (e.type === 'won') {

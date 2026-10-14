@@ -15,7 +15,11 @@
     const doors = [];
     const items = [];
     const beams = [];
+    const levers = [];
+    const plates = [];
+    const sdoors = [];
     let exclusive = false;
+    let dependent = false;
     const b = {
       put(c, r, ch) {
         if (c >= 0 && c < cols && r >= 0 && r < rows) g[r][c] = ch;
@@ -37,20 +41,29 @@
       beam: (c, r, dir) => (beams.push({ c, r, dir }), b),
       /** Bu bölümde kapılar birbirinden ayrılmıştır (karşı karakter diğerinin kapısına ulaşamaz); testte kanıtlanır. */
       exclusive: () => ((exclusive = true), b),
+      /** Kaldıraç (c, r: ayakta durulan satır); group bağlı taş kapı grubu; who: kullanması amaçlanan karakter (test için). */
+      lever: (c, r, group, who = 'any') => (levers.push({ c, r, group, who }), b),
+      /** Basınç plakası (c, r: üstüne basılan zemin satırı). */
+      plate: (c, r, group, who = 'any') => (plates.push({ c, r, group, who }), b),
+      /** Taş kapı: c sütunu, r0..r1 satırları (yukarı kayarak açılır). */
+      sdoor: (c, r0, r1, group) => (sdoors.push({ c, r0, r1, group }), b),
+      /** İş birliği zorunlu: yardım almadan kimse kapısına varamaz; testte kanıtlanır. */
+      dependent: () => ((dependent = true), b),
       star: (c, r) => (items.push({ kind: 'star', c, r }), b),
       feather: (c, r) => (items.push({ kind: 'feather', c, r }), b),
     };
     fn(b);
-    return { id, name, region, cols, rows, tiles: g.map((r) => r.join('')), starts, doors, items, beams, exclusive };
+    return { id, name, region, cols, rows, tiles: g.map((r) => r.join('')), starts, doors, items, beams, levers, plates, sdoors, exclusive, dependent };
   }
 
   const LEVELS = [];
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // 1 · İlk Adımlar — Zindan. Hareket, ivme, zıplama, ayrı çıkış kapıları, toplanabilirler, iki perde.
+  // 1 · İlk Adımlar — Zindan. Hareket, zıplama, ayrı kapılar, toplanabilirler, iki perde, karanlık su ve sabit huzme.
   //   Sol: ikisi de aynı basamaklardan yukarı çıkar. Sağdaki duvarın iki geçidi var:
   //   alttaki Işık perdesi (yalnız Işık geçer), üstteki karanlık perde (yalnız Gölge geçer).
-  //   Işık altta, Gölge üstte kendi koridorunda ilerler; çıkışlar ayrı. Bölüm ikisi de kapısındayken biter.
+  //   Işık'ın alt koridorunda karanlık su (taşlardan sıçrar), Gölge'nin üst koridorunda baş hizasında huzme (yürür, yüksek zıplamaz).
+  //   Çıkışlar ayrı; bölüm ikisi de kapısındayken biter.
   // ─────────────────────────────────────────────────────────────────────────────
   LEVELS.push(
     build('ilk-adimlar', { tr: 'İlk Adımlar', en: 'First Steps' }, 'dungeon', (b) => {
@@ -69,19 +82,21 @@
       // sağ bölge: iki koridor
       b.fill(15, 12, 38, 13); // ara döşeme
       b.fill(15, 2, 38, 5); // üst koridorun tavanı
-      // alt koridor (Işık): engeller ve bir sapma
-      b.fill(21, 18, 22, 19);
-      b.fill(26, 18, 27, 19);
-      b.fill(29, 16, 31, 16); // sapma platformu (yıldız tozu)
+      // alt koridor (Işık): karanlık su (zemin oyulmuş, 2 karo derin), iki taş, engel ve sapma platformu
+      b.fill(21, 19, 27, 20, 'w');
+      b.fill(22, 18, 23, 18);
+      b.fill(26, 18, 27, 18);
+      b.fill(30, 18, 31, 19);
+      b.fill(33, 16, 35, 16);
       b.star(17, 19);
-      b.star(21, 16);
-      b.star(30, 15);
-      // üst koridor (Gölge)
-      b.fill(21, 10, 22, 11);
-      b.fill(24, 8, 26, 8); // sapma platformu (gece tüyü)
+      b.star(25, 16);
+      b.star(34, 15);
+      // üst koridor (Gölge): 8. satırda huzme (başın ~70 px üstü); 1 karo engel (kısa sıçrayış)
+      b.beam(39, 8, 'l');
+      b.fill(21, 11, 22, 11);
       b.feather(17, 11);
-      b.feather(22, 8);
-      b.feather(25, 7);
+      b.feather(21, 10);
+      b.feather(28, 9); // risk/ödül: kısa-orta sıçrayış ister, tam zıplarsa huzmeye değer
       // çıkışlar
       b.doorLight(36, 19);
       b.doorShadow(36, 11);
@@ -91,34 +106,42 @@
   );
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // 2 · Karanlık Sular — Zindan. Karanlık su (Işık söner, Gölge yüzer) ve sabit ışık huzmesi (Gölge yok olur).
-  //   Havuzun üstünde tek tek taşlar: Işık sıçrayarak geçer, Gölge suyun dibinden yürür/yüzer.
-  //   Sağdaki alçak tünelde huzme baş hizasına yakın uzanır: Işık'a zarar vermez; Gölge yürüyerek geçer, yüksek zıplarsa yok olur.
-  //   Çıkışlar: Işık kapısı havuzdan sonraki kıyıda, Gölge kapısı tünelin sonunda.
+  // 2 · Karşılıklı Yardım — Zindan. Kaldıraç + taş kapı + basınç plakası. Biri öbürüne yol açar.
+  //   Aynı çatal. Işık alt koridorda plakaya basıp durur: üstteki kırmızı taş kapı Gölge için açılır.
+  //   Gölge geçip kaldıracı çeker: alt koridordaki mavi taş kapı Işık için açılır. Sonra Işık plakadan iner, kapısına gider.
+  //   Plaka tutulurken Işık'ın alt koridorda beklemesi, kaldıraç sırası ve ezme koruması (kapı biri altındayken kapanmaz) öğretilir.
   // ─────────────────────────────────────────────────────────────────────────────
   LEVELS.push(
-    build('karanlik-sular', { tr: 'Karanlık Sular', en: 'Dark Waters' }, 'dungeon', (b) => {
+    build('karsilikli-yardim', { tr: 'Karşılıklı Yardım', en: 'Helping Hands' }, 'dungeon', (b) => {
       b.frame();
-      b.fill(13, 19, 23, 20, 'w'); // karanlık su: zemin oyulmuş, dibi 21. satır (2 karo derin)
-      b.fill(14, 18, 15, 18); // taş A (altı 2 karo açık: Gölge altından yürür)
-      b.fill(19, 18, 20, 18); // taş B
-      // tünel: giriş duvarı (2 karolu açıklık), tavan; huzme 17. satırda sağ duvardan sola uzanır ve giriş duvarında biter
-      b.fill(29, 14, 29, 17);
-      b.fill(30, 14, 38, 16);
-      b.beam(39, 17, 'l');
-      // yıldız tozu (Işık): taşlar arası sıçrayış hatları, bir de tünelin içi
-      b.star(17, 16);
-      b.star(22, 16);
-      b.star(33, 19);
-      // gece tüyü (Gölge): suyun dibi, tünel ve huzmenin hemen altı (kısa sıçrayış ister)
-      b.feather(17, 20);
-      b.feather(22, 20);
-      b.feather(31, 19);
-      b.feather(34, 18);
-      b.doorLight(25, 19);
-      b.doorShadow(37, 19);
+      b.exclusive();
+      b.dependent();
+      b.fill(7, 18, 8, 19);
+      b.fill(3, 16, 5, 16);
+      b.fill(7, 14, 10, 14);
+      b.fill(11, 12, 13, 12);
+      b.fill(14, 2, 14, 8);
+      b.fill(14, 9, 14, 11, 'd');
+      b.fill(14, 12, 14, 16);
+      b.fill(14, 17, 14, 19, 'l');
+      b.fill(15, 12, 38, 13);
+      b.fill(15, 2, 38, 5);
+      // alt koridor (Işık): plaka, mavi taş kapı
+      b.plate(18, 19, 'red', 'light');
+      b.sdoor(28, 14, 19, 'blue');
+      // üst koridor (Gölge): kırmızı taş kapı, mavi kaldıraç
+      b.sdoor(22, 6, 11, 'red');
+      b.lever(26, 11, 'blue', 'shadow');
+      b.star(16, 19);
+      b.star(24, 19);
+      b.star(32, 19);
+      b.feather(17, 11);
+      b.feather(24, 11);
+      b.feather(31, 11);
+      b.doorLight(36, 19);
+      b.doorShadow(36, 11);
       b.light(2, 19);
-      b.shadow(4, 19);
+      b.shadow(5, 19);
     }),
   );
 

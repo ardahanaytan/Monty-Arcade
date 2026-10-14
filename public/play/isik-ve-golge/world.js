@@ -22,6 +22,7 @@
   };
   const HERO = { w: 22, h: 34 };
   const SPARK = { base: 170, perRel: 0.45, cooldown: 0.3, hop: 170 };
+  const SDOOR_SPEED = 1.8; // taş kapı: tam açılma ~0,55 sn
   const DOOR_HOLD = 0.55; // ikisi de kapıdayken bölümün bitmesi için bekleme (sn)
 
   const overlap = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
@@ -55,6 +56,13 @@
       this.doors = level.doors.map((d) => ({ kind: d.kind, c: d.c, r: d.r, x: d.c * TILE, y: (d.r - 1) * TILE, w: TILE, h: TILE * 2, open: 0 }));
       this.items = level.items.map((it, i) => ({ id: i, kind: it.kind, x: it.c * TILE + TILE / 2, y: it.r * TILE + TILE / 2, taken: false }));
       this.beams = (level.beams || []).map((b) => this.traceBeam(b));
+      /** Kaldıraç: iki konumlu, kalıcı. 'right' = açık. Karakter hangi yönden içinden geçerse o yöne yatar. */
+      this.levers = (level.levers || []).map((l) => ({ ...l, pos: 'left', x: l.c * TILE + TILE / 2 }));
+      /** Basınç plakası: üstünde ağırlık olduğu sürece aktif. */
+      this.plates = (level.plates || []).map((p) => ({ ...p, down: false, rect: { x: p.c * TILE + 3, y: (p.r + 1) * TILE - 6, w: TILE - 6, h: 6 } }));
+      /** Taş kapı: c sütunu, r0..r1 satırları; yukarı kayarak açılır. */
+      this.sdoors = (level.sdoors || []).map((d) => ({ ...d, open: 0, len: d.r1 - d.r0 + 1 }));
+      this.force = new Set(); // testler: bu gruplar sanki açılmış sayılır
       this.collected = { star: 0, feather: 0 };
       this.total = { star: this.items.filter((i) => i.kind === 'star').length, feather: this.items.filter((i) => i.kind === 'feather').length };
     }
@@ -81,6 +89,7 @@
         bumpCD: 0,
         landV: 0,
         dead: false,
+        pcx: 0,
         immune: false, // testler: tehlikelerden etkilenmez
         wet: false,
       };
@@ -97,6 +106,15 @@
     }
 
     // --- Çarpışma ---
+    /** Taş kapının şu an kapalı olan satır sayısı (yukarıdan aşağı). */
+    closedRows(d) {
+      return Math.ceil(d.len * (1 - d.open) - 1e-6);
+    }
+    blocked(kind, c, r) {
+      if (solidFor(kind, this.tileAt(c, r))) return true;
+      for (const d of this.sdoors) if (d.c === c && r >= d.r0 && r < d.r0 + this.closedRows(d)) return true;
+      return false;
+    }
     /** x ekseninde dx kadar ilerler; çarpılan karoyu döner (yoksa null). */
     moveX(h, dx) {
       h.x += dx;
@@ -106,7 +124,7 @@
       const c = dx > 0 ? Math.floor((h.x + h.w - 0.001) / TILE) : Math.floor(h.x / TILE);
       for (let r = r0; r <= r1; r++) {
         const ch = this.tileAt(c, r);
-        if (solidFor(h.kind, ch)) {
+        if (this.blocked(h.kind, c, r)) {
           h.x = dx > 0 ? c * TILE - h.w : (c + 1) * TILE;
           return ch;
         }
@@ -121,7 +139,7 @@
       const r = dy > 0 ? Math.floor((h.y + h.h - 0.001) / TILE) : Math.floor(h.y / TILE);
       for (let c = c0; c <= c1; c++) {
         const ch = this.tileAt(c, r);
-        if (solidFor(h.kind, ch)) {
+        if (this.blocked(h.kind, c, r)) {
           h.y = dy > 0 ? r * TILE - h.h : (r + 1) * TILE;
           return ch;
         }
@@ -146,7 +164,9 @@
         }
         return;
       }
+      for (const h of this.list) h.pcx = h.x + h.w / 2;
       for (const h of this.list) this.simulate(h, dt, (inp && inp[h.kind]) || {});
+      this.triggers(dt);
       this.hazards();
       if (this.state === 'dead') return;
       this.sparks(dt);
@@ -235,6 +255,45 @@
       } else h.onGround = false;
       if (h.onGround && Math.abs(h.vx) > 8) h.walk += Math.abs(h.vx) * dt * 0.06;
       h.squash += (1 - h.squash) * Math.min(1, dt * 14);
+    }
+
+    // --- Kaldıraç, plaka, taş kapı ---
+    triggers(dt) {
+      // kaldıraç: içinden geçen karakterin yönüne yatar
+      for (const l of this.levers) {
+        const zone = { x: l.c * TILE, y: l.r * TILE, w: TILE, h: TILE };
+        for (const h of this.list) {
+          if (h.dead || !overlap(h, zone)) continue;
+          const cx = h.x + h.w / 2;
+          let pos = null;
+          if (h.pcx < l.x && cx >= l.x) pos = 'right';
+          else if (h.pcx > l.x && cx <= l.x) pos = 'left';
+          if (pos && pos !== l.pos) {
+            l.pos = pos;
+            this.emit('lever', { x: l.x, y: l.r * TILE + TILE / 2, pos, group: l.group });
+          }
+        }
+      }
+      // plaka
+      for (const p of this.plates) {
+        const was = p.down;
+        p.down = this.list.some((h) => !h.dead && overlap(h, p.rect));
+        if (p.down !== was) this.emit('plate', { x: p.c * TILE + TILE / 2, y: (p.r + 1) * TILE, down: p.down, group: p.group });
+      }
+      // taş kapılar
+      for (const d of this.sdoors) {
+        const on = this.force.has(d.group) || this.levers.some((l) => l.group === d.group && l.pos === 'right') || this.plates.some((p) => p.group === d.group && p.down);
+        const was = d.open;
+        if (on) d.open = Math.min(1, d.open + dt * SDOOR_SPEED);
+        else {
+          const next = Math.max(0, d.open - dt * SDOOR_SPEED);
+          // altında biri varsa kapanma (ezme yok)
+          const rows = Math.ceil(d.len * (1 - next) - 1e-6);
+          const rect = { x: d.c * TILE, y: d.r0 * TILE, w: TILE, h: rows * TILE };
+          if (!this.list.some((h) => overlap(h, rect))) d.open = next;
+        }
+        if ((was === 0) !== (d.open === 0) || (was === 1) !== (d.open === 1)) this.emit('sdoor', { x: d.c * TILE + TILE / 2, y: (d.r0 + d.len / 2) * TILE, open: d.open > was });
+      }
     }
 
     // --- Huzme izi: yayıcıdan ilk duvara kadar ---
