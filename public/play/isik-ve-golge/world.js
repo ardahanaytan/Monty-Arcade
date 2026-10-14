@@ -12,7 +12,7 @@
     maxRun: 230, // px/sn
     accel: 575, // tam hıza ~0,4 sn
     friction: 900, // bırakınca ~bir karakter boyu kayar (230²/(2·900) ≈ 29 px)
-    airAccel: 110, // havada az kontrol
+    airAccel: 400, // havada orta kontrol (~0,6 sn'de tam hız); momentum yine korunur
     gravity: 1900,
     jumpV: 640, // ~3,3 karo yükseklik
     jumpCut: 0.5, // tuş erken bırakılırsa
@@ -159,8 +159,9 @@
           h.vx = Math.max(-PHYS.maxRun, Math.min(PHYS.maxRun, h.vx + dir * PHYS.accel * dt));
         }
       } else if (dir !== 0) {
-        // havada az kontrol: momentum korunur; yön ancak biraz değişir, hız artırılamaz
-        if (Math.sign(h.vx) === -dir || Math.abs(h.vx) < PHYS.maxRun * 0.6) h.vx += dir * PHYS.airAccel * dt;
+        // havada orta kontrol: yön rahatça değişir, hız artırılabilir ama momentum (sürtünmesizlik) korunur
+        const a = Math.sign(h.vx) === -dir ? PHYS.airAccel * 1.5 : PHYS.airAccel;
+        if (Math.sign(h.vx) === -dir || Math.abs(h.vx) < PHYS.maxRun) h.vx += dir * a * dt;
         h.vx = Math.max(-PHYS.maxRun, Math.min(PHYS.maxRun, h.vx));
       }
 
