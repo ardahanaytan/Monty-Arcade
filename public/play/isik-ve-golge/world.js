@@ -21,7 +21,10 @@
     buffer: 0.1,
   };
   const HERO = { w: 22, h: 34 };
-  const SPARK = { base: 170, perRel: 0.45, cooldown: 0.3, hop: 170 };
+  // kıvılcım itmesi: bağıl hızla güçlenir (durana çarpmak ~450, karşılıklı koşmak 640 px/sn). Havadaki biri fırlatılırsa boşluk aşar.
+  const SPARK = { base: 200, perRel: 1.1, max: 640, cooldown: 0.3, hop: 170 };
+  const PUSH_MAX = 110; // kutu iterken azami hız (px/sn)
+  const BOX = 32;
   const SDOOR_SPEED = 1.8; // taş kapı: tam açılma ~0,55 sn
   const DOOR_HOLD = 0.55; // ikisi de kapıdayken bölümün bitmesi için bekleme (sn)
 
@@ -63,6 +66,8 @@
       /** Taş kapı: c sütunu, r0..r1 satırları; yukarı kayarak açılır. */
       this.sdoors = (level.sdoors || []).map((d) => ({ ...d, open: 0, len: d.r1 - d.r0 + 1 }));
       this.force = new Set(); // testler: bu gruplar sanki açılmış sayılır
+      /** İtilebilir kutu: karakterler iter (yavaş), yerçekimi, plakayı basılı tutar, basamak olur. */
+      this.boxes = (level.boxes || []).map((b) => ({ x: b.c * TILE, y: (b.r + 1) * TILE - BOX, w: BOX, h: BOX, vy: 0, onGround: false }));
       this.collected = { star: 0, feather: 0 };
       this.total = { star: this.items.filter((i) => i.kind === 'star').length, feather: this.items.filter((i) => i.kind === 'feather').length };
     }
@@ -129,7 +134,68 @@
           return ch;
         }
       }
+      // kutular: itilir; itilemiyorsa katı
+      for (const b of this.boxes) {
+        if (!overlap(h, b)) continue;
+        const push = dx > 0 ? h.x + h.w - b.x : h.x - (b.x + b.w);
+        const moved = this.moveBoxX(b, push, h);
+        if (Math.abs(moved - push) > 1e-6) {
+          h.x -= push - moved;
+          return 'box';
+        }
+      }
       return null;
+    }
+    /** Kutuyu x'te ilerletir; engel varsa durur. Gerçekte kat edilen mesafeyi döner. */
+    moveBoxX(b, dx, pusher) {
+      const old = b.x;
+      b.x += dx;
+      const r0 = Math.floor(b.y / TILE);
+      const r1 = Math.floor((b.y + b.h - 0.001) / TILE);
+      const c = dx > 0 ? Math.floor((b.x + b.w - 0.001) / TILE) : Math.floor(b.x / TILE);
+      for (let r = r0; r <= r1; r++) {
+        if (this.boxBlocked(c, r)) {
+          b.x = dx > 0 ? c * TILE - b.w : (c + 1) * TILE;
+          break;
+        }
+      }
+      for (const o of this.boxes) if (o !== b && overlap(b, o)) b.x = dx > 0 ? o.x - b.w : o.x + o.w;
+      for (const h of this.list) if (h !== pusher && overlap(b, h)) b.x = dx > 0 ? h.x - b.w : h.x + h.w;
+      return b.x - old;
+    }
+    boxBlocked(c, r) {
+      const ch = this.tileAt(c, r);
+      if (ch === '#' || ch === 'l' || ch === 'd') return true;
+      for (const d of this.sdoors) if (d.c === c && r >= d.r0 && r < d.r0 + this.closedRows(d)) return true;
+      return false;
+    }
+    updateBoxes(dt) {
+      for (const b of this.boxes) {
+        b.vy = Math.min(700, b.vy + PHYS.gravity * dt);
+        b.y += b.vy * dt;
+        b.onGround = false;
+        const c0 = Math.floor(b.x / TILE);
+        const c1 = Math.floor((b.x + b.w - 0.001) / TILE);
+        const r = Math.floor((b.y + b.h - 0.001) / TILE);
+        for (let c = c0; c <= c1; c++) {
+          if (this.boxBlocked(c, r)) {
+            b.y = r * TILE - b.h;
+            b.vy = 0;
+            b.onGround = true;
+            break;
+          }
+        }
+        for (const o of this.boxes) if (o !== b && overlap(b, o) && b.y < o.y) {
+          b.y = o.y - b.h;
+          b.vy = 0;
+          b.onGround = true;
+        }
+        for (const h of this.list) if (overlap(b, h) && b.y < h.y && b.vy >= 0) {
+          b.y = h.y - b.h;
+          b.vy = 0;
+          b.onGround = true;
+        }
+      }
     }
     moveY(h, dy) {
       h.y += dy;
@@ -143,6 +209,11 @@
           h.y = dy > 0 ? r * TILE - h.h : (r + 1) * TILE;
           return ch;
         }
+      }
+      for (const b of this.boxes) {
+        if (!overlap(h, b)) continue;
+        h.y = dy > 0 ? b.y - h.h : b.y + b.h;
+        return 'box';
       }
       return null;
     }
@@ -166,6 +237,7 @@
       }
       for (const h of this.list) h.pcx = h.x + h.w / 2;
       for (const h of this.list) this.simulate(h, dt, (inp && inp[h.kind]) || {});
+      this.updateBoxes(dt);
       this.triggers(dt);
       this.hazards();
       if (this.state === 'dead') return;
@@ -191,12 +263,14 @@
           h.vx += dir * PHYS.friction * dt; // ters yöne dönüş
         } else if (Math.abs(h.vx) < PHYS.maxRun) {
           h.vx = Math.max(-PHYS.maxRun, Math.min(PHYS.maxRun, h.vx + dir * PHYS.accel * dt));
+        } else if (Math.abs(h.vx) > PHYS.maxRun + 0.5) {
+          h.vx -= Math.sign(h.vx) * PHYS.friction * dt; // fırlatmadan kalan fazla hız yerde sönümlenir
         }
       } else if (dir !== 0) {
         // havada orta kontrol: yön rahatça değişir, hız artırılabilir ama momentum (sürtünmesizlik) korunur
         const a = Math.sign(h.vx) === -dir ? PHYS.airAccel * 1.5 : PHYS.airAccel;
         if (Math.sign(h.vx) === -dir || Math.abs(h.vx) < PHYS.maxRun) h.vx += dir * a * dt;
-        h.vx = Math.max(-PHYS.maxRun, Math.min(PHYS.maxRun, h.vx));
+        if (Math.sign(h.vx) === dir && Math.abs(h.vx) > PHYS.maxRun && Math.sign(h.vx) !== -dir) h.vx = Math.max(h.vx - dir * a * dt, Math.sign(h.vx) * PHYS.maxRun);
       }
 
       // zıplama
@@ -205,10 +279,14 @@
       if (pressed) h.buffer = PHYS.buffer;
       else h.buffer = Math.max(0, h.buffer - dt);
       h.coyote = h.onGround ? PHYS.coyote : Math.max(0, h.coyote - dt);
-      if (h.wet && pressed && !h.onGround) {
-        // yüzeye yakınken suyun dışına sıçra
+      h.hopCD = Math.max(0, (h.hopCD || 0) - dt);
+      if (h.wet && i.jump && !h.onGround && h.hopCD <= 0) {
+        // yüzeye yakınken (zıplama tuşu basılıysa) suyun dışına sıçra
         const above = this.tileAt(Math.floor((h.x + h.w / 2) / TILE), Math.floor((h.y + 4) / TILE));
-        if (above !== 'w') h.vy = -PHYS.jumpV * 0.8;
+        if (above !== 'w') {
+          h.vy = -PHYS.jumpV * 0.8;
+          h.hopCD = 0.4;
+        }
       }
       if (h.buffer > 0 && (h.onGround || h.coyote > 0)) {
         h.vy = h.wet ? -330 : -PHYS.jumpV;
@@ -227,10 +305,11 @@
       // yerçekimi ve hareket
       if (h.wet) {
         h.vy = Math.min(150, h.vy + PHYS.gravity * 0.3 * dt);
-        if (i.jump) h.vy = Math.max(h.vy - 1700 * dt, -170); // zıplama tuşu: yukarı yüz
+        if (i.jump && h.vy > -170) h.vy = Math.max(h.vy - 1700 * dt, -170); // zıplama tuşu: yukarı yüz (sıçrama hızını kırpmaz)
         h.vx = Math.max(-PHYS.maxRun * 0.75, Math.min(PHYS.maxRun * 0.75, h.vx));
       } else h.vy = Math.min(PHYS.maxFall, h.vy + PHYS.gravity * dt);
       const wasGround = h.onGround;
+      if (h.vx !== 0 && this.boxes.some((b) => overlap({ x: h.x + Math.sign(h.vx) * 2, y: h.y, w: h.w, h: h.h }, b))) h.vx = Math.max(-PUSH_MAX, Math.min(PUSH_MAX, h.vx));
       const hit = this.moveX(h, h.vx * dt);
       if (hit) {
         if ((hit === 'l' || hit === 'd') && h.bumpCD <= 0 && Math.abs(h.vx) > 20) {
@@ -277,7 +356,7 @@
       // plaka
       for (const p of this.plates) {
         const was = p.down;
-        p.down = this.list.some((h) => !h.dead && overlap(h, p.rect));
+        p.down = this.list.some((h) => !h.dead && overlap(h, p.rect)) || this.boxes.some((b) => overlap(b, p.rect));
         if (p.down !== was) this.emit('plate', { x: p.c * TILE + TILE / 2, y: (p.r + 1) * TILE, down: p.down, group: p.group });
       }
       // taş kapılar
@@ -290,7 +369,7 @@
           // altında biri varsa kapanma (ezme yok)
           const rows = Math.ceil(d.len * (1 - next) - 1e-6);
           const rect = { x: d.c * TILE, y: d.r0 * TILE, w: TILE, h: rows * TILE };
-          if (!this.list.some((h) => overlap(h, rect))) d.open = next;
+          if (!this.list.some((h) => overlap(h, rect)) && !this.boxes.some((b) => overlap(b, rect))) d.open = next;
         }
         if ((was === 0) !== (d.open === 0) || (was === 1) !== (d.open === 1)) this.emit('sdoor', { x: d.c * TILE + TILE / 2, y: (d.r0 + d.len / 2) * TILE, open: d.open > was });
       }
@@ -352,7 +431,7 @@
       if (a.sparkCD > 0 || b.sparkCD > 0) return;
       const dir = a.x + a.w / 2 <= b.x + b.w / 2 ? -1 : 1; // Işık'ın itildiği yön
       const rel = Math.abs(a.vx - b.vx);
-      const kick = SPARK.base + SPARK.perRel * rel;
+      const kick = Math.min(SPARK.max, SPARK.base + SPARK.perRel * rel);
       a.vx = dir * kick;
       b.vx = -dir * kick;
       if (a.onGround) a.vy = -SPARK.hop;

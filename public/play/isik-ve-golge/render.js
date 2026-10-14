@@ -518,6 +518,28 @@
     }
   }
 
+  // --- Kutu ---
+  function drawBox(ctx, b, t) {
+    const x = b.x;
+    const y = b.y;
+    glow(ctx, x + b.w / 2, y + b.h / 2, 38, '255,196,120', 0.12);
+    ctx.fillStyle = '#4a3a2a';
+    ctx.fillRect(x, y, b.w, b.h);
+    ctx.fillStyle = '#6b5238';
+    ctx.fillRect(x + 3, y + 3, b.w - 6, b.h - 6);
+    ctx.strokeStyle = '#2c2116';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(x + 1.5, y + 1.5, b.w - 3, b.h - 3);
+    ctx.beginPath();
+    ctx.moveTo(x + 4, y + 4);
+    ctx.lineTo(x + b.w - 4, y + b.h - 4);
+    ctx.moveTo(x + b.w - 4, y + 4);
+    ctx.lineTo(x + 4, y + b.h - 4);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,220,160,.35)';
+    ctx.fillRect(x + 2, y + 2, b.w - 4, 2);
+  }
+
   // --- Sahne ---
   function drawScene(ctx, w, cam, t) {
     drawBackground(ctx, w, t);
@@ -529,6 +551,7 @@
     drawPlates(ctx, w, t);
     drawLevers(ctx, w, t);
     drawSDoors(ctx, w, t);
+    for (const b of w.boxes) drawBox(ctx, b, t);
     for (const it of w.items) drawItem(ctx, it, t);
     // Işık'ın çevresine hafif aydınlatma
     const L = w.heroes.light;

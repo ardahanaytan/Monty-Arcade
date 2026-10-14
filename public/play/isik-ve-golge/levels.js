@@ -18,8 +18,9 @@
     const levers = [];
     const plates = [];
     const sdoors = [];
+    const boxes = [];
     let exclusive = false;
-    let dependent = false;
+    let dependent = [];
     const b = {
       put(c, r, ch) {
         if (c >= 0 && c < cols && r >= 0 && r < rows) g[r][c] = ch;
@@ -47,13 +48,15 @@
       plate: (c, r, group, who = 'any') => (plates.push({ c, r, group, who }), b),
       /** Taş kapı: c sütunu, r0..r1 satırları (yukarı kayarak açılır). */
       sdoor: (c, r0, r1, group) => (sdoors.push({ c, r0, r1, group }), b),
-      /** İş birliği zorunlu: yardım almadan kimse kapısına varamaz; testte kanıtlanır. */
-      dependent: () => ((dependent = true), b),
+      /** Yardım almadan şu karakterler kapısına varamaz (varsayılan: ikisi); testte kanıtlanır. */
+      dependent: (...kinds) => ((dependent = kinds.length ? kinds : ['light', 'shadow']), b),
+      /** İtilebilir kutu (c, r: üzerinde durduğu zemin satırı). */
+      box: (c, r) => (boxes.push({ c, r }), b),
       star: (c, r) => (items.push({ kind: 'star', c, r }), b),
       feather: (c, r) => (items.push({ kind: 'feather', c, r }), b),
     };
     fn(b);
-    return { id, name, region, cols, rows, tiles: g.map((r) => r.join('')), starts, doors, items, beams, levers, plates, sdoors, exclusive, dependent };
+    return { id, name, region, cols, rows, tiles: g.map((r) => r.join('')), starts, doors, items, beams, levers, plates, sdoors, boxes, exclusive, dependent };
   }
 
   const LEVELS = [];
@@ -141,6 +144,40 @@
       b.doorLight(36, 19);
       b.doorShadow(36, 11);
       b.light(2, 19);
+      b.shadow(5, 19);
+    }),
+  );
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 3 · Kutu ve Kıvılcım — Zindan. Kutu (itme, plakayı tutma, basamak) ve kıvılcım fırlatması.
+  //   Başlangıç ile çıkış arasında 6 karoluk karanlık su: Işık'ın zıplama menzili 5 karo, yani tek başına geçemez.
+  //   Gölge suyun dibinden geçer, karşı kıyıdaki kutuyu sarı plakaya iter (taş kapı kutuyla açık kalır), sonra geri yüzer.
+  //   İkisi birlikte havada çarpışırsa kıvılcım Işık'ı karşı kıyıya fırlatır (Gölge arkadan, ikisi de zıplarken).
+  //   Kapının ardında ikinci bir su (2 karo) ve alçak huzmeli tünel: Işık atlar, Gölge yüzer ve yürür; tünelde zıplayan Gölge yok olur.
+  // ─────────────────────────────────────────────────────────────────────────────
+  LEVELS.push(
+    build('kutu-ve-kivilcim', { tr: 'Kutu ve Kıvılcım', en: 'Crate & Spark' }, 'dungeon', (b) => {
+      b.frame();
+      b.dependent('light'); // Gölge tek başına yüzüp kapısına varabilir; Işık varamaz
+      b.fill(11, 20, 16, 20, 'w'); // büyük su (6 karo)
+      b.box(19, 19);
+      b.plate(24, 19, 'amber', 'any');
+      b.fill(25, 2, 25, 13); // taş kapının üstü
+      b.sdoor(25, 14, 19, 'amber');
+      b.fill(29, 20, 30, 20, 'w'); // ikinci su (2 karo)
+      b.fill(33, 14, 33, 17); // tünel girişi (2 karolu açıklık)
+      b.fill(34, 14, 38, 16); // tünel tavanı
+      b.beam(39, 17, 'l');
+      b.star(13, 16); // fırlatma yayının üstünde
+      b.star(21, 19);
+      b.star(36, 19);
+      b.feather(13, 20); // büyük suyun dibinde
+      b.feather(22, 19);
+      b.feather(29, 20); // ikinci suyun dibinde
+      b.feather(36, 18); // huzmenin hemen altı (kısa sıçrayış)
+      b.doorShadow(35, 19);
+      b.doorLight(37, 19);
+      b.light(3, 19);
       b.shadow(5, 19);
     }),
   );

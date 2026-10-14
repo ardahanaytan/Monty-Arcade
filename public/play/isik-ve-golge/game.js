@@ -205,6 +205,8 @@
         sound.noise(0, 0.5, 160, 1, 0.22, 'lowpass');
         sound.tone(e.open ? 110 : 90, 0, 0.45, 'sine', 0.05, e.open ? 140 : 70);
         G.shake = Math.max(G.shake, 2);
+      } else if (e.type === 'boxpush') {
+        sound.noise(0, 0.05, 300, 1, 0.05, 'lowpass');
       } else if (e.type === 'doorin') {
         sound.tone(e.kind === 'light' ? 660 : 495, 0, 0.3, 'sine', 0.05);
       } else if (e.type === 'won') {
