@@ -802,6 +802,87 @@
     }),
   );
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 16 · Basamaklı Sur — Özgürlük. Birleşim: kandil + dönen ayna + kristal + sis. Düzen: çapraz merdiven (dört teras, her biri 3 karo yüksek; sağ üst çıkış).
+  //   T0: Işık kandili yakar (kandil riser bloğuna gömülü) → T1 girişindeki kapı açılır; huzmesi T0'ı kaplar (Gölge önce T1 girişine çıkmış olmalı).
+  //   T1: doğu risere gömülü yayıcı batıya huzme gönderir; asılı DÖNEN ayna onu yukarı (zararsız) ya da aşağı (kristal) çevirir. Işık kaldıracı çevirir → kristal yanar → T2 kapısı açılır.
+  //   Gölge kaldıraç çevrilmeden T1'in doğu ucuna geçmiş olmalı (huzme dikey çizgiyle T1'i böler). T2'de zamanlı huzme geçidi, T3'te sis ve su.
+  // ─────────────────────────────────────────────────────────────────────────────
+  LEVELS.push(
+    build('basamakli-sur', { tr: 'Basamaklı Sur', en: 'Stepped Rampart' }, 'ozgurluk', (b) => {
+      b.frame();
+      b.dependent('shadow');
+      b.fill(11, 17, 18, 19).fill(19, 14, 26, 19).fill(27, 11, 38, 19); // teraslar
+      // --- T0 (başlangıç) ---
+      b.fill(6, 19, 7, 19, 'w'); // su (2 karo)
+      b.lantern(11, 19, 'l', { group: 'p' }); // riser bloğuna gömülü, batıya bakar
+      b.sdoor(13, 2, 16, 'p');
+      // --- T1 ---
+      b.rmirror(15, 11, 'n', 'r'); // asılı dönen ayna: başta yukarı çevirir
+      b.fill(19, 2, 19, 11); b.beam(19, 11, 'l'); // T2 girişinin üstündeki duvardan batıya (tırmanış yayından yüksekte)
+      b.crystal(15, 17, 'b'); // T1 zemininde, ayna aşağı çevirince yanar
+      b.lever(12, 16, 'r', 'light');
+      b.fill(16, 16, 16, 16, 'f'); // sis
+      b.sdoor(21, 2, 13, 'b');
+      // --- T2 ---
+      b.gauntlet(25, 13, 2, { period: 2.4, on: 1.0 }); // huzme 23-24, engel 22
+      // --- T3 ---
+      b.fill(30, 10, 30, 10, 'f'); // sis
+      b.fill(32, 10, 33, 10, 'w'); // su (2 karo)
+      // toplanabilirler
+      b.star(3, 19);
+      b.star(14, 16);
+      b.star(20, 13);
+      b.star(29, 10);
+      b.feather(9, 19);
+      b.feather(18, 16);
+      b.feather(24, 13);
+      b.feather(35, 10);
+      b.doorLight(36, 10);
+      b.doorShadow(37, 10);
+      b.light(2, 19);
+      b.shadow(4, 19);
+    }),
+  );
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 17 · Makara Kulesi — Özgürlük. Birleşim: terazi + zamanlı düğme + kristal-benzeri baskı (lever) + sis. Düzen: ikiz kuleler: ortada dolu blok, üstte köprü, altta koridor, iki yanda terazi kuyusu (makara).
+  //   Işık sol alttaki panda (A, aşağıda), Gölge üst köprünün sağ ucunda (kutu yanında) başlar; B sağ kuyuda YUKARIDA. Gölge kutuyu B'ye itip çıkar (3 > 1): B iner, A çıkar → yer değiştirirler.
+  //   Köprü (Işık): su havuzu, kaldıraç → alt koridordaki kapıyı açar. Koridor (Gölge): zamanlı huzme geçidi, zamanlı düğme (üst köprüdeki Işık kapısını 8 sn açar), sis, kaldıraçla açılan kapı.
+  // ─────────────────────────────────────────────────────────────────────────────
+  LEVELS.push(
+    build('makara-kulesi', { tr: 'Makara Kulesi', en: 'Pulley Tower' }, 'ozgurluk', (b) => {
+      b.frame();
+      b.dependent('light', 'shadow');
+      b.fill(9, 6, 30, 14); // orta blok
+      b.scale(31, 5, 4, 19, 5); // B (31-34) yukarıda, A (5-8) aşağıda
+      b.box(28, 5); // Gölge'nin B'ye itecegi kutu
+      // --- ÜST KÖPRÜ (Işık, takaslandıktan sonra) ---
+      b.fill(13, 5, 14, 5, 'w'); // su (2 karo)
+      b.lever(20, 5, 'x', 'light'); // alt koridorun kapısı
+      b.fill(23, 5, 23, 5, 'f'); // sis
+      b.sdoor(26, 2, 5, 'y'); // Işık'ın kapısı: Gölge'nin zamanlı düğmesi
+      // --- ALT KORİDOR (Gölge) ---
+      b.gauntlet(28, 19, 4, { period: 2.4, on: 1.0 }); // huzme 24-27, engel 23
+      b.timed(22, 19, 'y', 8.0);
+      b.sdoor(17, 15, 19, 'x');
+      b.fill(13, 19, 13, 19, 'f'); // sis
+      // toplanabilirler
+      b.star(10, 5);
+      b.star(16, 5);
+      b.star(21, 5);
+      b.star(27, 5);
+      b.feather(20, 19);
+      b.feather(15, 19);
+      b.feather(11, 19);
+      b.feather(26, 19);
+      b.doorLight(28, 5);
+      b.doorShadow(10, 19);
+      b.light(6, 19);
+      b.shadow(29, 5);
+    }),
+  );
+
   const api = { LEVELS, build };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.IVGLevels = api;
