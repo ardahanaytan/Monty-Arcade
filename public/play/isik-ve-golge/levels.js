@@ -41,7 +41,7 @@
       doorLight: (c, r) => (doors.push({ kind: 'light', c, r }), b),
       doorShadow: (c, r) => (doors.push({ kind: 'shadow', c, r }), b),
       /** Sabit ışık huzmesi: yayıcı (c,r) duvar karosundadır; dir: u|d|l|r. Gölge için ölümcül. */
-      beam: (c, r, dir) => (beams.push({ c, r, dir }), b),
+      beam: (c, r, dir, o = {}) => (beams.push({ c, r, dir, ...o }), b),
       /** Bu bölümde kapılar birbirinden ayrılmıştır (karşı karakter diğerinin kapısına ulaşamaz); testte kanıtlanır. */
       exclusive: () => ((exclusive = true), b),
       /** Kaldıraç (c, r: ayakta durulan satır); group bağlı taş kapı grubu; who: kullanması amaçlanan karakter (test için). */
@@ -60,6 +60,15 @@
       box: (c, r) => (boxes.push({ c, r }), b),
       /** Kandil (c, r): Işık yakar, Gölge söndürür. dir: huzme yönü (u|d|l|r). o: { lit (başta yanık), group (bağlı taş kapı) }. Duvara gömülü olabilir. */
       lantern: (c, r, dir, o = {}) => (lanterns.push({ c, r, dir, ...o }), b),
+      /**
+       * Huzme geçidi: doğuda 2 karo yüksek yayıcı blok (c, r-1..r), batıya karakter boyunda ZAMANLI huzme, n karo uzunlukta; batı ucunda 1 karo engel.
+       * Gölge bölgeyi huzme kapalıyken geçmelidir (açık pencere `on` sn, döngü `period` sn). Işık'a etkisiz. Engel ve bloğun üstünden zıplanır.
+       */
+      gauntlet: (c, r, n, o = {}) => {
+        b.fill(c, r - 1, c, r);
+        b.fill(c - n - 1, r, c - n - 1, r);
+        return b.beam(c, r, 'l', { low: true, period: o.period || 2.4, on: o.on || 1.0, phase: o.phase || 0 });
+      },
       star: (c, r) => (items.push({ kind: 'star', c, r }), b),
       feather: (c, r) => (items.push({ kind: 'feather', c, r }), b),
     };
@@ -191,8 +200,8 @@
       b.fill(6, 12, 7, 13); // batı basamağı
       b.fill(3, 10, 4, 10); // üst kata açıklığın altındaki ince platform (5. sütun boş: basamaktan batıya inilebilir)
       // --- ÜST KAT ---
-      b.beam(39, 5, 'l');
-      b.fill(20, 2, 20, 5); // sütun: huzmeyi keser
+      b.fill(20, 2, 20, 5); // sütun
+      b.gauntlet(30, 7, 5, { period: 2.4, on: 1.2 }); // huzme geçidi (25-29): Gölge huzme kapalıyken geçmeli
       // toplanabilirler
       b.star(13, 16); // fırlatma yayının üstünde
       b.star(22, 19);
@@ -247,6 +256,7 @@
       b.lever(2, 13, 'red');
       b.fill(6, 12, 7, 13);
       b.fill(3, 10, 4, 10);
+      b.gauntlet(14, 13, 5, { period: 2.4, on: 1.2, phase: 0.6 }); // huzme geçidi (9-13): kaldıracın yolunda, gidiş ve dönüşte geçilir
       // --- ÜST KAT ---
       b.lever(10, 7, 'green');
       b.box(16, 7);

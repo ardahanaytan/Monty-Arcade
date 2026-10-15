@@ -545,8 +545,17 @@
       const x0 = Math.min(c0, c1) * TILE;
       const y0 = Math.min(r0, r1) * TILE;
       const len = (Math.abs(c1 - c0) + Math.abs(r1 - r0) + 1) * TILE;
-      const rect = horiz ? { x: x0, y: b.r * TILE + TILE / 2 - 5, w: len, h: 10 } : { x: b.c * TILE + TILE / 2 - 5, y: y0, w: 10, h: len };
-      return { c: b.c, r: b.r, dir: b.dir, ...rect, horiz };
+      const th = b.low ? LB : 10; // low: karakter boyunda (zemine hizalı), zıplayarak aşılamaz
+      const rect = horiz ? { x: x0, y: b.low ? (b.r + 1) * TILE - th : b.r * TILE + TILE / 2 - 5, w: len, h: th } : { x: b.c * TILE + TILE / 2 - th / 2, y: y0, w: th, h: len };
+      // zamanlı huzme: period sn'lik döngünün ilk `on` saniyesi açık (phase kaydırır); kapalıyken zararsız, açılmadan 0,5 sn önce uyarı
+      let active = true;
+      let warn = false;
+      if (b.period) {
+        const ph = (this.time + (b.phase || 0)) % b.period;
+        active = ph < b.on;
+        warn = !active && ph >= b.period - 0.5;
+      }
+      return { c: b.c, r: b.r, dir: b.dir, ...rect, horiz, active, warn, timed: !!b.period };
     }
 
     // --- Ölümcül tehlikeler ---
@@ -559,7 +568,7 @@
           if (t === 'w') this.die(h, 'water');
         } else {
           const box = { x: h.x + 3, y: h.y + 3, w: h.w - 6, h: h.h - 6 };
-          for (const b of this.beams) if (overlap(box, b)) this.die(h, 'beam');
+          for (const b of this.beams) if (b.active !== false && overlap(box, b)) this.die(h, 'beam');
         }
         if (this.state === 'dead') return;
       }

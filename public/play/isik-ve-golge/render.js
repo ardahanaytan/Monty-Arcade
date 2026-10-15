@@ -379,6 +379,24 @@
   // --- Sabit ışık huzmesi ---
   function drawBeams(ctx, w, t) {
     for (const b of w.beams) {
+      if (b.timed && !b.active) {
+        // kapalı: yayıcıdan soluk noktalı iz; açılmadan önce yanıp söner
+        const a = b.warn ? 0.25 + 0.35 * Math.abs(Math.sin(t * 22)) : 0.1;
+        ctx.fillStyle = `rgba(255,236,190,${a})`;
+        if (b.horiz) for (let x = b.x; x < b.x + b.w; x += 14) ctx.fillRect(x, b.y + b.h / 2 - 1, 5, 2);
+        else for (let y = b.y; y < b.y + b.h; y += 14) ctx.fillRect(b.x + b.w / 2 - 1, y, 2, 5);
+        const ex0 = b.c * TILE + TILE / 2;
+        const ey0 = b.r * TILE + TILE / 2;
+        ctx.fillStyle = '#0a0d22';
+        ctx.beginPath();
+        ctx.arc(ex0, ey0, 11, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = `rgba(255,244,210,${b.warn ? 0.9 : 0.3})`;
+        ctx.beginPath();
+        ctx.arc(ex0, ey0, 6, 0, Math.PI * 2);
+        ctx.fill();
+        continue;
+      }
       const flick = 0.85 + Math.sin(t * 30) * 0.08;
       // geniş parıltı
       const pad = 14;
