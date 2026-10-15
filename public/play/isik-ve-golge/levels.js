@@ -310,21 +310,22 @@
       // --- SAĞ ÜST ---
       b.lantern(39, 9, 'l', { group: 'blue' }); // doğu duvara gömülü, batıya bakar; Işık yakar
       // --- SAĞ ALT ---
-      b.fill(25, 20, 30, 20, 'w'); // büyük su (6 karo): Işık için fırlatma
-      b.fill(33, 12, 33, 17); // tünel girişi (2+1 karolu açıklık)
-      b.fill(34, 12, 38, 16); // tünel tavanı
+      b.fill(25, 20, 31, 20, 'w'); // büyük su (7 karo): Işık için fırlatma
+      b.fill(24, 12, 33, 15); // alçak tavan (fırlatma yayını kısaltır: zıplama ~3 karo altına iner)
+      b.fill(34, 12, 34, 17); // tünel girişi (2+1 karolu açıklık)
+      b.fill(35, 12, 38, 16); // tünel tavanı
       b.beam(39, 17, 'l');
       // toplanabilirler
       b.star(12, 8);
       b.star(36, 8);
       b.star(22, 18);
-      b.star(36, 19);
+      b.star(37, 19);
       b.feather(13, 20);
       b.feather(10, 15);
       b.feather(27, 20);
-      b.feather(36, 18);
-      b.doorShadow(35, 19);
-      b.doorLight(37, 19);
+      b.feather(37, 18);
+      b.doorShadow(36, 19);
+      b.doorLight(38, 19);
       b.light(11, 9);
       b.shadow(13, 9);
     }),
@@ -350,14 +351,13 @@
       b.fill(27, 7, 27, 7); // engel: doğuya itilen kutu burada durur
       b.plate(12, 7, 'amber'); // batıda: D_L'yi (Gölge'nin kapısı) açar
       b.fill(11, 7, 11, 7); // engel: batıya itilen kutu burada durur
-      b.fill(29, 8, 30, 8, 'w'); // su (2 karo)
+      b.fill(29, 8, 31, 8, 'w'); // su (3 karo)
       b.sdoor(33, 2, 7, 'blue'); // Işık'ın kapısı
       // --- ALT KAT (Gölge) ---
       b.box(24, 19);
       b.box(26, 19);
       b.button(38, 19, 0, 'right'); // en doğuda (doğuya geçince): alttan üste gönderir
-      b.beam(39, 16, 'l'); // baş hizasında huzme (Gölge yürür, zıplamaz); sütun kesiyor
-      b.fill(29, 10, 29, 16);
+      b.gauntlet(37, 19, 5, { period: 2.4, on: 1.0 }); // huzme geçidi (32-36): düğmeye giderken ve dönerken Gölge huzme kapalıyken geçmeli
       b.sdoor(8, 10, 19, 'amber'); // Gölge'nin kapısı
       // toplanabilirler
       b.star(6, 6);
@@ -371,7 +371,7 @@
       b.doorLight(36, 7);
       b.doorShadow(4, 19);
       b.light(4, 7);
-      b.shadow(32, 19);
+      b.shadow(30, 19);
     }),
   );
 
