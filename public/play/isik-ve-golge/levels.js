@@ -883,6 +883,123 @@
     }),
   );
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 18 · Uzun Sıçrayış — Özgürlük. Birleşim: uzun itme atlayışı (kıvılcım fırlatması) + sis havuzu + asansör. Düzen: iki uzun kat (alt: Işık, üst: Gölge); uçlarda iki asansör.
+  //   Alt kat: 7 karoluk sis çukuru (alçak tavan altında): Işık yalnız Gölge'nin kıvılcım fırlatmasıyla geçer. Gölge fırlatmayı yaptıktan sonra batı asansörüyle üst kata çıkar
+  //   (asansöre yürüyerek biner: düğmenin üstünden geçince kalkar). Üst kat: karanlık perde (yalnız Gölge geçer), zamanlı huzme geçidi, sis; doğu asansörüyle alt kata iner. Çıkışlar alt katın doğu ucunda.
+  // ─────────────────────────────────────────────────────────────────────────────
+  LEVELS.push(
+    build('uzun-sicrayis', { tr: 'Uzun Sıçrayış', en: 'The Long Leap' }, 'ozgurluk', (b) => {
+      b.frame();
+      b.dependent('light');
+      b.fill(1, 10, 2, 11).fill(7, 10, 32, 11).fill(37, 10, 38, 11); // üst kat zemini (asansör kuyuları 3-6 ve 33-36)
+      b.lift(3, 4, 19, 9); // batı asansörü (aşağıda başlar)
+      b.lift(33, 4, 19, 9, { start: 'high' }); // doğu asansörü (yukarıda başlar)
+      b.button(4, 19, 0, 'right'); // batı asansörünün üstünde: doğuya geçince yukarı çıkarır
+      b.button(34, 9, 1, 'right'); // doğu asansörünün üstünde: doğuya geçince aşağı indirir
+      // --- ALT KAT ---
+      b.fill(14, 19, 14, 19, 'w'); // küçük su (Işık atlar)
+      b.fill(25, 20, 31, 20, 'f'); // sis çukuru (7 karo)
+      b.fill(24, 12, 32, 15); // alçak tavan
+      // --- ÜST KAT (Gölge) ---
+      b.fill(20, 2, 20, 9, 'd'); // karanlık perde: yalnız Gölge
+      b.gauntlet(16, 9, 4, { period: 2.4, on: 1.0 }); // huzme 12-15, engel 11
+      b.fill(26, 9, 27, 9, 'f'); // sis
+      b.gauntlet(31, 9, 3, { period: 2.4, on: 1.0, phase: 1.0 }); // huzme 28-30, engel 27 (sis 26-27: sis engelin batısında)
+      // toplanabilirler
+      b.star(10, 19);
+      b.star(18, 19);
+      b.star(22, 19);
+      b.star(34, 19);
+      b.feather(9, 9);
+      b.feather(18, 9);
+      b.feather(24, 9);
+      b.feather(37, 9);
+      b.doorLight(37, 19);
+      b.doorShadow(38, 19);
+      b.light(9, 19);
+      b.shadow(7, 19);
+    }),
+  );
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 19 · Son Sınav — Özgürlük. En zor bölüm: kandil + zamanlı VE kapısı + zamanlı huzme + sis + asansör + dönen aynalar. Düzen: U (üst koridor batıdan doğuya, doğuda ortak asansör, alt koridor doğudan batıya).
+  //   Üst koridor: Işık kandili yakar (zemine gömülü, dikey huzme: Gölge o sütunu geçemez) → 1. kapı; iki zamanlı düğme BİRLİKTE (VE) 2. kapıyı açar: Işık sondaki düğmede bekler, Gölge ilkine basıp koşar,
+  //   sonra Işık düğmeden çıkıp süre dolmadan geçer. Sis ve zamanlı geçit, sonra ikisi asansöre biner (Gölge asansörde bekler, Işık düğmenin üstünden geçince asansör iner).
+  //   Alt koridor: üç dönen ayna kapısı tek kaldıraçta (Işık kaldıracı sağa-sola-sağa çevirir, Gölge kapılar arasında ilerler); çıkışlar batı uçta.
+  // ─────────────────────────────────────────────────────────────────────────────
+  LEVELS.push(
+    build('son-sinav', { tr: 'Son Sınav', en: 'The Last Trial' }, 'ozgurluk', (b) => {
+      b.frame();
+      b.dependent('light', 'shadow');
+      b.fill(1, 9, 34, 15); // üst koridor zemini + alt koridor tavanı (alt koridor: satır 16-19)
+      b.lift(35, 4, 19, 8, { start: 'high' });
+      b.button(36, 8, 0, 'right'); // asansörün üstünde: doğuya geçince indirir
+      // --- ÜST KORİDOR ---
+      b.lantern(5, 9, 'u', { group: 'p' }); // zemine gömülü, yukarı bakar
+      b.sdoor(11, 2, 8, 'p');
+      b.timed(14, 8, 'q', 6.0);
+      b.timed(19, 8, 'q', 6.0);
+      b.sdoor(21, 2, 8, 'q', { all: true });
+      b.fill(25, 8, 25, 8, 'f'); // sis
+      b.gauntlet(31, 8, 4, { period: 2.4, on: 1.0 }); // huzme 27-30, engel 26
+      // --- ALT KORİDOR ---
+      b.fill(10, 16, 10, 16).fill(16, 16, 16, 16).fill(22, 16, 22, 16); // asılı yayıcılar
+      b.beam(10, 16, 'r').beam(16, 16, 'r').beam(22, 16, 'r');
+      b.rmirror(14, 16, 'n', 'x').rmirror(20, 16, 'm', 'x').rmirror(26, 16, 'n', 'x');
+      b.lever(37, 19, 'x', 'light'); // asansör inişinde, Gölge'nin yolunun dışında
+      b.fill(29, 19, 29, 19, 'f'); // sis
+      // toplanabilirler
+      b.star(3, 8);
+      b.star(16, 8);
+      b.star(33, 8);
+      b.star(18, 19);
+      b.feather(9, 8);
+      b.feather(24, 8);
+      b.feather(28, 8);
+      b.feather(8, 19);
+      b.doorLight(2, 19);
+      b.doorShadow(3, 19);
+      b.light(2, 8);
+      b.shadow(8, 8);
+    }),
+  );
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 20 · Buluşma — Özgürlük (kapanış bölümü, yumuşak). İkisi uzun salonun iki ucundan başlar, ortadaki odada TEK ORTAK ÇIKIŞ kapısında buluşur (iki kapı yan yana).
+  //   Her biri önce kendi tarafının zorluklarını aşıp kaldıracı çevirerek ÖTEKİNİN kapısını açar: Işık su ve sisi aşıp kaldıracı çeker (Gölge'nin kapısı); Gölge zamanlı geçidi ve sisi aşıp kaldıracı çeker (Işık'ın kapısı).
+  //   Ortada toplanabilirler ve ortak çıkış. Bölüm bitince kapanış sahnesi.
+  // ─────────────────────────────────────────────────────────────────────────────
+  LEVELS.push(
+    build('bulusma', { tr: 'Buluşma', en: 'Meeting' }, 'ozgurluk', (b) => {
+      b.frame();
+      b.dependent('light', 'shadow');
+      // --- BATI (Işık) ---
+      b.fill(5, 19, 6, 19, 'w'); // su (2 karo)
+      b.lever(9, 19, 'e', 'light'); // Gölge'nin kapısı (doğu kapı)
+      b.fill(12, 19, 12, 19, 'f'); // sis
+      b.sdoor(16, 14, 19, 'w'); // Işık'ın kapısı (batı kapı)
+      // --- DOĞU (Gölge) ---
+      b.gauntlet(35, 19, 3, { period: 2.4, on: 1.0 }); // huzme 32-34, engel 31
+      b.fill(28, 19, 28, 19, 'f'); // sis
+      b.lever(26, 19, 'w', 'shadow'); // Işık'ın kapısı (batı kapı)
+      b.sdoor(23, 14, 19, 'e'); // Gölge'nin kapısı (doğu kapı)
+      // toplanabilirler
+      b.star(3, 19);
+      b.star(8, 19);
+      b.star(17, 19);
+      b.star(18, 19);
+      b.feather(21, 19);
+      b.feather(22, 19);
+      b.feather(30, 19);
+      b.feather(37, 19);
+      b.doorLight(19, 19);
+      b.doorShadow(20, 19);
+      b.light(2, 19);
+      b.shadow(37, 19);
+    }),
+  );
+
   const api = { LEVELS, build };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.IVGLevels = api;
