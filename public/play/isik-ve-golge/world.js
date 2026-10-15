@@ -68,12 +68,14 @@
       this.rmir = new Map((level.rmirrors || []).map((m) => [m.c + ',' + m.r, m.group]));
       this.levers = (level.levers || []).map((l) => ({ ...l, pos: 'left', x: l.c * TILE + TILE / 2 }));
       /** Basınç plakası: üstünde ağırlık olduğu sürece aktif. */
+      this.crystalList = level.crystals || [];
       this.plates = (level.plates || []).map((p) => ({ ...p, down: false, t: 0, rect: { x: p.c * TILE + 3, y: (p.r + 1) * TILE - 6, w: TILE - 6, h: 6 } }));
+      for (const c of this.crystalList) this.plates.push({ ...c, crystal: true, down: false, t: 0, rect: { x: c.c * TILE - 3, y: c.r * TILE - 3, w: TILE + 6, h: TILE + 6 } });
       /** Taş kapı: c sütunu, r0..r1 satırları; yukarı kayarak açılır. */
       this.sdoors = (level.sdoors || []).map((d) => ({ ...d, open: 0, len: d.r1 - d.r0 + 1 }));
       this.force = new Set(); // testler: bu gruplar sanki açılmış sayılır
       /** İtilebilir kutu: karakterler iter (yavaş), yerçekimi, plakayı basılı tutar, basamak olur. */
-      this.boxes = (level.boxes || []).map((b) => ({ x: b.c * TILE, y: (b.r + 1) * TILE - BOX, w: BOX, h: BOX, vy: 0, onGround: false }));
+      this.boxes = (level.boxes || []).map((b) => ({ x: b.c * TILE, y: (b.r + 1) * TILE - BOX, w: BOX, h: BOX, vy: 0, onGround: false, mirror: b.mirror || null }));
       /** Asansör: c sütunundan wc karo genişlikte ince platform; rLow/rHigh: iki durağın ayakta durulan satırı. Düğme kaldıraçlarıyla (lever.button) hedef değişir. */
       this.lifts = (level.lifts || []).map((l) => ({
         ...l,
@@ -394,7 +396,7 @@
       // plaka
       for (const p of this.plates) {
         const was = p.down;
-        const on = this.list.some((h) => !h.dead && overlap(h, p.rect)) || this.boxes.some((b) => overlap(b, p.rect));
+        const on = p.crystal ? this.beams.some((bm) => bm.active !== false && overlap(bm, p.rect)) : this.list.some((h) => !h.dead && overlap(h, p.rect)) || this.boxes.some((b) => overlap(b, p.rect));
         if (p.hold) {
           // zamanlı düğme: basılınca `hold` sn aktif kalır (üstte durdukça süre tazelenir)
           if (on) p.t = p.hold;
@@ -443,7 +445,23 @@
       for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) if (this.blocked(kind, c, r)) return true;
       return false;
     }
+    /** Terazi: iki panın yükü (kutu 2, karakter 1); ağır olan pan alçalır. */
+    liftLoad(l) {
+      const onTop = (e) => Math.abs(e.y + e.h - l.y) <= 2 && e.x + e.w > l.x + 1 && e.x < l.x + l.w - 1;
+      let load = 0;
+      for (const b of this.boxes) if (onTop(b)) load += 2;
+      for (const h of this.list) if (!h.dead && onTop(h)) load += 1;
+      return load;
+    }
     updateLifts(dt) {
+      for (const [i, l] of this.lifts.entries()) {
+        if (l.pair === undefined || l.pair < i) continue;
+        const o = this.lifts[l.pair];
+        const la = this.liftLoad(l);
+        const lb = this.liftLoad(o);
+        if (la > lb) [l.target, o.target] = [0, 1];
+        else if (lb > la) [l.target, o.target] = [1, 0];
+      }
       for (const l of this.lifts) {
         const ty = l.target ? l.yHigh : l.yLow;
         if (Math.abs(ty - l.y) < 0.01) {
@@ -486,6 +504,14 @@
       }
     }
 
+    /** Bu karoda (merkezi) duran itilebilir ayna kutusunun yönü ('m' | 'n') ya da null. */
+    boxMirrorAt(c, r) {
+      for (const b of this.boxes) {
+        if (!b.mirror) continue;
+        if (Math.floor((b.x + b.w / 2) / TILE) === c && Math.floor((b.y + b.h / 2) / TILE) === r) return b.mirror;
+      }
+      return null;
+    }
     /** Ayna karosunun şu anki yönü (m: /, n: \; dönen aynada grubunun kaldıracı sağdaysa ters). Ayna değilse null. */
     mirrorAt(c, r) {
       const ch = this.tileAt(c, r);
@@ -578,7 +604,7 @@
         const r0 = nr;
         let mirror = null;
         while (!this.rayBlocked(nc, nr)) {
-          const ch = this.mirrorAt(nc, nr);
+          const ch = this.mirrorAt(nc, nr) || this.boxMirrorAt(nc, nr);
           if (ch) {
             mirror = ch;
             break;
@@ -601,6 +627,7 @@
           const sgn = horiz ? d[0] : d[1];
           let end = sgn > 0 ? start + len : start - len;
           for (const bx of this.boxes) {
+            if (bx.mirror) continue; // ayna kutusu huzmeyi keser değil, çevirir
             if (horiz ? bx.y >= ly + th || bx.y + bx.h <= ly : bx.x >= lx + th || bx.x + bx.w <= lx) continue;
             if (sgn > 0) {
               const edge = horiz ? bx.x : bx.y;

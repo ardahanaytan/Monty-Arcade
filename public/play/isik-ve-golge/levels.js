@@ -22,6 +22,7 @@
     const lanterns = [];
     const lifts = [];
     const rmirrors = [];
+    const crystals = [];
     let exclusive = false;
     let dependent = [];
     const b = {
@@ -55,6 +56,12 @@
       plate: (c, r, group, who = 'any') => (plates.push({ c, r, group, who }), b),
       /** Kaldıraçla dönen ayna: `type` başlangıç yönü (m: /, n: \); grubundaki kaldıraç sağdayken tersine döner. */
       rmirror: (c, r, type, group) => (b.put(c, r, type), rmirrors.push({ c, r, group }), b),
+      /** Işık kristali: duvar karosuna gömülü (c, r); üstüne/bitişiğine huzme düştüğü sürece grubu aktif eder (plaka gibi). */
+      crystal: (c, r, group) => (crystals.push({ c, r, group }), b),
+      /** İtilebilir ayna kutusu (c, r: durduğu zemin satırı); type: m (/) ya da n (\). Üstüne gelen huzmeyi 90° çevirir. */
+      mbox: (c, r, type) => (boxes.push({ c, r, mirror: type }), b),
+      /** Terazi: iki pan; c1 (başta yüksek) ve c2 (başta alçak). Yük (kutu 2, karakter 1) fazla olan pan iner, öteki çıkar. */
+      scale: (c1, c2, wc, rLow, rHigh) => (lifts.push({ c: c1, wc, rLow, rHigh, start: 'high', pair: lifts.length + 1 }), lifts.push({ c: c2, wc, rLow, rHigh, start: 'low', pair: lifts.length - 1 }), b),
       /** Zamanlı düğme: plaka gibi ama basıldıktan sonra `secs` sn aktif kalır (geri sayım çubuğu görünür). */
       timed: (c, r, group, secs, who = 'any') => (plates.push({ c, r, group, who, hold: secs }), b),
       /** Taş kapı: c sütunu, r0..r1 satırları (yukarı kayarak açılır). */
@@ -79,7 +86,7 @@
       feather: (c, r) => (items.push({ kind: 'feather', c, r }), b),
     };
     fn(b);
-    return { id, name, region, cols, rows, tiles: g.map((r) => r.join('')), starts, doors, items, beams, levers, plates, sdoors, boxes, lanterns, lifts, rmirrors, exclusive, dependent };
+    return { id, name, region, cols, rows, tiles: g.map((r) => r.join('')), starts, doors, items, beams, levers, plates, sdoors, boxes, lanterns, lifts, rmirrors, crystals, exclusive, dependent };
   }
 
   const LEVELS = [];
@@ -619,6 +626,49 @@
       b.doorShadow(37, 19);
       b.light(6, 19);
       b.shadow(8, 19);
+    }),
+  );
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 12 · Kristal Odası — Sur. YENİ: IŞIK KRİSTALİ (huzme düşünce aktif). Düzen: iki büyük oda (batı: kristal odası, doğu: çıkış odası), ortada bölme duvarı ve kapı.
+  //   Batı oda: duvara gömülü kristal, batı duvardaki yayıcının huzmesi rafın üzerinden ona gider; raftaki KUTU huzmeyi keser (kristal sönük).
+  //   Işık (huzmeye dayanıklı) merdivenle rafa çıkar, kutuyu rafın batı ucundan aşağı iter → huzme kristale ulaşır. Kutu zemine düşer; Gölge onu zamanlı geçidin batısındaki plakaya iter.
+  //   Bölme kapısı VE kapısı: kristal + plaka. Doğu odada Işık kaldıraç rafına çıkıp kaldıracı çeker → çıkış odasının kapısı açılır.
+  // ─────────────────────────────────────────────────────────────────────────────
+  LEVELS.push(
+    build('kristal-odasi', { tr: 'Kristal Odası', en: 'Crystal Chamber' }, 'sur', (b) => {
+      b.frame();
+      b.dependent('light', 'shadow');
+      b.fill(19, 2, 19, 14); // bölme duvarı (altta kapı)
+      // --- BATI ODA ---
+      b.fill(1, 17, 4, 17); // basamak
+      b.fill(7, 15, 17, 15); // raf
+      b.beam(0, 14, 'r', { shade: true }); // raf hizasında doğuya
+      b.crystal(19, 14, 'a');
+      b.box(13, 14);
+      b.plate(9, 19, 'a');
+      b.gauntlet(16, 19, 4, { period: 2.4, on: 1.0 }); // huzme 12-15, engel 11
+      b.sdoor(19, 15, 19, 'a', { all: true });
+      // --- DOĞU ODA ---
+      b.fill(23, 17, 25, 17); // basamak
+      b.fill(27, 15, 33, 15); // kaldıraç rafı
+      b.lever(30, 14, 'x', 'light');
+      b.fill(25, 19, 26, 19, 'f'); // sis (2 karo)
+      b.fill(29, 19, 31, 19, 'w'); // su (3 karo)
+      b.sdoor(35, 15, 19, 'x');
+      // toplanabilirler
+      b.star(3, 16);
+      b.star(16, 14);
+      b.star(24, 16);
+      b.star(32, 14);
+      b.feather(3, 19);
+      b.feather(13, 19);
+      b.feather(22, 19);
+      b.feather(33, 19);
+      b.doorLight(37, 19);
+      b.doorShadow(38, 19);
+      b.light(3, 19);
+      b.shadow(2, 19);
     }),
   );
 

@@ -568,8 +568,32 @@
       }
     }
   }
+  // --- Işık kristali: duvar karosuna gömülü, huzme düşünce parlar ---
+  function drawCrystals(ctx, w, t) {
+    for (const p of w.plates) {
+      if (!p.crystal) continue;
+      const rgb = gcol(p.group);
+      const x = p.c * TILE + TILE / 2;
+      const y = p.r * TILE + TILE / 2;
+      if (p.down) glow(ctx, x, y, 70, rgb, 0.6 + 0.2 * Math.sin(t * 8));
+      ctx.fillStyle = '#10152e';
+      ctx.beginPath();
+      ctx.arc(x, y, 14, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = p.down ? `rgba(${rgb},.98)` : `rgba(${rgb},.35)`;
+      ctx.beginPath();
+      ctx.moveTo(x, y - 12);
+      ctx.lineTo(x + 8, y);
+      ctx.lineTo(x, y + 12);
+      ctx.lineTo(x - 8, y);
+      ctx.closePath();
+      ctx.fill();
+      rune(ctx, p.group, x, y, 4, p.down ? 0.95 : 0.5);
+    }
+  }
   function drawPlates(ctx, w, t) {
     for (const p of w.plates) {
+      if (p.crystal) continue;
       const rgb = gcol(p.group);
       const x = p.c * TILE;
       const y = (p.r + 1) * TILE;
@@ -615,6 +639,16 @@
     ctx.stroke();
     ctx.fillStyle = 'rgba(255,220,160,.35)';
     ctx.fillRect(x + 2, y + 2, b.w - 4, 2);
+    if (b.mirror) {
+      ctx.fillStyle = '#10152e';
+      ctx.fillRect(x + 4, y + 4, b.w - 8, b.h - 8);
+      ctx.strokeStyle = 'rgba(214,232,255,.95)';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      if (b.mirror === 'm') (ctx.moveTo(x + 6, y + b.h - 6), ctx.lineTo(x + b.w - 6, y + 6));
+      else (ctx.moveTo(x + 6, y + 6), ctx.lineTo(x + b.w - 6, y + b.h - 6));
+      ctx.stroke();
+    }
   }
 
   // --- Kandil ---
@@ -701,6 +735,7 @@
     drawTiles(ctx, w, t);
     for (const d of w.doors) drawDoor(ctx, d, t);
     drawLifts(ctx, w, t);
+    drawCrystals(ctx, w, t);
     drawBeams(ctx, w, t);
     drawLanterns(ctx, w, t);
     drawPlates(ctx, w, t);
