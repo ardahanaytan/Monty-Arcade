@@ -34,6 +34,7 @@
 
   const REGIONS = {
     dungeon: { top: '#070a1a', bottom: '#151a37', brick: '#222a4f', edge: '#3a4580', deep: '#10152e', fog: '120,130,190' },
+    ozgurluk: { top: '#1a1030', bottom: '#4a3060', brick: '#5a3d6e', edge: '#c9a0dc', deep: '#2a1840', fog: '240,190,220' },
     sur: { top: '#140c1e', bottom: '#3a2540', brick: '#4a3358', edge: '#8a64a0', deep: '#24152e', fog: '210,150,190' },
     courtyard: { top: '#0c1130', bottom: '#222a52', brick: '#2e3868', edge: '#5560a8', deep: '#171d40', fog: '160,150,210' },
   };

@@ -759,6 +759,49 @@
     }),
   );
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 15 · Sur Sınavı — Sur. Bölge sınavı: terazi + kandil + ayna kutusu + kristal. Düzen: üst köprü + alt tünel (iki uzun kat), batıda terazi kuyusu.
+  //   Işık üst-batıdaki sahanlıktan, Gölge alttaki panda başlar. Işık kutuyu pan A'ya itip kendi de çıkar (3 > 1): A iner, B çıkar; Işık alt tünele, Gölge üst köprüye taşınır.
+  //   Alt tünel (Işık): su, sis; ayna kutusunu doğudan batıya engele (kandilin gömülü olduğu blok) iter; kandili yakar → doğu kapı açılır → doğu duvardaki yayıcının huzmesi ayna kutusuna varır,
+  //   yukarı çıkıp üst köprünün tabanındaki kristale ulaşır. Üst köprü (Gölge): sis, kaldıraç, zamanlı geçit; çıkış kapısı SIKI VE (kristal + kaldıraç).
+  // ─────────────────────────────────────────────────────────────────────────────
+  LEVELS.push(
+    build('sur-sinavi', { tr: 'Sur Sınavı', en: 'Rampart Trial' }, 'sur', (b) => {
+      b.frame();
+      b.dependent('light', 'shadow');
+      b.fill(13, 9, 38, 10).fill(1, 9, 2, 10); // üst köprü zemini + batı sahanlık
+      b.scale(3, 9, 4, 19, 8); // A (3-6) yukarıda, B (9-12) aşağıda
+      b.box(2, 8); // Işık'ın itecegi kutu
+      // --- ALT TÜNEL (Işık) ---
+      b.fill(16, 19, 18, 19, 'w'); // su (3 karo)
+      b.fill(22, 19, 22, 19, 'f'); // sis
+      b.fill(29, 19, 29, 19); // engel + kandil bloğu
+      b.lantern(29, 19, 'r', { group: 'h' });
+      b.mbox(33, 19, 'n');
+      b.beam(39, 19, 'l');
+      b.sdoor(35, 11, 19, 'h');
+      b.crystal(30, 10, 'g');
+      // --- ÜST KÖPRÜ (Gölge) ---
+      b.fill(15, 8, 15, 8, 'f'); // sis
+      b.lever(18, 8, 'g', 'shadow');
+      b.gauntlet(29, 8, 5, { period: 2.4, on: 1.0 }); // huzme 24-28, engel 23
+      b.sdoor(34, 2, 8, 'g', { all: true, strict: true });
+      // toplanabilirler
+      b.star(1, 8);
+      b.star(14, 19);
+      b.star(25, 19);
+      b.star(32, 19);
+      b.feather(16, 8);
+      b.feather(20, 8);
+      b.feather(26, 8);
+      b.feather(36, 8);
+      b.doorLight(37, 19);
+      b.doorShadow(37, 8);
+      b.light(1, 8);
+      b.shadow(10, 19);
+    }),
+  );
+
   const api = { LEVELS, build };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.IVGLevels = api;
