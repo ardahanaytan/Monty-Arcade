@@ -34,6 +34,7 @@
 
   const REGIONS = {
     dungeon: { top: '#070a1a', bottom: '#151a37', brick: '#222a4f', edge: '#3a4580', deep: '#10152e', fog: '120,130,190' },
+    sur: { top: '#140c1e', bottom: '#3a2540', brick: '#4a3358', edge: '#8a64a0', deep: '#24152e', fog: '210,150,190' },
     courtyard: { top: '#0c1130', bottom: '#222a52', brick: '#2e3868', edge: '#5560a8', deep: '#171d40', fog: '160,150,210' },
   };
 
@@ -81,6 +82,7 @@
         const x = c * TILE;
         const y = r * TILE;
         if (ch === 'm' || ch === 'n') {
+          const mc = w.mirrorAt(c, r);
           // ayna bloğu: koyu çerçeve + çapraz parlak yüz (m: /, n: \)
           ctx.fillStyle = '#10152e';
           ctx.fillRect(x, y, TILE, TILE);
@@ -89,7 +91,7 @@
           ctx.strokeStyle = 'rgba(214,232,255,.95)';
           ctx.lineWidth = 4;
           ctx.beginPath();
-          if (ch === 'm') (ctx.moveTo(x + 4, y + TILE - 4), ctx.lineTo(x + TILE - 4, y + 4));
+          if (mc === 'm') (ctx.moveTo(x + 4, y + TILE - 4), ctx.lineTo(x + TILE - 4, y + 4));
           else (ctx.moveTo(x + 4, y + 4), ctx.lineTo(x + TILE - 4, y + TILE - 4));
           ctx.stroke();
           ctx.strokeStyle = `rgba(255,255,255,${0.4 + 0.3 * Math.sin(t * 3 + c)})`;

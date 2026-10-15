@@ -65,6 +65,7 @@
       this.beamSrc = (level.beams || []).map((b) => ({ ...b, kind: 'static' }));
       this.beams = [];
       /** Kaldıraç: iki konumlu, kalıcı. 'right' = açık. Karakter hangi yönden içinden geçerse o yöne yatar. */
+      this.rmir = new Map((level.rmirrors || []).map((m) => [m.c + ',' + m.r, m.group]));
       this.levers = (level.levers || []).map((l) => ({ ...l, pos: 'left', x: l.c * TILE + TILE / 2 }));
       /** Basınç plakası: üstünde ağırlık olduğu sürece aktif. */
       this.plates = (level.plates || []).map((p) => ({ ...p, down: false, t: 0, rect: { x: p.c * TILE + 3, y: (p.r + 1) * TILE - 6, w: TILE - 6, h: 6 } }));
@@ -485,6 +486,15 @@
       }
     }
 
+    /** Ayna karosunun şu anki yönü (m: /, n: \; dönen aynada grubunun kaldıracı sağdaysa ters). Ayna değilse null. */
+    mirrorAt(c, r) {
+      const ch = this.tileAt(c, r);
+      if (ch !== 'm' && ch !== 'n') return null;
+      const g = this.rmir.get(c + ',' + r);
+      if (g && this.levers.some((l) => l.group === g && l.pos === 'right')) return ch === 'm' ? 'n' : 'm';
+      return ch;
+    }
+
     // --- Huzmeler: yayıcıdan ilk duvara / kapalı taş kapıya / kutuya kadar; her adımda yeniden hesaplanır ---
     rayBlocked(c, r) {
       if (this.tileAt(c, r) === '#') return true;
@@ -568,8 +578,8 @@
         const r0 = nr;
         let mirror = null;
         while (!this.rayBlocked(nc, nr)) {
-          const ch = this.tileAt(nc, nr);
-          if (ch === 'm' || ch === 'n') {
+          const ch = this.mirrorAt(nc, nr);
+          if (ch) {
             mirror = ch;
             break;
           }

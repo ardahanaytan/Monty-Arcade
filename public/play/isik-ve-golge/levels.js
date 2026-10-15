@@ -21,6 +21,7 @@
     const boxes = [];
     const lanterns = [];
     const lifts = [];
+    const rmirrors = [];
     let exclusive = false;
     let dependent = [];
     const b = {
@@ -52,6 +53,8 @@
       lift: (c, wc, rLow, rHigh, o = {}) => (lifts.push({ c, wc, rLow, rHigh, ...o }), b),
       /** Basınç plakası (c, r: üstüne basılan zemin satırı). */
       plate: (c, r, group, who = 'any') => (plates.push({ c, r, group, who }), b),
+      /** Kaldıraçla dönen ayna: `type` başlangıç yönü (m: /, n: \); grubundaki kaldıraç sağdayken tersine döner. */
+      rmirror: (c, r, type, group) => (b.put(c, r, type), rmirrors.push({ c, r, group }), b),
       /** Zamanlı düğme: plaka gibi ama basıldıktan sonra `secs` sn aktif kalır (geri sayım çubuğu görünür). */
       timed: (c, r, group, secs, who = 'any') => (plates.push({ c, r, group, who, hold: secs }), b),
       /** Taş kapı: c sütunu, r0..r1 satırları (yukarı kayarak açılır). */
@@ -76,7 +79,7 @@
       feather: (c, r) => (items.push({ kind: 'feather', c, r }), b),
     };
     fn(b);
-    return { id, name, region, cols, rows, tiles: g.map((r) => r.join('')), starts, doors, items, beams, levers, plates, sdoors, boxes, lanterns, lifts, exclusive, dependent };
+    return { id, name, region, cols, rows, tiles: g.map((r) => r.join('')), starts, doors, items, beams, levers, plates, sdoors, boxes, lanterns, lifts, rmirrors, exclusive, dependent };
   }
 
   const LEVELS = [];
@@ -574,6 +577,48 @@
       b.doorShadow(33, 11);
       b.light(2, 11);
       b.shadow(8, 11);
+    }),
+  );
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 11 · Dönen Aynalar — Sur. YENİ: KALDIRAÇLA DÖNEN AYNA. Düzen: uzun alt koridor + kuzey-batıda gizli kaldıraç odası (Işık), doğu uçta Gölge'nin çıkışı.
+  //   Koridorun tavanından asılı üç yayıcı üç aynaya huzme yollar; her ayna ya aşağı (koridoru kapatan dikey huzme) ya yukarı (zararsız) çevirir.
+  //   TEK kaldıraç üçünü birden çevirir ve ikincisi ötekilerin tersidir: kapı 1 ve 3 aynı anda açıkken kapı 2 kapanır. Gölge kapıları sırayla geçer:
+  //   Işık kaldıracı sağa, sola, sağa çevirerek onu bekleyen Gölge'yi ilerletir (Gölge kapılar arasında güvenli hücrelerde durur).
+  //   Gölge doğuda zamanlı huzme geçidini geçip kaldıracı çeker → Işık'ın çıkış kapısı açılır.
+  // ─────────────────────────────────────────────────────────────────────────────
+  LEVELS.push(
+    build('donen-aynalar', { tr: 'Dönen Aynalar', en: 'Turning Mirrors' }, 'sur', (b) => {
+      b.frame();
+      b.dependent('light', 'shadow');
+      b.fill(1, 2, 38, 15); // tavan bloğu
+      b.fill(1, 3, 6, 15, '.'); // kule boşluğu
+      b.fill(7, 3, 15, 9, '.'); // kaldıraç odası
+      b.fill(1, 17, 4, 17).fill(3, 14, 6, 14).fill(1, 11, 4, 11); // kule basamakları
+      // --- KALDIRAÇ ODASI (Işık) ---
+      b.fill(8, 9, 9, 9, 'w'); // su (2 karo)
+      b.lever(11, 9, 'x', 'light');
+      b.sdoor(13, 3, 9, 'e');
+      // --- KORİDOR (Gölge) ---
+      b.fill(10, 16, 10, 16).fill(16, 16, 16, 16).fill(22, 16, 22, 16); // asılı yayıcı blokları
+      b.beam(10, 16, 'r').beam(16, 16, 'r').beam(22, 16, 'r');
+      b.rmirror(14, 16, 'n', 'x').rmirror(20, 16, 'm', 'x').rmirror(26, 16, 'n', 'x');
+      b.fill(12, 19, 12, 19, 'f'); // sis
+      b.gauntlet(34, 19, 4, { period: 2.4, on: 1.0 }); // huzme 30-33, engel 29
+      b.lever(36, 19, 'e', 'shadow'); // Işık'ın çıkış kapısı
+      // toplanabilirler
+      b.star(5, 13);
+      b.star(3, 10);
+      b.star(10, 9);
+      b.star(14, 9);
+      b.feather(7, 19);
+      b.feather(18, 19);
+      b.feather(24, 19);
+      b.feather(31, 19);
+      b.doorLight(15, 9);
+      b.doorShadow(37, 19);
+      b.light(6, 19);
+      b.shadow(8, 19);
     }),
   );
 
