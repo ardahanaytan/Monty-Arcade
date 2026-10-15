@@ -53,6 +53,7 @@
       /** Basınç plakası (c, r: üstüne basılan zemin satırı). */
       plate: (c, r, group, who = 'any') => (plates.push({ c, r, group, who }), b),
       /** Taş kapı: c sütunu, r0..r1 satırları (yukarı kayarak açılır). */
+      /** Taş kapı. o: { inv: kandil sönükken açık, all: gruptaki TÜM plakalar basılı (ve tüm kandiller yanık) olmalı; kaldıraç sağdaysa kalıcı açar }. */
       sdoor: (c, r0, r1, group, o = {}) => (sdoors.push({ c, r0, r1, group, ...o }), b),
       /** Yardım almadan şu karakterler kapısına varamaz (varsayılan: ikisi); testte kanıtlanır. */
       dependent: (...kinds) => ((dependent = kinds.length ? kinds : ['light', 'shadow']), b),
@@ -202,16 +203,23 @@
       // --- ÜST KAT ---
       b.fill(20, 2, 20, 5); // sütun
       b.gauntlet(30, 7, 5, { period: 2.4, on: 1.2 }); // huzme geçidi (25-29): Gölge huzme kapalıyken geçmeli
+      // çıkış odası kapısı (33): iki plakanın İKİSİ de basılı olmalı (biri kutu, biri karakter); kapının ardındaki kaldıraç mandal: sonra herkes geçer
+      b.box(12, 7);
+      b.plate(14, 7, 'green');
+      b.fill(15, 7, 15, 7); // engel: kutu burada durur (14. plakada)
+      b.plate(17, 7, 'green');
+      b.sdoor(33, 2, 7, 'green', { all: true });
+      b.lever(34, 7, 'green');
       // toplanabilirler
       b.star(13, 16); // fırlatma yayının üstünde
       b.star(22, 19);
       b.star(38, 12); // doğu cep (orta kat)
-      b.star(30, 6);
+      b.star(22, 6);
       b.feather(13, 20); // suyun dibi
       b.feather(29, 20); // ikinci suyun dibi
       b.feather(29, 12); // huzme koridorunda
       b.feather(9, 13);
-      b.feather(33, 6); // huzmenin hemen altı (kısa sıçrayış)
+      b.feather(32, 6); // geçit bloğundan sonra, kapıdan önce
       b.doorShadow(35, 7);
       b.doorLight(37, 7);
       b.fill(1, 17, 3, 17); // Işık'ın başladığı ince platform (altı açık)
@@ -226,7 +234,7 @@
   //   ALT KAT: Batıda alçak bir tünel; ucundaki duvara gömülü bekçi kandili (başta yanık) tüneli ölümcül yapar. Tünelin ağzında kutu, ucunda plaka.
   //     Alçak tavan yüzünden kutunun önüne geçilemez: Gölge kutuyu tünelin ucuna iter, kutunun arkasında gölgelik içinde yürür. Kutu kandile bitişik
   //     plakaya oturunca taş kapı (plakadan 25 karo uzakta) kalıcı açılır. Kutu şart: plakayı elle tutan karakter kapıya yetişemez.
-  //   ORTA KAT (sağdan sola): L3'teki gibi huzme koridoru, kırmızı plaka + taş kapı + en batıdaki kaldıraç; sonra batıdaki basamaklarla üst kata.
+  //   ORTA KAT (sağdan sola): huzme koridoru; kırmızı taş kapı İKİ plakanın birlikte basılmasını ister (kutu + karakter); en batıdaki kaldıraç mandal; sonra huzme geçidi ve basamaklarla üst kata.
   //   ÜST KAT (soldan sağa): sonda bekçi kandili (başta yanık, doğu duvara gömülü, batıya bakar) çıkışları kaplar. Önce kaldıraç yeşil taş kapıyı açar
   //     (kapı kutuyla korunur); Gölge kutuyu 22 karo doğuya, kandile bitişene dek iter (arkası gölgelik) ve kandile yaklaşıp söndürür; sonra çıkışlar.
   //   Yalnız Gölge'nin yürüyeceği her yer ölümcül olabilir: ışık huzmeleri karakter boyunda, zıplayarak aşılamaz.
@@ -251,8 +259,11 @@
       // --- ORTA KAT --- (L3'tekiyle aynı kurgu)
       b.beam(39, 10, 'l');
       b.fill(25, 9, 25, 10);
-      b.plate(24, 13, 'red');
-      b.sdoor(17, 9, 13, 'red');
+      b.plate(24, 13, 'red'); // doğudaki plaka: Işık durur
+      b.plate(22, 13, 'red'); // batıdaki plaka: kutu durur (engel kutuyu burada tutar)
+      b.fill(21, 13, 21, 13);
+      b.box(26, 13); // orta kattaki kutu: batıya itilir (Gölge)
+      b.sdoor(17, 9, 13, 'red', { all: true }); // iki plaka birlikte basılı olmalı; en batıdaki kaldıraç mandal
       b.lever(2, 13, 'red');
       b.fill(6, 12, 7, 13);
       b.fill(3, 10, 4, 10);

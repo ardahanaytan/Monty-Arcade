@@ -408,7 +408,11 @@
       for (const d of this.sdoors) {
         const lamps = this.lanterns.filter((l) => l.group === d.group);
         const lampOn = d.inv ? lamps.length > 0 && lamps.every((l) => !l.lit) : lamps.some((l) => l.lit);
-        const on = this.force.has(d.group) || lampOn || this.levers.some((l) => l.group === d.group && l.pos === 'right') || this.plates.some((p) => p.group === d.group && p.down);
+        const gl = this.levers.filter((l) => l.group === d.group);
+        const gp = this.plates.filter((p) => p.group === d.group);
+        // all: gruptaki TÜM plakalar basılı ve TÜM kandiller (ters değilse) yanık olmalı; kaldıraç sağa yatırılmışsa kalıcı olarak açar (mandal)
+        const andOn = d.all && (gp.length > 0 || lamps.length > 0) && gp.every((p) => p.down) && (d.inv ? lamps.every((l) => !l.lit) : lamps.every((l) => l.lit));
+        const on = this.force.has(d.group) || (d.all ? andOn : lampOn || gp.some((p) => p.down)) || gl.some((l) => l.pos === 'right');
         const was = d.open;
         if (on) d.open = Math.min(1, d.open + dt * SDOOR_SPEED);
         else {
