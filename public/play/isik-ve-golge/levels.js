@@ -672,6 +672,93 @@
     }),
   );
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 13 · Terazi Sarayı — Sur. YENİ: TERAZİ (ağır pan iner, öteki çıkar; kutu 2, karakter 1). Düzen: ayna simetrik; ortada terazi odası, yanlarda iki katlı galeriler (üst: kuzey, alt: güney).
+  //   Işık üst-batıda, Gölge alt-doğuda başlar; çıkışlar çaprazdır (Işık alt-batı, Gölge üst-doğu). Pan A başta yukarıda (Işık tarafı), pan B aşağıda (Gölge tarafı).
+  //   Işık: su havuzunun ötesinde kapı (Gölge'nin plakası); kutuyu A'ya itip kendi de A'ya çıkar (3 > 1). Gölge: zamanlı geçidi geçip ikinci kutuyu plakaya iter (üst kapı açılır), sonra B'ye çıkar.
+  //   İkisi de aynı anda panlarda olunca A iner, B çıkar: Işık alt galeriye, Gölge üst galeriye taşınır. Sonra her biri kendi tehlikeleriyle çıkışa.
+  // ─────────────────────────────────────────────────────────────────────────────
+  LEVELS.push(
+    build('terazi-sarayi', { tr: 'Terazi Sarayı', en: 'Hall of Scales' }, 'sur', (b) => {
+      b.frame();
+      b.dependent('light', 'shadow');
+      b.fill(1, 12, 14, 13).fill(25, 12, 38, 13); // ara tavan/zemin (üst galeriler: satır 11)
+      b.scale(15, 21, 4, 19, 11); // A (15-18) yukarıda, B (21-24) aşağıda
+      // --- ÜST-BATI (Işık) ---
+      b.fill(4, 11, 6, 11, 'w'); // su (3 karo)
+      b.sdoor(9, 6, 11, 'a'); // Gölge'nin plakası açar
+      b.box(11, 11);
+      // --- ALT-DOĞU (Gölge) ---
+      b.gauntlet(36, 19, 4, { period: 2.4, on: 1.0 }); // huzme 32-35, engel 31
+      b.box(29, 19);
+      b.plate(27, 19, 'a');
+      // --- ALT-BATI (Işık'ın çıkışı) ---
+      b.fill(5, 19, 6, 19, 'w'); // su (2 karo)
+      b.fill(11, 19, 11, 19, 'f'); // sis
+      // --- ÜST-DOĞU (Gölge'nin çıkışı) ---
+      b.fill(26, 11, 26, 11, 'f'); // sis
+      b.gauntlet(34, 11, 4, { period: 2.4, on: 1.0, phase: 1.0 }); // huzme 30-33, engel 29
+      // toplanabilirler
+      b.star(2, 11);
+      b.star(8, 11);
+      b.star(16, 10);
+      b.star(12, 19);
+      b.feather(37, 19);
+      b.feather(25, 19);
+      b.feather(27, 10);
+      b.feather(32, 10);
+      b.doorLight(2, 19);
+      b.doorShadow(37, 11);
+      b.light(2, 11);
+      b.shadow(38, 19);
+    }),
+  );
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 14 · Yansıma Odası — Sur. YENİ: İTİLEBİLİR AYNA (ayna kutusu). Düzen: iki oda (batı: yansıma odası, doğu: çıkışlar); batıda iki ayrı yayıcı, iki ayna kutusu, iki sabit ayna, iki kristal.
+  //   Kristaller bölme duvarındadır; ikisi de yanınca VE kapısı açılır. Huzmeler ayna kutularının olduğu hücreden yukarı çıkar, tavandaki sabit aynada doğuya döner, kristale varır.
+  //   Işık (huzmeye dayanıklı) alt kattaki kutuyu engele, rafın üstündeki kutuyu rafın engeline iter (kutu tam doğru sütunda durur). Gölge bölme kapısının batısında bekler (zemin huzmesi yalnız batı yarıyı kaplar).
+  //   Doğuda Gölge'yi zamanlı huzme geçidi, sis ve su, Işık'ı su ve sis bekler.
+  // ─────────────────────────────────────────────────────────────────────────────
+  LEVELS.push(
+    build('yansima-odasi', { tr: 'Yansıma Odası', en: 'Reflection Chamber' }, 'sur', (b) => {
+      b.frame();
+      b.dependent('light', 'shadow');
+      b.fill(19, 2, 19, 14); // bölme duvarı (altta kapı)
+      // --- BATI ODA ---
+      b.fill(1, 17, 3, 17).fill(5, 15, 7, 15); // basamaklar (Işık)
+      b.fill(8, 13, 12, 13); // raf
+      b.beam(0, 19, 'r'); // zemin huzmesi
+      b.beam(0, 12, 'r'); // raf huzmesi
+      b.mbox(6, 19, 'm'); // zemin ayna kutusu
+      b.mbox(9, 12, 'm'); // raf ayna kutusu
+      b.fill(14, 19, 14, 19); // engel: zemin kutusu 13. sütunda durur
+      b.fill(12, 12, 12, 12); // engel: raf kutusu 11. sütunda durur
+      b.put(13, 4, 'm'); // sabit aynalar (tavan hizası)
+      b.put(11, 8, 'm');
+      b.crystal(19, 4, 'a');
+      b.crystal(19, 8, 'a');
+      b.sdoor(19, 15, 19, 'a', { all: true });
+      // --- DOĞU ODA ---
+      b.fill(23, 19, 23, 19, 'f'); // sis
+      b.gauntlet(31, 19, 5, { period: 2.4, on: 1.0 }); // huzme 26-30, engel 25
+      b.fill(33, 19, 34, 19, 'w'); // su (2 karo)
+      // toplanabilirler
+      b.star(2, 16);
+      b.star(8, 12);
+      b.star(11, 12);
+      b.star(21, 19);
+      b.feather(17, 19);
+      b.feather(22, 19);
+      b.feather(28, 19);
+      b.feather(35, 19);
+      b.doorLight(36, 19);
+      b.doorShadow(37, 19);
+      b.light(2, 19);
+      b.shadow(16, 19);
+    }),
+  );
+
   const api = { LEVELS, build };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.IVGLevels = api;
