@@ -53,7 +53,7 @@
       /** Basınç plakası (c, r: üstüne basılan zemin satırı). */
       plate: (c, r, group, who = 'any') => (plates.push({ c, r, group, who }), b),
       /** Taş kapı: c sütunu, r0..r1 satırları (yukarı kayarak açılır). */
-      /** Taş kapı. o: { inv: kandil sönükken açık, all: gruptaki TÜM plakalar basılı (ve tüm kandiller yanık) olmalı; kaldıraç sağdaysa kalıcı açar }. */
+      /** Taş kapı. o: { inv: kandil sönükken açık, all: gruptaki TÜM plakalar basılı (ve tüm kandiller yanık) olmalı; kaldıraç sağdaysa kalıcı açar, strict: kaldıraçlar da VE'ye katılır (mandal yok) }. */
       sdoor: (c, r0, r1, group, o = {}) => (sdoors.push({ c, r0, r1, group, ...o }), b),
       /** Yardım almadan şu karakterler kapısına varamaz (varsayılan: ikisi); testte kanıtlanır. */
       dependent: (...kinds) => ((dependent = kinds.length ? kinds : ['light', 'shadow']), b),
@@ -306,12 +306,14 @@
       b.fill(1, 10, 2, 11).fill(6, 10, 19, 11).fill(24, 10, 38, 11);
       // dikey bölme (sütun 16): üstte sarı kapı (satır 6-9), altta mavi kapı (satır 16-19)
       b.fill(16, 2, 16, 5).fill(16, 10, 16, 11).fill(16, 12, 16, 15);
-      b.sdoor(16, 6, 9, 'amber');
+      b.sdoor(16, 6, 9, 'amber', { all: true, strict: true });
       b.sdoor(16, 16, 19, 'blue');
       // --- SOL ÜST ---
       b.beam(0, 7, 'r'); // batı duvardan doğuya; sütun huzmeyi keser (deliği kapsar)
       b.fill(7, 2, 7, 7);
-      b.box(9, 9);
+      b.box(8, 9); // delikten aşağı itilecek kutu (Gölge)
+      b.box(13, 9); // üst kapının plakasına itilecek kutu (Işık)
+      b.plate(15, 9, 'amber'); // sarı kapı: bu plaka (kutu) VE alttaki kaldıraç birlikte
       // --- SOL ALT ---
       b.fill(8, 19, 8, 19); // engel: kutu burada durur (basamak)
       b.fill(9, 16, 11, 16); // ince raf (kaldıraç)
@@ -338,7 +340,7 @@
       b.doorShadow(36, 19);
       b.doorLight(38, 19);
       b.light(11, 9);
-      b.shadow(13, 9);
+      b.shadow(10, 9);
     }),
   );
 
@@ -367,9 +369,12 @@
       // --- ALT KAT (Gölge) ---
       b.box(24, 19);
       b.box(26, 19);
+      b.box(21, 19); // en batıdaki kutu: kuyuyu geçip alt kattaki plakaya gider (kapıya VE: üst plaka + bu plaka)
+      b.plate(13, 19, 'amber');
+      b.fill(12, 19, 12, 19); // engel: kutu 13'te durur
       b.button(38, 19, 0, 'right'); // en doğuda (doğuya geçince): alttan üste gönderir
       b.gauntlet(37, 19, 5, { period: 2.4, on: 1.0 }); // huzme geçidi (32-36): düğmeye giderken ve dönerken Gölge huzme kapalıyken geçmeli
-      b.sdoor(8, 10, 19, 'amber'); // Gölge'nin kapısı
+      b.sdoor(8, 10, 19, 'amber', { all: true }); // Gölge'nin kapısı: batıdaki üst plaka VE alt plaka birlikte
       // toplanabilirler
       b.star(6, 6);
       b.star(14, 6);
