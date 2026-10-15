@@ -73,6 +73,19 @@
       this.force = new Set(); // testler: bu gruplar sanki açılmış sayılır
       /** İtilebilir kutu: karakterler iter (yavaş), yerçekimi, plakayı basılı tutar, basamak olur. */
       this.boxes = (level.boxes || []).map((b) => ({ x: b.c * TILE, y: (b.r + 1) * TILE - BOX, w: BOX, h: BOX, vy: 0, onGround: false }));
+      /** Asansör: c sütunundan wc karo genişlikte ince platform; rLow/rHigh: iki durağın ayakta durulan satırı. Düğme kaldıraçlarıyla (lever.button) hedef değişir. */
+      this.lifts = (level.lifts || []).map((l) => ({
+        ...l,
+        x: l.c * TILE,
+        w: l.wc * TILE,
+        h: 12,
+        yLow: (l.rLow + 1) * TILE,
+        yHigh: (l.rHigh + 1) * TILE,
+        y: ((l.start === 'high' ? l.rHigh : l.rLow) + 1) * TILE,
+        target: l.start === 'high' ? 1 : 0,
+        speed: l.speed || 110,
+        moving: false,
+      }));
       this.updateBeams();
       this.collected = { star: 0, feather: 0 };
       this.total = { star: this.items.filter((i) => i.kind === 'star').length, feather: this.items.filter((i) => i.kind === 'feather').length };
@@ -140,6 +153,11 @@
           return ch;
         }
       }
+      for (const l of this.lifts) {
+        if (!overlap(h, l)) continue;
+        h.x = dx > 0 ? l.x - h.w : l.x + l.w;
+        return 'lift';
+      }
       // kutular: itilir; itilemiyorsa katı
       for (const b of this.boxes) {
         if (!overlap(h, b)) continue;
@@ -191,6 +209,11 @@
             break;
           }
         }
+        for (const l of this.lifts) if (overlap(b, l) && b.vy >= 0 && b.y + b.h - l.y <= 14) {
+          b.y = l.y - b.h;
+          b.vy = 0;
+          b.onGround = true;
+        }
         for (const o of this.boxes) if (o !== b && overlap(b, o) && b.y < o.y) {
           b.y = o.y - b.h;
           b.vy = 0;
@@ -215,6 +238,11 @@
           h.y = dy > 0 ? r * TILE - h.h : (r + 1) * TILE;
           return ch;
         }
+      }
+      for (const l of this.lifts) {
+        if (!overlap(h, l)) continue;
+        h.y = dy > 0 ? l.y - h.h : l.y + l.h;
+        return 'lift';
       }
       for (const b of this.boxes) {
         if (!overlap(h, b)) continue;
@@ -245,6 +273,7 @@
       for (const h of this.list) this.simulate(h, dt, (inp && inp[h.kind]) || {});
       this.updateBoxes(dt);
       this.triggers(dt);
+      this.updateLifts(dt);
       this.updateBeams();
       this.hazards();
       if (this.state === 'dead') return;
@@ -356,6 +385,7 @@
           else if (h.pcx > l.x && cx <= l.x) pos = 'left';
           if (pos && pos !== l.pos) {
             l.pos = pos;
+            if (l.button && this.lifts[l.lift] && (!l.btnDir || l.btnDir === pos)) this.lifts[l.lift].target = 1 - this.lifts[l.lift].target; // düğme: asansörü çağırır/gönderir (btnDir: yalnız o yöne geçilince)
             this.emit('lever', { x: l.x, y: l.r * TILE + TILE / 2, pos, group: l.group });
           }
         }
@@ -389,6 +419,58 @@
           if (!this.list.some((h) => overlap(h, rect)) && !this.boxes.some((b) => overlap(b, rect))) d.open = next;
         }
         if ((was === 0) !== (d.open === 0) || (was === 1) !== (d.open === 1)) this.emit('sdoor', { x: d.c * TILE + TILE / 2, y: (d.r0 + d.len / 2) * TILE, open: d.open > was });
+      }
+    }
+
+    // --- Asansör ---
+    tilesBlock(kind, x, y, w, h) {
+      const c0 = Math.floor(x / TILE);
+      const c1 = Math.floor((x + w - 0.001) / TILE);
+      const r0 = Math.floor(y / TILE);
+      const r1 = Math.floor((y + h - 0.001) / TILE);
+      for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) if (this.blocked(kind, c, r)) return true;
+      return false;
+    }
+    updateLifts(dt) {
+      for (const l of this.lifts) {
+        const ty = l.target ? l.yHigh : l.yLow;
+        if (Math.abs(ty - l.y) < 0.01) {
+          l.moving = false;
+          continue;
+        }
+        const dy = Math.sign(ty - l.y) * Math.min(l.speed * dt, Math.abs(ty - l.y));
+        const onTop = (e) => Math.abs(e.y + e.h - l.y) <= 2 && e.x + e.w > l.x + 1 && e.x < l.x + l.w - 1;
+        const riders = [];
+        const rb = this.boxes.filter(onTop);
+        for (const b of rb) riders.push(b);
+        for (const h of this.list) {
+          if (h.dead) continue;
+          if (onTop(h) || rb.some((b) => Math.abs(h.y + h.h - b.y) <= 2 && h.x + h.w > b.x + 1 && h.x < b.x + b.w - 1)) riders.push(h);
+        }
+        const nl = { x: l.x, y: l.y + dy, w: l.w, h: l.h };
+        let blocked = false;
+        for (const h of this.list) if (!h.dead && !riders.includes(h) && overlap(h, nl)) blocked = true;
+        for (const b of this.boxes) if (!riders.includes(b) && overlap(b, nl)) blocked = true;
+        if (!blocked && dy < 0) {
+          // yukarı çıkarken yolcunun başı tavana çarpıyorsa durur (ezme yok)
+          for (const e of riders) {
+            const kind = e.kind || 'box';
+            if (this.tilesBlock(kind === 'box' ? 'light' : kind, e.x, e.y + dy, e.w, e.h)) blocked = true;
+          }
+        }
+        l.moving = !blocked;
+        if (blocked) continue;
+        l.y = nl.y;
+        for (const e of riders) {
+          e.y = l.y - e.h;
+          if (e.kind) {
+            e.vy = 0;
+            e.onGround = true;
+          } else {
+            e.vy = 0;
+            e.onGround = true;
+          }
+        }
       }
     }
 

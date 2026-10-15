@@ -20,6 +20,7 @@
     const sdoors = [];
     const boxes = [];
     const lanterns = [];
+    const lifts = [];
     let exclusive = false;
     let dependent = [];
     const b = {
@@ -44,7 +45,11 @@
       /** Bu bölümde kapılar birbirinden ayrılmıştır (karşı karakter diğerinin kapısına ulaşamaz); testte kanıtlanır. */
       exclusive: () => ((exclusive = true), b),
       /** Kaldıraç (c, r: ayakta durulan satır); group bağlı taş kapı grubu; who: kullanması amaçlanan karakter (test için). */
-      lever: (c, r, group, who = 'any') => (levers.push({ c, r, group, who }), b),
+      lever: (c, r, group, who = 'any', o = {}) => (levers.push({ c, r, group, who, ...o }), b),
+      /** Düğme: üstünden geçilince asansörü öbür durağa gönderir. btnDir 'left'|'right': yalnız o yöne (batıya/doğuya) geçilince; boş: her iki yöne. Uç noktadaki düğmeye basıp geri dönmek tekrar tetiklemesin diye uçlarda yön verilir. */
+      button: (c, r, lift, btnDir = null, who = 'any') => (levers.push({ c, r, group: 'lift' + lift, who, button: true, lift, btnDir }), b),
+      /** Asansör: c sütunundan wc karo, rLow/rHigh durak satırları (ayakta durulan satır). */
+      lift: (c, wc, rLow, rHigh, o = {}) => (lifts.push({ c, wc, rLow, rHigh, ...o }), b),
       /** Basınç plakası (c, r: üstüne basılan zemin satırı). */
       plate: (c, r, group, who = 'any') => (plates.push({ c, r, group, who }), b),
       /** Taş kapı: c sütunu, r0..r1 satırları (yukarı kayarak açılır). */
@@ -59,7 +64,7 @@
       feather: (c, r) => (items.push({ kind: 'feather', c, r }), b),
     };
     fn(b);
-    return { id, name, region, cols, rows, tiles: g.map((r) => r.join('')), starts, doors, items, beams, levers, plates, sdoors, boxes, lanterns, exclusive, dependent };
+    return { id, name, region, cols, rows, tiles: g.map((r) => r.join('')), starts, doors, items, beams, levers, plates, sdoors, boxes, lanterns, lifts, exclusive, dependent };
   }
 
   const LEVELS = [];
@@ -312,6 +317,51 @@
       b.doorLight(37, 19);
       b.light(11, 9);
       b.shadow(13, 9);
+    }),
+  );
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 6 · Asansör Kuyusu — Avlu. YENİ: ASANSÖR (hareketli platform) ve DÜĞME. Düzen: dikey kule, iki kat + ortada asansör kuyusu; Işık üstte (sol), Gölge altta (sağ).
+  //   Çıkışlar: Işık sağ üst, Gölge sol alt. Her çıkış taş kapının ardında; iki kapıyı da ÜSTTEKİ iki plaka (kuyunun iki yanında, biri doğuda biri batıda) açar ve plakaları yalnız KUTU tutabilir
+  //   (tutan karakter çıkışa yetişemez). Ama iki kutu ALTTA: yalnız asansör taşır. Gölge kutuyu asansöre yükler, uzak uçtaki düğmeye basar (asansör çıkar);
+  //   Işık üstte kutuyu plakaya iter ve kendi uçtaki düğmeyle asansörü geri yollar; ikinci kutu için tekrar. Alt katta doğuda baş hizasında huzme (Gölge yürür).
+  //   Ters bağımlılık: kutuların sırası (batıdaki önce) ve plakaların sırası kutuların birbirini engellemesinden çıkar; sıçrama değil mantık sınanır.
+  // ─────────────────────────────────────────────────────────────────────────────
+  LEVELS.push(
+    build('asansor-kuyusu', { tr: 'Asansör Kuyusu', en: 'Lift Shaft' }, 'courtyard', (b) => {
+      b.frame();
+      b.dependent('light', 'shadow');
+      // üst kat zemini (satır 8-9); asansör kuyusu 17-20 açık
+      b.fill(1, 8, 16, 9).fill(21, 8, 38, 9);
+      b.lift(17, 4, 19, 7); // alt durak: satır 19 (zemin), üst durak: satır 7 (üst kat)
+      // --- ÜST KAT (Işık) ---
+      b.button(2, 7, 0, 'left'); // en batıda (batıya geçince): üstten alta gönderir
+      b.plate(26, 7, 'blue'); // doğuda: D_U'yu (Işık'ın kapısı) açar
+      b.fill(27, 7, 27, 7); // engel: doğuya itilen kutu burada durur
+      b.plate(12, 7, 'amber'); // batıda: D_L'yi (Gölge'nin kapısı) açar
+      b.fill(11, 7, 11, 7); // engel: batıya itilen kutu burada durur
+      b.fill(29, 8, 30, 8, 'w'); // su (2 karo)
+      b.sdoor(33, 2, 7, 'blue'); // Işık'ın kapısı
+      // --- ALT KAT (Gölge) ---
+      b.box(24, 19);
+      b.box(26, 19);
+      b.button(38, 19, 0, 'right'); // en doğuda (doğuya geçince): alttan üste gönderir
+      b.beam(39, 16, 'l'); // baş hizasında huzme (Gölge yürür, zıplamaz); sütun kesiyor
+      b.fill(29, 10, 29, 16);
+      b.sdoor(8, 10, 19, 'amber'); // Gölge'nin kapısı
+      // toplanabilirler
+      b.star(6, 6);
+      b.star(14, 6);
+      b.star(24, 6);
+      b.star(35, 6);
+      b.feather(6, 18);
+      b.feather(14, 18);
+      b.feather(33, 18);
+      b.feather(36, 18);
+      b.doorLight(36, 7);
+      b.doorShadow(4, 19);
+      b.light(4, 7);
+      b.shadow(32, 19);
     }),
   );
 

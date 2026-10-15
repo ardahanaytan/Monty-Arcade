@@ -34,6 +34,7 @@
 
   const REGIONS = {
     dungeon: { top: '#070a1a', bottom: '#151a37', brick: '#222a4f', edge: '#3a4580', deep: '#10152e', fog: '120,130,190' },
+    courtyard: { top: '#0c1130', bottom: '#222a52', brick: '#2e3868', edge: '#5560a8', deep: '#171d40', fog: '160,150,210' },
   };
 
   // --- Arka plan ---
@@ -497,10 +498,15 @@
       glow(ctx, 0, -26, 18, rgb, l.pos === 'right' ? 0.6 : 0.25);
       ctx.fillStyle = `rgb(${rgb})`;
       ctx.beginPath();
-      ctx.arc(0, -26, 5, 0, Math.PI * 2);
+      if (l.button) ctx.rect(-6, -32, 12, 10);
+      else ctx.arc(0, -26, 5, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
-      rune(ctx, l.group, x, y - 52, 5, 0.6);
+      if (!l.button) rune(ctx, l.group, x, y - 52, 5, 0.6);
+      else {
+        ctx.fillStyle = 'rgba(255,214,140,.9)';
+        ctx.fillRect(x - 3, y - 58, 6, 6);
+      }
     }
   }
   function drawPlates(ctx, w, t) {
@@ -584,6 +590,39 @@
     }
   }
 
+  // --- Asansör ---
+  function drawLifts(ctx, w, t) {
+    for (const l of w.lifts) {
+      // ray (yol boyunca ince çizgiler)
+      ctx.fillStyle = 'rgba(8,11,28,.55)';
+      ctx.fillRect(l.x + 2, l.yHigh, 6, l.yLow - l.yHigh + l.h);
+      ctx.fillRect(l.x + l.w - 8, l.yHigh, 6, l.yLow - l.yHigh + l.h);
+      ctx.fillStyle = 'rgba(120,130,190,.35)';
+      for (let y = l.yHigh; y < l.yLow; y += 32) {
+        ctx.fillRect(l.x + 4, y, 2, 8);
+        ctx.fillRect(l.x + l.w - 6, y, 2, 8);
+      }
+      // platform
+      const g = ctx.createLinearGradient(0, l.y, 0, l.y + l.h);
+      g.addColorStop(0, '#6c78b8');
+      g.addColorStop(1, '#2c3566');
+      ctx.fillStyle = g;
+      rr(ctx, l.x, l.y, l.w, l.h, 3);
+      ctx.fill();
+      ctx.fillStyle = l.moving ? 'rgba(255,214,140,.95)' : 'rgba(180,190,240,.6)';
+      ctx.fillRect(l.x + 6, l.y + 2, l.w - 12, 2);
+      // yön oku: hedef
+      const up = l.target === 1;
+      ctx.fillStyle = 'rgba(255,214,140,.8)';
+      const cx = l.x + l.w / 2;
+      ctx.beginPath();
+      ctx.moveTo(cx, l.y - 10 + (up ? -6 : 6));
+      ctx.lineTo(cx - 6, l.y - 10);
+      ctx.lineTo(cx + 6, l.y - 10);
+      ctx.fill();
+    }
+  }
+
   // --- Sahne ---
   function drawScene(ctx, w, cam, t) {
     drawBackground(ctx, w, t);
@@ -591,6 +630,7 @@
     ctx.translate(cam.x, cam.y);
     drawTiles(ctx, w, t);
     for (const d of w.doors) drawDoor(ctx, d, t);
+    drawLifts(ctx, w, t);
     drawBeams(ctx, w, t);
     drawLanterns(ctx, w, t);
     drawPlates(ctx, w, t);
