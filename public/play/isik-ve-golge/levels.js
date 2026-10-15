@@ -213,7 +213,7 @@
       // toplanabilirler
       b.star(13, 16); // fırlatma yayının üstünde
       b.star(22, 19);
-      b.star(38, 12); // doğu cep (orta kat)
+      b.star(38, 13); // doğu cep (orta kat)
       b.star(22, 6);
       b.feather(13, 20); // suyun dibi
       b.feather(29, 20); // ikinci suyun dibi
@@ -337,6 +337,7 @@
       b.feather(10, 15);
       b.feather(27, 20);
       b.feather(37, 18);
+      b.star(3, 6); // sol üst: huzmenin hemen üstünde (Işık için)
       b.doorShadow(36, 19);
       b.doorLight(38, 19);
       b.light(11, 9);
@@ -388,6 +389,58 @@
       b.doorShadow(4, 19);
       b.light(4, 7);
       b.shadow(30, 19);
+    }),
+  );
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 7 · Sis Çemberi — Avlu. YENİ: SİS HAVUZU (ikisi için de ölümcül). Düzen: halka; ortada dolu blok, etrafında alt koridor, iki kule (batı: Işık, doğu: Gölge) ve üst koridor.
+  //   Alt koridor ortasında sis: iki kule birbirinden ayrı. Her kule 3 basamaklı tırmanış (su/sis/zamanlı huzme tuzakları) ve üstte bir oda:
+  //   batı odada kutu+kırmızı plaka ve mavi kaldıraç (su havuzu üstünden), doğu odada kutu+mavi plaka ve kırmızı kaldıraç (zamanlı huzme koridoru).
+  //   Üst koridorda iki taş kapı (kırmızı=Işık'ın yolu, mavi=Gölge'nin yolu) SIKI VE: kendi tarafındaki plaka KUTUYLA tutulu + karşı tarafın kaldıracı. Çıkışlar ortadaki odada.
+  // ─────────────────────────────────────────────────────────────────────────────
+  LEVELS.push(
+    build('sis-cemberi', { tr: 'Sis Çemberi', en: 'Ring of Fog' }, 'courtyard', (b) => {
+      b.frame();
+      b.dependent('light', 'shadow');
+      b.fill(10, 8, 29, 14); // orta blok
+      // alt koridor
+      b.fill(17, 18, 22, 19, 'f'); // ortada sis: kuleler ayrı
+      // --- BATI KULE (Işık) ---
+      b.fill(5, 17, 9, 17).fill(1, 14, 4, 14).fill(5, 11, 9, 11);
+      b.fill(5, 19, 8, 19, 'w'); // zemin suyu (basamak 1'in altı)
+      b.fill(2, 13, 3, 13, 'w'); // basamak 2 üstünde havuz
+      b.fill(5, 10, 5, 10, 'f'); // basamak 3'ün giriş ucunda sis
+      b.fill(1, 8, 6, 8); // üst oda zemini (7-9 giriş boşluğu)
+      b.fill(2, 7, 3, 7, 'w'); // üst odada su havuzu
+      b.plate(4, 7, 'red');
+      b.box(5, 7);
+      b.lever(1, 7, 'blue', 'light');
+      // --- DOĞU KULE (Gölge) ---
+      b.fill(30, 17, 34, 17).fill(35, 14, 38, 14).fill(30, 11, 34, 11);
+      b.fill(31, 19, 34, 19, 'f');
+      b.fill(37, 13, 37, 13, 'f');
+      b.fill(34, 10, 34, 10, 'f');
+      b.beam(29, 9, 'r', { period: 2.4, on: 1.2, phase: 0.4 }); // basamak 3'ten üst odaya çıkış boşluğunda zamanlı huzme
+      b.fill(33, 8, 38, 8);
+      b.gauntlet(38, 7, 4, { period: 2.4, on: 1.0, phase: 1.0 }); // engel 33, huzme 34-37
+      b.plate(34, 7, 'blue');
+      b.box(35, 7);
+      b.lever(36, 7, 'red', 'shadow');
+      // --- ÜST KORİDOR ---
+      b.sdoor(14, 2, 7, 'red', { all: true, strict: true });
+      b.sdoor(25, 2, 7, 'blue', { all: true, strict: true });
+      b.star(1, 13);
+      b.star(38, 12);
+      b.star(14, 19);
+      b.star(25, 19);
+      b.feather(12, 7);
+      b.feather(27, 7);
+      b.feather(8, 10);
+      b.feather(31, 10);
+      b.doorLight(17, 7);
+      b.doorShadow(22, 7);
+      b.light(2, 19);
+      b.shadow(37, 19);
     }),
   );
 

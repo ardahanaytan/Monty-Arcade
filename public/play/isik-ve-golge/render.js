@@ -376,6 +376,27 @@
     }
   }
 
+  // --- Sis havuzu: ikisi için de ölümcül, soluk yeşilimsi bulut ---
+  function drawFog(ctx, w, t) {
+    for (let r = 0; r < w.rows; r++) {
+      for (let c = 0; c < w.cols; c++) {
+        if (w.tiles[r][c] !== 'f') continue;
+        const x = c * TILE;
+        const y = r * TILE;
+        ctx.fillStyle = 'rgba(120,170,150,.55)';
+        ctx.fillRect(x, y, TILE, TILE);
+        for (let k = 0; k < 3; k++) {
+          const px = x + ((t * 14 + c * 11 + k * 13) % TILE);
+          const py = y + 4 + k * 10 + Math.sin(t * 1.6 + c + k) * 3;
+          ctx.fillStyle = 'rgba(210,240,225,.35)';
+          ctx.beginPath();
+          ctx.arc(px, py, 7, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+  }
+
   // --- Sabit ışık huzmesi ---
   function drawBeams(ctx, w, t) {
     for (const b of w.beams) {
@@ -665,6 +686,7 @@
       drawHero(ctx, h, t);
     }
     drawWater(ctx, w, t);
+    drawFog(ctx, w, t);
     ctx.restore();
   }
 

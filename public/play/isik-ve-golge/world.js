@@ -571,7 +571,9 @@
         if (h.kind === 'light') {
           const t = this.tileAt(Math.floor((h.x + h.w / 2) / TILE), Math.floor((h.y + h.h / 2) / TILE));
           if (t === 'w') this.die(h, 'water');
+          else if (t === 'f') this.die(h, 'fog');
         } else {
+          if (this.tileAt(Math.floor((h.x + h.w / 2) / TILE), Math.floor((h.y + h.h / 2) / TILE)) === 'f') this.die(h, 'fog');
           const box = { x: h.x + 3, y: h.y + 3, w: h.w - 6, h: h.h - 6 };
           for (const b of this.beams) if (b.active !== false && overlap(box, b)) this.die(h, 'beam');
         }
