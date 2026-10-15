@@ -533,6 +533,50 @@
     }),
   );
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 10 · Avlu Sınavı — Avlu. Bölge sınavı: kandil + zamanlı düğme + ayna + kutu gölgesi. Düzen: uzun koridor + aşağı sarkan oda (üç kapıyla dört bölüme ayrılmış).
+  //   S0: Işık kandili yakar → 1. kapı açılır. S1: iki zamanlı düğme BİRLİKTE (VE) 2. kapıyı açar; biri koridorda (Gölge bekler), öteki aşağıdaki odada (Işık: iner, düğmeye basar, 2 basamakla çıkar, kapıya yetişir).
+  //   S2: zamanlı huzme geçidi. 3. geçit: koridora gömülü ayna bloğu doğu duvardaki yayıcının huzmesini YUKARI çevirir (Gölge geçemez); kutu raftan huzmenin yoluna düşerse huzme kesilir.
+  //   Işık (huzmeye dayanıklı) aynanın ötesine geçer, rafa çıkıp kutuyu doğuya iter; Gölge ayna bloğunu aşıp çıkışa varır.
+  // ─────────────────────────────────────────────────────────────────────────────
+  LEVELS.push(
+    build('avlu-sinavi', { tr: 'Avlu Sınavı', en: 'Courtyard Trial' }, 'courtyard', (b) => {
+      b.frame();
+      b.dependent('light', 'shadow');
+      b.fill(1, 2, 38, 5); // tavan
+      b.fill(1, 12, 38, 19); // zemin + alt blok
+      b.fill(12, 14, 17, 19, '.').fill(13, 12, 16, 13, '.'); // aşağıdaki oda ve girişi
+      b.fill(12, 17, 14, 17).fill(15, 14, 17, 14); // odanın basamakları
+      // S0
+      b.lantern(5, 12, 'u', { group: 'p' }); // zemine gömülü, yukarı bakar; Işık yakar
+      b.sdoor(10, 6, 11, 'p');
+      // S1
+      b.timed(16, 19, 'b', 10.0); // odada
+      b.timed(18, 11, 'b', 7.0); // koridorda
+      b.sdoor(20, 6, 11, 'b', { all: true });
+      // S2
+      b.gauntlet(28, 11, 5, { period: 2.4, on: 1.0 }); // huzme 23-27, engel 22
+      // S3: ayna geçidi
+      b.put(31, 11, 'n');
+      b.beam(39, 11, 'l', { shade: true });
+      b.fill(34, 9, 37, 9); // raf
+      b.box(36, 8);
+      // toplanabilirler
+      b.star(3, 11);
+      b.star(13, 19);
+      b.star(25, 11);
+      b.star(35, 8);
+      b.feather(8, 11);
+      b.feather(15, 11);
+      b.feather(24, 11);
+      b.feather(32, 11);
+      b.doorLight(34, 8);
+      b.doorShadow(33, 11);
+      b.light(2, 11);
+      b.shadow(8, 11);
+    }),
+  );
+
   const api = { LEVELS, build };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.IVGLevels = api;
