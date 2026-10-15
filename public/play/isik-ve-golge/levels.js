@@ -495,6 +495,44 @@
     }),
   );
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 9 · Aynalı Salon — Avlu. YENİ: SABİT AYNA (m: /, n: \) ve KUTU GÖLGESİ (shade). Düzen: iki katlı uzun salon (alt: Gölge'nin koridoru, üst: ara kat) + batıda merdiven, ortada asansör kuyusu.
+  //   Doğu duvardaki yayıcı, ara katta batıya doğru huzme gönderir; batı ucundaki ayna onu AŞAĞI çevirir ve alt koridorun batısını dikey huzmeyle kapatır (Gölge geçemez).
+  //   Kutu huzmenin yoluna girerse ARKASI kesilir (ayna beslenmez). Kutu alt katta; yalnız asansör ara kata çıkarır: Işık (huzmeye dayanıklı) kutuyu asansöre iter,
+  //   merdivenden ara kata çıkıp ara kattaki düğmeyle asansörü gönderir → kutu huzmeyi keser. Gölge geçer: zamanlı huzme geçidi, sis, taş kapı (Işık'ın ara kattaki kaldıracı).
+  // ─────────────────────────────────────────────────────────────────────────────
+  LEVELS.push(
+    build('aynali-salon', { tr: 'Aynalı Salon', en: 'Hall of Mirrors' }, 'courtyard', (b) => {
+      b.frame();
+      b.dependent('shadow');
+      b.fill(8, 13, 28, 14).fill(33, 13, 38, 14); // ara kat zemini (asansör kuyusu 29-32)
+      b.lift(29, 4, 19, 12);
+      b.fill(1, 17, 4, 17).fill(3, 14, 6, 14); // merdiven basamakları (Işık)
+      b.put(7, 12, 'm'); // ayna '/': batıya giden huzmeyi aşağı çevirir
+      b.beam(39, 12, 'l', { shade: true }); // ara katta batıya
+      b.box(26, 19); // alt kat: asansöre itilecek (geçidin doğusunda)
+      b.button(27, 12, 0, 'right'); // ara kat: asansörü gönderir
+      b.lever(34, 12, 'g', 'light'); // Gölge'nin kapısı
+      // --- ALT KAT (Gölge) ---
+      b.gauntlet(24, 19, 4, { period: 2.4, on: 1.0 }); // huzme 20-23, engel 19
+      b.fill(34, 19, 34, 19, 'f'); // sis
+      b.sdoor(36, 15, 19, 'g');
+      // toplanabilirler
+      b.star(3, 16);
+      b.star(16, 12);
+      b.star(24, 12);
+      b.star(30, 19);
+      b.feather(10, 19);
+      b.feather(15, 19);
+      b.feather(22, 19);
+      b.feather(35, 18);
+      b.doorLight(10, 12);
+      b.doorShadow(37, 19);
+      b.light(4, 19);
+      b.shadow(2, 19);
+    }),
+  );
+
   const api = { LEVELS, build };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.IVGLevels = api;

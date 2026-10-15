@@ -80,6 +80,23 @@
         const ch = w.tiles[r][c];
         const x = c * TILE;
         const y = r * TILE;
+        if (ch === 'm' || ch === 'n') {
+          // ayna bloğu: koyu çerçeve + çapraz parlak yüz (m: /, n: \)
+          ctx.fillStyle = '#10152e';
+          ctx.fillRect(x, y, TILE, TILE);
+          ctx.fillStyle = R.brick;
+          ctx.fillRect(x + 2, y + 2, TILE - 4, TILE - 4);
+          ctx.strokeStyle = 'rgba(214,232,255,.95)';
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          if (ch === 'm') (ctx.moveTo(x + 4, y + TILE - 4), ctx.lineTo(x + TILE - 4, y + 4));
+          else (ctx.moveTo(x + 4, y + 4), ctx.lineTo(x + TILE - 4, y + TILE - 4));
+          ctx.stroke();
+          ctx.strokeStyle = `rgba(255,255,255,${0.4 + 0.3 * Math.sin(t * 3 + c)})`;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+          continue;
+        }
         if (ch === '#') {
           const v = rnd(c * 31 + r * 17);
           ctx.fillStyle = R.brick;
@@ -406,6 +423,7 @@
         ctx.fillStyle = `rgba(255,236,190,${a})`;
         if (b.horiz) for (let x = b.x; x < b.x + b.w; x += 14) ctx.fillRect(x, b.y + b.h / 2 - 1, 5, 2);
         else for (let y = b.y; y < b.y + b.h; y += 14) ctx.fillRect(b.x + b.w / 2 - 1, y, 2, 5);
+        if (b.cont) continue;
         const ex0 = b.c * TILE + TILE / 2;
         const ey0 = b.r * TILE + TILE / 2;
         ctx.fillStyle = '#0a0d22';
@@ -435,7 +453,7 @@
         if (b.horiz) ctx.fillRect(b.x + b.w - u, b.y + b.h / 2 - 1 + Math.sin(i * 3 + t * 9) * 6, 3, 2);
         else ctx.fillRect(b.x + b.w / 2 - 1 + Math.sin(i * 3 + t * 9) * 6, b.y + u, 2, 3);
       }
-      if (b.lantern) continue;
+      if (b.lantern || b.cont) continue;
       // yayıcı mercek (duvar karosunda)
       const ex = b.c * TILE + TILE / 2;
       const ey = b.r * TILE + TILE / 2;

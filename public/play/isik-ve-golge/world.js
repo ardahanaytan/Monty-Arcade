@@ -34,7 +34,7 @@
 
   /** Bu karakter için bu karo katı mı? (#: herkes · l: Işık perdesi, Gölge'ye katı · d: karanlık perde, Işık'a katı) */
   function solidFor(kind, ch) {
-    if (ch === '#') return true;
+    if (ch === '#' || ch === 'm' || ch === 'n') return true; // m, n: ayna blokları (katı)
     if (ch === 'l') return kind === 'shadow';
     if (ch === 'd') return kind === 'light';
     return false;
@@ -189,7 +189,7 @@
     }
     boxBlocked(c, r) {
       const ch = this.tileAt(c, r);
-      if (ch === '#' || ch === 'l' || ch === 'd') return true;
+      if (ch === '#' || ch === 'm' || ch === 'n' || ch === 'l' || ch === 'd') return true;
       for (const d of this.sdoors) if (d.c === c && r >= d.r0 && r < d.r0 + this.closedRows(d)) return true;
       return false;
     }
@@ -493,7 +493,7 @@
     }
     updateBeams() {
       const out = [];
-      for (const s of this.beamSrc) out.push(this.traceBeam(s));
+      for (const s of this.beamSrc) out.push(...this.traceBeam(s));
       for (const l of this.lanterns) if (l.lit) {
         const t = this.traceLantern(l);
         if (t) out.push(t);
@@ -540,24 +540,14 @@
       }
       return { c: l.c, r: l.r, dir: l.dir, ...rect, horiz, lantern: true };
     }
+    /**
+     * Sabit huzme: yayıcıdan ilk duvara / kapalı taş kapıya kadar; aynalara (m: /, n: \) çarpınca 90° döner. Parça listesi döner.
+     * o.shade: kutu huzmeyi keser (arkası güvenli). Zamanlı (period) huzmede tüm parçalar aynı döngüyü izler.
+     */
     traceBeam(b) {
-      const d = { u: [0, -1], d: [0, 1], l: [-1, 0], r: [1, 0] }[b.dir];
-      let c = b.c + d[0];
-      let r = b.r + d[1];
-      const c0 = c;
-      const r0 = r;
-      while (!this.rayBlocked(c, r)) {
-        c += d[0];
-        r += d[1];
-      }
-      const c1 = c - d[0];
-      const r1 = r - d[1];
-      const horiz = d[1] === 0;
-      const x0 = Math.min(c0, c1) * TILE;
-      const y0 = Math.min(r0, r1) * TILE;
-      const len = (Math.abs(c1 - c0) + Math.abs(r1 - r0) + 1) * TILE;
+      const DIRS = { u: [0, -1], d: [0, 1], l: [-1, 0], r: [1, 0] };
+      const REF = { m: { r: 'u', u: 'r', l: 'd', d: 'l' }, n: { r: 'd', d: 'r', l: 'u', u: 'l' } };
       const th = b.low ? LB : 10; // low: karakter boyunda (zemine hizalı), zıplayarak aşılamaz
-      const rect = horiz ? { x: x0, y: b.low ? (b.r + 1) * TILE - th : b.r * TILE + TILE / 2 - 5, w: len, h: th } : { x: b.c * TILE + TILE / 2 - th / 2, y: y0, w: th, h: len };
       // zamanlı huzme: period sn'lik döngünün ilk `on` saniyesi açık (phase kaydırır); kapalıyken zararsız, açılmadan 0,5 sn önce uyarı
       let active = true;
       let warn = false;
@@ -566,7 +556,70 @@
         active = ph < b.on;
         warn = !active && ph >= b.period - 0.5;
       }
-      return { c: b.c, r: b.r, dir: b.dir, ...rect, horiz, active, warn, timed: !!b.period };
+      const out = [];
+      let dir = b.dir;
+      let c = b.c;
+      let r = b.r;
+      for (let bounce = 0; bounce < 8; bounce++) {
+        const d = DIRS[dir];
+        let nc = c + d[0];
+        let nr = r + d[1];
+        const c0 = nc;
+        const r0 = nr;
+        let mirror = null;
+        while (!this.rayBlocked(nc, nr)) {
+          const ch = this.tileAt(nc, nr);
+          if (ch === 'm' || ch === 'n') {
+            mirror = ch;
+            break;
+          }
+          nc += d[0];
+          nr += d[1];
+        }
+        const c1 = mirror ? nc : nc - d[0];
+        const r1 = mirror ? nr : nr - d[1];
+        const horiz = d[1] === 0;
+        let x0 = Math.min(c0, c1) * TILE;
+        let y0 = Math.min(r0, r1) * TILE;
+        let len = (Math.abs(c1 - c0) + Math.abs(r1 - r0) + 1) * TILE;
+        let cut = false;
+        if (b.shade) {
+          // kutu: yayıcı tarafından bakınca ilk kutudan sonrası kesilir
+          const ly = horiz ? (b.low ? (r + 1) * TILE - th : r * TILE + TILE / 2 - 5) : 0;
+          const lx = horiz ? 0 : c * TILE + TILE / 2 - th / 2;
+          const start = horiz ? (d[0] > 0 ? x0 : x0 + len) : d[1] > 0 ? y0 : y0 + len;
+          const sgn = horiz ? d[0] : d[1];
+          let end = sgn > 0 ? start + len : start - len;
+          for (const bx of this.boxes) {
+            if (horiz ? bx.y >= ly + th || bx.y + bx.h <= ly : bx.x >= lx + th || bx.x + bx.w <= lx) continue;
+            if (sgn > 0) {
+              const edge = horiz ? bx.x : bx.y;
+              if (edge >= start && edge < end) {
+                end = edge;
+                cut = true;
+              }
+            } else {
+              const edge = horiz ? bx.x + bx.w : bx.y + bx.h;
+              if (edge <= start && edge > end) {
+                end = edge;
+                cut = true;
+              }
+            }
+          }
+          if (cut) {
+            len = Math.abs(end - start);
+            if (horiz) x0 = Math.min(start, end);
+            else y0 = Math.min(start, end);
+          }
+        }
+        const rect = horiz ? { x: x0, y: b.low ? (r + 1) * TILE - th : r * TILE + TILE / 2 - 5, w: len, h: th } : { x: c * TILE + TILE / 2 - th / 2, y: y0, w: th, h: len };
+        out.push({ c: b.c, r: b.r, dir, ...rect, horiz, active, warn, timed: !!b.period, cont: bounce > 0 });
+        if (!mirror || cut) break;
+        dir = REF[mirror][dir];
+        c = nc;
+        r = nr;
+      }
+      return out;
     }
 
     // --- Ölümcül tehlikeler ---
