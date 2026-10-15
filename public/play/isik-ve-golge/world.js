@@ -67,7 +67,7 @@
       /** Kaldıraç: iki konumlu, kalıcı. 'right' = açık. Karakter hangi yönden içinden geçerse o yöne yatar. */
       this.levers = (level.levers || []).map((l) => ({ ...l, pos: 'left', x: l.c * TILE + TILE / 2 }));
       /** Basınç plakası: üstünde ağırlık olduğu sürece aktif. */
-      this.plates = (level.plates || []).map((p) => ({ ...p, down: false, rect: { x: p.c * TILE + 3, y: (p.r + 1) * TILE - 6, w: TILE - 6, h: 6 } }));
+      this.plates = (level.plates || []).map((p) => ({ ...p, down: false, t: 0, rect: { x: p.c * TILE + 3, y: (p.r + 1) * TILE - 6, w: TILE - 6, h: 6 } }));
       /** Taş kapı: c sütunu, r0..r1 satırları; yukarı kayarak açılır. */
       this.sdoors = (level.sdoors || []).map((d) => ({ ...d, open: 0, len: d.r1 - d.r0 + 1 }));
       this.force = new Set(); // testler: bu gruplar sanki açılmış sayılır
@@ -393,7 +393,13 @@
       // plaka
       for (const p of this.plates) {
         const was = p.down;
-        p.down = this.list.some((h) => !h.dead && overlap(h, p.rect)) || this.boxes.some((b) => overlap(b, p.rect));
+        const on = this.list.some((h) => !h.dead && overlap(h, p.rect)) || this.boxes.some((b) => overlap(b, p.rect));
+        if (p.hold) {
+          // zamanlı düğme: basılınca `hold` sn aktif kalır (üstte durdukça süre tazelenir)
+          if (on) p.t = p.hold;
+          else if (p.t > 0) p.t = Math.max(0, p.t - dt);
+          p.down = on || p.t > 0;
+        } else p.down = on;
         if (p.down !== was) this.emit('plate', { x: p.c * TILE + TILE / 2, y: (p.r + 1) * TILE, down: p.down, group: p.group });
       }
       // kandiller: Işık yakar, Gölge söndürür (yakınlık yeterli)

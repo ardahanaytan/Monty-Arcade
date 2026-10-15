@@ -560,6 +560,17 @@
       rr(ctx, x + 3, y - 7 + dn, TILE - 6, 6 - dn + 1, 2);
       ctx.fill();
       if (p.down) glow(ctx, x + TILE / 2, y - 6, 40, rgb, 0.45);
+      if (p.hold) {
+        // geri sayım halkası: kalan süre oranında dolu yay
+        const fr = p.t > 0 ? p.t / p.hold : 0;
+        ctx.strokeStyle = `rgba(${rgb},.9)`;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(x + TILE / 2, y - 26, 11, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (p.down && fr === 0 ? 1 : fr));
+        ctx.stroke();
+        ctx.fillStyle = `rgba(${rgb},.9)`;
+        ctx.fillRect(x + 9, y - 12, TILE - 18, 2);
+      }
       rune(ctx, p.group, x + TILE / 2, y - 26, 5, p.down ? 0.95 : 0.55);
     }
   }

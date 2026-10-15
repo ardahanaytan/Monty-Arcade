@@ -52,6 +52,8 @@
       lift: (c, wc, rLow, rHigh, o = {}) => (lifts.push({ c, wc, rLow, rHigh, ...o }), b),
       /** Basınç plakası (c, r: üstüne basılan zemin satırı). */
       plate: (c, r, group, who = 'any') => (plates.push({ c, r, group, who }), b),
+      /** Zamanlı düğme: plaka gibi ama basıldıktan sonra `secs` sn aktif kalır (geri sayım çubuğu görünür). */
+      timed: (c, r, group, secs, who = 'any') => (plates.push({ c, r, group, who, hold: secs }), b),
       /** Taş kapı: c sütunu, r0..r1 satırları (yukarı kayarak açılır). */
       /** Taş kapı. o: { inv: kandil sönükken açık, all: gruptaki TÜM plakalar basılı (ve tüm kandiller yanık) olmalı; kaldıraç sağdaysa kalıcı açar, strict: kaldıraçlar da VE'ye katılır (mandal yok) }. */
       sdoor: (c, r0, r1, group, o = {}) => (sdoors.push({ c, r0, r1, group, ...o }), b),
@@ -409,23 +411,23 @@
       b.fill(5, 17, 9, 17).fill(1, 14, 4, 14).fill(5, 11, 9, 11);
       b.fill(5, 19, 8, 19, 'w'); // zemin suyu (basamak 1'in altı)
       b.fill(2, 13, 3, 13, 'w'); // basamak 2 üstünde havuz
-      b.fill(5, 10, 5, 10, 'f'); // basamak 3'ün giriş ucunda sis
-      b.fill(1, 8, 6, 8); // üst oda zemini (7-9 giriş boşluğu)
-      b.fill(2, 7, 3, 7, 'w'); // üst odada su havuzu
-      b.plate(4, 7, 'red');
-      b.box(5, 7);
-      b.lever(1, 7, 'blue', 'light');
+      b.fill(6, 10, 6, 10, 'f'); // basamak 3'ün giriş ucunda sis
+      b.fill(1, 7, 6, 7); // üst oda zemini (koridordan 1 karo yüksek; 7-9 giriş boşluğu)
+      b.fill(2, 6, 3, 6, 'w'); // üst odada su havuzu
+      b.plate(4, 6, 'red');
+      b.box(5, 6);
+      b.lever(1, 6, 'blue', 'light');
       // --- DOĞU KULE (Gölge) ---
       b.fill(30, 17, 34, 17).fill(35, 14, 38, 14).fill(30, 11, 34, 11);
       b.fill(31, 19, 34, 19, 'f');
       b.fill(37, 13, 37, 13, 'f');
-      b.fill(34, 10, 34, 10, 'f');
+      b.fill(33, 10, 33, 10, 'f');
       b.beam(29, 9, 'r', { period: 2.4, on: 1.2, phase: 0.4 }); // basamak 3'ten üst odaya çıkış boşluğunda zamanlı huzme
-      b.fill(33, 8, 38, 8);
-      b.gauntlet(38, 7, 4, { period: 2.4, on: 1.0, phase: 1.0 }); // engel 33, huzme 34-37
-      b.plate(34, 7, 'blue');
-      b.box(35, 7);
-      b.lever(36, 7, 'red', 'shadow');
+      b.fill(33, 7, 38, 7);
+      b.gauntlet(38, 6, 4, { period: 2.4, on: 1.0, phase: 1.0 }); // engel 33, huzme 34-37
+      b.plate(34, 6, 'blue');
+      b.box(35, 6);
+      b.lever(36, 6, 'red', 'shadow');
       // --- ÜST KORİDOR ---
       b.sdoor(14, 2, 7, 'red', { all: true, strict: true });
       b.sdoor(25, 2, 7, 'blue', { all: true, strict: true });
@@ -441,6 +443,55 @@
       b.doorShadow(22, 7);
       b.light(2, 19);
       b.shadow(37, 19);
+    }),
+  );
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 8 · Geri Sayım — Avlu. YENİ: ZAMANLI DÜĞME (basılınca süre boyunca aktif). Düzen: artı (+); ortada dikey merdiven kuyusu, dört kanat (üst-batı, üst-doğu, alt-batı, alt-doğu).
+  //   Başlangıç: Işık üst-batıda, Gölge alt-doğuda. İkisi de önce ötekinin kapısını kaldıraçla açar (Işık: su havuzunun ötesinde 'd' kaldıracı = Gölge'nin alt kapısı;
+  //   Gölge: zamanlı huzme geçidinin ardında 'c' kaldıracı = Işık'ın üst kapısı). Sonra: Işık üst-batıdaki zamanlı düğmeye basar (7 sn), Gölge alt-doğudaki düğmenin üstünde bekler;
+  //   VE kapısı (üst-doğu) ikisi birlikte aktifken açık: Işık kuyuyu geçip kapıdan girer, odadaki zamanlı düğmeye basar (7 sn) → alt-batı kapısı açılır:
+  //   Gölge kuyunun altından, kapıdan, zamanlı huzme geçidinden ve sisten geçip çıkışa YETİŞMELİ. Işık sağ uçtaki su ve sisi aşıp çıkışa varır.
+  // ─────────────────────────────────────────────────────────────────────────────
+  LEVELS.push(
+    build('geri-sayim', { tr: 'Geri Sayım', en: 'Countdown' }, 'courtyard', (b) => {
+      b.frame();
+      b.dependent('light', 'shadow');
+      b.fill(1, 9, 16, 10).fill(23, 9, 38, 10); // üst zemin (kuyu 17-22 açık)
+      b.fill(1, 11, 16, 14).fill(23, 11, 38, 14); // orta bant
+      b.fill(17, 17, 20, 17).fill(19, 14, 22, 14).fill(17, 11, 20, 11); // merdiven basamakları
+      // --- ÜST-BATI (Işık) ---
+      b.fill(4, 8, 6, 8, 'w'); // su (3 karo)
+      b.lever(2, 8, 'd', 'light'); // Gölge'nin alt kapısını açar
+      b.timed(14, 8, 'a', 7.0); // VE kapısının Işık'ın düğmesi
+      b.sdoor(15, 2, 8, 'c'); // Işık'ın kuyuya çıkış kapısı (Gölge'nin kaldıracı)
+      // --- ALT-DOĞU (Gölge) ---
+      b.gauntlet(33, 19, 5, { period: 2.4, on: 1.0 }); // huzme 28-32, engel 27
+      b.timed(26, 19, 'a', 5.0); // VE kapısının Gölge'nin düğmesi
+      b.lever(25, 19, 'c', 'shadow'); // Işık'ın üst kapısını açar
+      b.sdoor(23, 15, 19, 'd'); // Gölge'nin kuyuya çıkış kapısı (Işık'ın kaldıracı)
+      // --- ÜST-DOĞU (Işık'ın çıkışı) ---
+      b.sdoor(24, 2, 8, 'a', { all: true }); // iki zamanlı düğme birlikte
+      b.timed(26, 8, 'b', 7.0); // alt-batı kapısını açar
+      b.fill(28, 8, 30, 8, 'w'); // su (3 karo)
+      b.fill(33, 8, 33, 8, 'f'); // sis
+      // --- ALT-BATI (Gölge'nin çıkışı) ---
+      b.sdoor(15, 15, 19, 'b');
+      b.gauntlet(13, 19, 4, { period: 2.4, on: 1.0, phase: 0.6 }); // huzme 9-12, engel 8
+      b.fill(5, 19, 5, 19, 'f'); // sis
+      // toplanabilirler
+      b.star(10, 8);
+      b.star(18, 10);
+      b.star(21, 13);
+      b.star(34, 8);
+      b.feather(38, 19);
+      b.feather(18, 16);
+      b.feather(12, 19);
+      b.feather(4, 19);
+      b.doorLight(36, 8);
+      b.doorShadow(3, 19);
+      b.light(9, 8);
+      b.shadow(36, 19);
     }),
   );
 
