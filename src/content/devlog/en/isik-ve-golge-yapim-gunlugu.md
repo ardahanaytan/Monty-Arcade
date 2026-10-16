@@ -1,5 +1,5 @@
 ---
-title: "Light & Shadow: how we built a puzzle-platformer, level by level"
+title: "Light & Shadow"
 description: "The story of Light & Shadow, a 20-level, two-player, one-keyboard game: where the idea came from, what we changed, how we tested it and where we got it wrong."
 date: 2026-10-16T12:00:00
 game: isik-ve-golge
@@ -51,7 +51,7 @@ After that, every level brings one or two **new** things and **combines** the ol
 | Rampart | 11–15 | rotating mirror, crystal, scale, pushable mirror |
 | Freedom | 16–20 | combinations, long launch, final exam, meeting |
 
-In the last level (Meeting) the two characters start at opposite ends of a long hall and meet at **one shared exit door** in the middle. The end of the difficulty the title promises: reaching each other.
+In the last level (Meeting) the two characters start at opposite ends of a long hall. Each one crosses the hazards on their own side and pulls a lever that opens **the other's door**, and then both reach the room in the middle. There, Light's door and Shadow's door stand **side by side**: a shared room, but each with their own door. The end of the difficulty the title promises: reaching each other.
 
 ## Difficulty: "the levels are too easy"
 

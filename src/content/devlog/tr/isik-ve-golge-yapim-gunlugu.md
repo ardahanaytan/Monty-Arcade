@@ -1,5 +1,5 @@
 ---
-title: "Işık ve Gölge: bir bulmaca-platform oyununu bölüm bölüm nasıl yaptık"
+title: "Işık ve Gölge"
 description: "İki kişilik, tek klavyeli, 20 bölümlük Işık ve Gölge'nin hikâyesi: fikir nereden çıktı, neleri değiştirdik, nasıl test ettik, nerede hata yaptık?"
 date: 2026-10-16T12:00:00
 game: isik-ve-golge
@@ -51,7 +51,7 @@ Sonraki her bölüm bir ya da iki **yeni** şey getirip eskileri **birleştiriyo
 | Sur | 11–15 | dönen ayna, kristal, terazi, itilebilir ayna |
 | Özgürlük | 16–20 | birleşimler, uzun fırlatma, son sınav, buluşma |
 
-Son bölümde (Buluşma) iki karakter uzun bir salonun iki ucundan başlayıp ortadaki **tek ortak kapıda** buluşuyor. Oyunun adı olan zorluğun, yani birbirine ulaşma çabasının sonu.
+Son bölümde (Buluşma) iki karakter uzun bir salonun iki ucundan başlıyor. Her biri kendi tarafının engellerini aşıp bir kaldıraç çevirerek **öbürünün kapısını** açıyor, sonra ikisi de ortadaki odaya varıyor. Orada Işık'ın ve Gölge'nin kapıları **yan yana** duruyor: ortak bir odada, ama her birinin kendi kapısı. Oyunun adı olan zorluğun, yani birbirine ulaşma çabasının sonu.
 
 ## Zorluk: "bölümler çok kolay"
 
