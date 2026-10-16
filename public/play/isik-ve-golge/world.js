@@ -158,6 +158,7 @@
       }
       for (const l of this.lifts) {
         if (!overlap(h, l)) continue;
+        if (h.y + h.h <= l.y + 3) continue; // platformun üstünde duran (hizalı) karakter yandan çarpmış sayılmaz
         h.x = dx > 0 ? l.x - h.w : l.x + l.w;
         return 'lift';
       }

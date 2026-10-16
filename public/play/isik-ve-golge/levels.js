@@ -655,7 +655,7 @@
       b.lever(30, 14, 'x', 'light');
       b.fill(25, 19, 26, 19, 'f'); // sis (2 karo)
       b.fill(29, 19, 31, 19, 'w'); // su (3 karo)
-      b.sdoor(35, 15, 19, 'x');
+      b.sdoor(35, 2, 19, 'x'); // tam yükseklik: üstünden geçilemez
       // toplanabilirler
       b.star(3, 16);
       b.star(16, 14);
@@ -686,7 +686,7 @@
       b.scale(15, 21, 4, 19, 11); // A (15-18) yukarıda, B (21-24) aşağıda
       // --- ÜST-BATI (Işık) ---
       b.fill(4, 11, 6, 11, 'w'); // su (3 karo)
-      b.sdoor(9, 6, 11, 'a'); // Gölge'nin plakası açar
+      b.sdoor(9, 2, 11, 'a'); // Gölge'nin plakası açar (tam yükseklik)
       b.box(11, 11);
       // --- ALT-DOĞU (Gölge) ---
       b.gauntlet(36, 19, 4, { period: 2.4, on: 1.0 }); // huzme 32-35, engel 31
@@ -978,12 +978,12 @@
       b.fill(5, 19, 6, 19, 'w'); // su (2 karo)
       b.lever(9, 19, 'e', 'light'); // Gölge'nin kapısı (doğu kapı)
       b.fill(12, 19, 12, 19, 'f'); // sis
-      b.sdoor(16, 14, 19, 'w'); // Işık'ın kapısı (batı kapı)
+      b.sdoor(16, 2, 19, 'w'); // Işık'ın kapısı (batı kapı, tam yükseklik)
       // --- DOĞU (Gölge) ---
       b.gauntlet(35, 19, 3, { period: 2.4, on: 1.0 }); // huzme 32-34, engel 31
       b.fill(28, 19, 28, 19, 'f'); // sis
       b.lever(26, 19, 'w', 'shadow'); // Işık'ın kapısı (batı kapı)
-      b.sdoor(23, 14, 19, 'e'); // Gölge'nin kapısı (doğu kapı)
+      b.sdoor(23, 2, 19, 'e'); // Gölge'nin kapısı (doğu kapı, tam yükseklik)
       // toplanabilirler
       b.star(3, 19);
       b.star(8, 19);
