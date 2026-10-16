@@ -1,5 +1,4 @@
 ---
-# YAPIM AŞAMASINDA: oyun bitene kadar draft kalır (production build'e girmez). Tasarım: ../oyunlar/isik-ve-golge/TASARIM.md
 title: { tr: "Işık ve Gölge", en: "Light & Shadow" }
 tagline: { tr: "Birbirine dokunamayan iki yürek, tek bir çıkış.", en: "Two hearts that cannot touch, one way out." }
 description:
@@ -22,7 +21,7 @@ controls:
     action: { tr: "Duraklat", en: "Pause" }
 cover: ./covers/isik-ve-golge.png
 tags: [puzzle, platformer, co-op]
-releaseDate: 2026-10-14
+releaseDate: 2026-10-16
 featured: true
 aspectRatio: "16/9"
 sizeMB: 0.5
@@ -89,5 +88,5 @@ achievements:
     description: { tr: "20 bölümün hepsinde bütün yıldız tozlarını ve gece tüylerini topla.", en: "Collect every stardust and night feather in all 20 levels." }
     icon: trophy
     tier: legendary
-draft: true
+draft: false
 ---

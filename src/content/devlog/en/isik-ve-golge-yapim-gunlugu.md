@@ -3,7 +3,6 @@ title: "Light & Shadow"
 description: "The story of Light & Shadow, a 20-level, two-player, one-keyboard game: where the idea came from, what we changed, how we tested it and where we got it wrong."
 date: 2026-10-16T12:00:00
 game: isik-ve-golge
-draft: true
 ---
 
 The biggest lesson from making Light & Shadow: **writing a good puzzle game is less about writing code and more about answering "can this level really be solved?"** In this post I'll tell you where the idea came from, the rules of the game, what I asked for and when I changed my mind, the bugs, and how we tested everything. I built the game together with Claude, level by level; the "we" below is that pair.

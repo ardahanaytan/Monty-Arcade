@@ -7,10 +7,10 @@ Kendi yaptığım küçük HTML5 oyunlarının yayınlandığı statik Astro sit
 - Site yapısı, komutlar, içerik şemaları: [`README.tr.md`](README.tr.md).
 - İlk planlama ve tasarım spesifikasyonu: `../MONTY_ARCADE.md` (repo dışında; kod yazılmadan önce yazıldı, bazı yerleri eski).
 
-## Şu anki durum (2026-10-12)
+## Şu anki durum (2026-10-16)
 
-- **Canlıda v2.0.0** (2026-10-12): 4 oyun + üyelik, kalıcı başarımlar, sürücü profilleri (`features.accounts = true`).
-  Ana sayfada "Yakında — Her cuma yeni oyun" kutusu (`weeklyBox`).
+- **Canlıda v2.1.0** (2026-10-16): 5 oyun (yeni: **Işık ve Gölge**, 2 kişilik co-op bulmaca-platform, 20 bölüm, 12 başarım, haftanın oyunu) + üyelik, kalıcı başarımlar, sürücü profilleri (`features.accounts = true`).
+  Ana sayfada "Yakında — Her cuma yeni oyun" kutusu (`weeklyBox`). Işık ve Gölge'nin kaynağı repo dışında: `../oyunlar/isik-ve-golge` (`node build.mjs` ile `public/play/isik-ve-golge/` altına kopyalanır; tasarım: `TASARIM.md`).
 - Supabase, Brevo SMTP ve Vercel ortam değişkenleri kuruldu; kullanıcı kayıt → doğrulama → giriş akışını kendi
   mailiyle denedi, çalışıyor. Ayrıntılar ve panel ayarları: [`ACCOUNTS.md`](ACCOUNTS.md) §5.
 - **Sürüm çıkarma kalıbı:** `npm run check` + `npm run build` temiz → `npm version X.Y.Z --no-git-tag-version` → belgelerdeki

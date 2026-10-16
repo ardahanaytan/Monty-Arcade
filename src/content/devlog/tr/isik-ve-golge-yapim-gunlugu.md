@@ -3,7 +3,6 @@ title: "Işık ve Gölge"
 description: "İki kişilik, tek klavyeli, 20 bölümlük Işık ve Gölge'nin hikâyesi: fikir nereden çıktı, neleri değiştirdik, nasıl test ettik, nerede hata yaptık?"
 date: 2026-10-16T12:00:00
 game: isik-ve-golge
-draft: true
 ---
 
 Işık ve Gölge'yi yaparken en çok şunu öğrendim: **iyi bir bulmaca oyunu yazmak, kodu yazmaktan çok "bu bölüm gerçekten çözülebiliyor mu?" sorusunu cevaplamakmış.** Bu yazıda fikrin nereden çıktığını, oyunun kurallarını, benim ne istediğimi, ne zaman fikir değiştirdiğimi, hataları ve oyunu nasıl test ettiğimizi anlatıyorum. Oyunu Claude ile birlikte, bölüm bölüm yaptım; yazıdaki "biz" bu ikili.
