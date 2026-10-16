@@ -39,6 +39,11 @@
       best: 'EN İYİ',
       hintEnd: 'Her ikisi de kendi kapısında durunca bölüm biter.',
       skip: 'ENTER: GEÇ',
+      pick: 'B: BÖLÜMLER',
+      selTitle: 'BÖLÜMLER',
+      selHelp: 'OKLAR / WASD: SEÇ    ENTER: OYNA    ESC: GERİ',
+      region: { dungeon: 'ZİNDAN', courtyard: 'AVLU', sur: 'SUR', ozgurluk: 'ÖZGÜRLÜK' },
+      doneMark: 'TAMAM',
     },
     en: {
       title: 'LIGHT & SHADOW',
@@ -64,6 +69,11 @@
       best: 'BEST',
       hintEnd: 'The level ends when both stand at their own doors.',
       skip: 'ENTER: SKIP',
+      pick: 'B: LEVELS',
+      selTitle: 'LEVELS',
+      selHelp: 'ARROWS / WASD: PICK    ENTER: PLAY    ESC: BACK',
+      region: { dungeon: 'DUNGEON', courtyard: 'COURTYARD', sur: 'RAMPART', ozgurluk: 'FREEDOM' },
+      doneMark: 'DONE',
     },
   };
   const T = STR[kit.lang];
@@ -100,6 +110,8 @@
     mode: 'title', // title | intro | play | complete | outro
     sceneT: 0,
     sceneCue: 0,
+    sel: 0,
+    selFrom: 'title',
     t: 0,
     levelIndex: 0,
     world: null,
@@ -120,6 +132,48 @@
     G.paused = false;
     G.mode = 'play';
   }
+
+  // --- Bölüm seçimi ---
+  const SEL = { cols: 5, cw: 210, ch: 112, gap: 16, x0: 83, y0: 138 };
+  const REGION_COL = { dungeon: '#6a78d8', courtyard: '#8a96ee', sur: '#c08ad8', ozgurluk: '#f0c0e8' };
+  function openSelect(from) {
+    G.selFrom = from;
+    G.sel = Math.max(0, Math.min(LEVELS.length - 1, G.levelIndex));
+    G.mode = 'select';
+  }
+  const selRect = (i) => ({
+    x: SEL.x0 + (i % SEL.cols) * (SEL.cw + SEL.gap),
+    y: SEL.y0 + Math.floor(i / SEL.cols) * (SEL.ch + SEL.gap),
+    w: SEL.cw,
+    h: SEL.ch,
+  });
+  const toWorld = (e) => {
+    const r = canvas.getBoundingClientRect();
+    return { x: ((e.clientX - r.left) * (canvas.width / r.width) - ox) / scale, y: ((e.clientY - r.top) * (canvas.height / r.height) - oy) / scale };
+  };
+  const hitCard = (p) => {
+    for (let i = 0; i < LEVELS.length; i++) {
+      const c = selRect(i);
+      if (p.x >= c.x && p.x <= c.x + c.w && p.y >= c.y && p.y <= c.y + c.h) return i;
+    }
+    return -1;
+  };
+  canvas.addEventListener('pointermove', (e) => {
+    if (G.mode !== 'select') return;
+    const i = hitCard(toWorld(e));
+    if (i >= 0) G.sel = i;
+  });
+  canvas.addEventListener('click', (e) => {
+    if (G.mode === 'title') {
+      const p = toWorld(e);
+      if (p.y > 505 && p.y < 560 && Math.abs(p.x - VW / 2) < 160) startScene('intro');
+      else if (p.y > 596 && Math.abs(p.x - VW / 2) < 120) openSelect('title');
+      return;
+    }
+    if (G.mode !== 'select') return;
+    const i = hitCard(toWorld(e));
+    if (i >= 0) startLevel(i);
+  });
 
   // --- Sahneler (açılış / kapanış) ---
   function startScene(kind) {
@@ -167,6 +221,21 @@
     if (code === 'KeyM') sound.setUserMuted(!sound.userMuted);
     if (G.mode === 'title') {
       if (code === 'Enter' || code === 'Space') startScene('intro');
+      else if (code === 'KeyB' || code === 'KeyL') openSelect('title');
+    } else if (G.mode === 'select') {
+      const COLS = 5;
+      const n = LEVELS.length;
+      if (code === 'ArrowLeft' || code === 'KeyA') G.sel = Math.max(0, G.sel - 1);
+      else if (code === 'ArrowRight' || code === 'KeyD') G.sel = Math.min(n - 1, G.sel + 1);
+      else if (code === 'ArrowUp' || code === 'KeyW') G.sel = G.sel - COLS >= 0 ? G.sel - COLS : G.sel;
+      else if (code === 'ArrowDown' || code === 'KeyS') G.sel = G.sel + COLS < n ? G.sel + COLS : G.sel;
+      else if (code === 'Enter' || code === 'Space') startLevel(G.sel);
+      else if (code === 'Escape' || code === 'Backspace' || code === 'KeyB') {
+        if (G.selFrom === 'play' && G.world) {
+          G.mode = 'play';
+          G.paused = true;
+        } else G.mode = 'title';
+      }
     } else if (G.mode === 'intro') {
       if (code === 'Enter' || code === 'Space' || code === 'Escape') startLevel(0);
     } else if (G.mode === 'outro') {
@@ -176,6 +245,7 @@
       else if (G.paused && code === 'Enter') G.paused = false;
       else if (code === 'KeyR') startLevel(G.levelIndex);
       else if (G.paused && code === 'Backspace') G.mode = 'title';
+      else if (G.paused && (code === 'KeyB' || code === 'KeyL')) openSelect('play');
     } else if (G.mode === 'complete' && G.completeT > 0.8) {
       if (code === 'Enter' || code === 'Space') {
         if (G.levelIndex + 1 < LEVELS.length) startLevel(G.levelIndex + 1);
@@ -389,6 +459,9 @@
     };
     row(36, 'star', w.collected.star, w.total.star, 'left');
     row(VW - 36, 'feather', w.collected.feather, w.total.feather, 'right');
+    // her zaman görünen küçük bölüm göstergesi (üst orta)
+    text(`${T.level(G.levelIndex + 1)} / ${LEVELS.length}`, VW / 2, 28, 14, { font: 'mono', color: 'rgba(243,234,216,.8)' });
+    text(LEVELS[G.levelIndex].name[kit.lang], VW / 2, 46, 12, { font: 'mono', color: 'rgba(243,234,216,.45)' });
     // bölüm adı
     if (G.lvT < 3.2) {
       const a = Math.min(1, G.lvT * 3) * Math.min(1, (3.2 - G.lvT) * 2);
@@ -419,7 +492,8 @@
       text(T.paused, VW / 2, VH * 0.36, 46);
       text(T.resume, VW / 2, VH * 0.36 + 64, 16, { font: 'mono', color: '#ffd27a' });
       text(T.restart, VW / 2, VH * 0.36 + 94, 14, { font: 'mono' });
-      text('BACKSPACE: ' + T.menu.split(': ')[1], VW / 2, VH * 0.36 + 120, 14, { font: 'mono' });
+      text(T.pick, VW / 2, VH * 0.36 + 120, 14, { font: 'mono' });
+      text('BACKSPACE: ' + T.menu.split(': ')[1], VW / 2, VH * 0.36 + 146, 14, { font: 'mono' });
     }
   }
 
@@ -440,11 +514,58 @@
     text(T.title, VW / 2, 250, 78, { glow: 'rgba(255,200,120,.5)' });
     text(T.subtitle, VW / 2, 296, 18, { font: 'mono', color: 'rgba(243,234,216,.75)' });
     text(T.start, VW / 2, 540, 20, { font: 'mono', color: '#ffd27a', alpha: 0.6 + 0.4 * Math.sin(t * 4) });
+    text(T.pick, VW / 2, 612, 14, { font: 'mono', color: 'rgba(243,234,216,.8)' });
     text(T.two, VW / 2, 582, 13, { font: 'mono', color: 'rgba(243,234,216,.6)' });
     if (sound.muted) text('♪ ✕ (M)', VW - 24, VH - 16, 12, { font: 'mono', color: 'rgba(243,234,216,.5)', align: 'right' });
     else text('M: ♪', VW - 24, VH - 16, 12, { font: 'mono', color: 'rgba(243,234,216,.4)', align: 'right' });
   }
   const drawFig = (h, t) => R.drawHeroAt(ctx, h, t);
+
+  function drawSelect() {
+    const bg = G.title || (G.title = new World(LEVELS[0]));
+    R.drawScene(ctx, bg, { x: 0, y: 0 }, G.t);
+    veil(0.84);
+    text(T.selTitle, VW / 2, 84, 46, { glow: 'rgba(255,200,120,.4)' });
+    let doneCount = 0;
+    for (const lv of LEVELS) if (save.done[lv.id]) doneCount++;
+    text(`${doneCount} / ${LEVELS.length}`, VW / 2, 112, 15, { font: 'mono', color: 'rgba(243,234,216,.7)' });
+    for (let i = 0; i < LEVELS.length; i++) {
+      const lv = LEVELS[i];
+      const c = selRect(i);
+      const d = save.done[lv.id];
+      const sel = i === G.sel;
+      const cur = G.selFrom === 'play' && i === G.levelIndex;
+      const col = REGION_COL[lv.region] || '#8a96ee';
+      ctx.save();
+      ctx.fillStyle = sel ? 'rgba(40,46,90,.95)' : 'rgba(16,20,44,.85)';
+      R.rr(ctx, c.x, c.y, c.w, c.h, 12);
+      ctx.fill();
+      ctx.lineWidth = sel ? 3 : 1.5;
+      ctx.strokeStyle = sel ? '#ffd27a' : d ? col : 'rgba(150,160,210,.28)';
+      if (sel) {
+        ctx.shadowColor = 'rgba(255,200,120,.7)';
+        ctx.shadowBlur = 16;
+      }
+      ctx.stroke();
+      ctx.restore();
+      ctx.fillStyle = col;
+      ctx.globalAlpha = d ? 0.9 : 0.4;
+      ctx.fillRect(c.x + 14, c.y + 12, 26, 3);
+      ctx.globalAlpha = 1;
+      text(T.region[lv.region], c.x + 48, c.y + 18, 10, { font: 'mono', align: 'left', color: 'rgba(243,234,216,.55)' });
+      text(String(i + 1), c.x + 16, c.y + 66, 44, { align: 'left', color: d ? '#ffe9a8' : 'rgba(243,234,216,.85)' });
+      text(lv.name[kit.lang], c.x + 16, c.y + c.h - 30, 14, { font: 'mono', align: 'left', color: 'rgba(243,234,216,.9)' });
+      if (d) {
+        const ts = lv.items.filter((it) => it.kind === 'star').length;
+        const tf = lv.items.filter((it) => it.kind === 'feather').length;
+        text('✓ ' + T.doneMark, c.x + c.w - 14, c.y + 22, 11, { font: 'mono', align: 'right', color: '#9af0b4' });
+        text(`${d.time.toFixed(1)} s`, c.x + c.w - 14, c.y + 50, 12, { font: 'mono', align: 'right', color: 'rgba(243,234,216,.75)' });
+        text(`★ ${d.stars}/${ts}   ✦ ${d.feathers}/${tf}`, c.x + 16, c.y + c.h - 11, 11, { font: 'mono', align: 'left', color: 'rgba(243,234,216,.6)' });
+      }
+      if (cur) text('▶', c.x + c.w - 14, c.y + 22, 12, { font: 'mono', align: 'right', color: '#ffd27a' });
+    }
+    text(T.selHelp, VW / 2, VH - 28, 13, { font: 'mono', color: 'rgba(243,234,216,.65)' });
+  }
 
   function drawComplete() {
     const w = G.world;
@@ -471,6 +592,7 @@
     ctx.clip();
     if (G.mode === 'title') drawTitle();
     else if (G.mode === 'intro' || G.mode === 'outro') drawScene();
+    else if (G.mode === 'select') drawSelect();
     else if (G.mode === 'complete') drawComplete();
     else drawPlay();
     if (FPS.on) {
