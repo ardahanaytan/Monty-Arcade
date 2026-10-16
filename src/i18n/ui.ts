@@ -449,6 +449,7 @@ export const tagLabels: Record<string, Record<Lang, string>> = {
   'one-button': { tr: 'Tek tuş', en: 'One button' },
   board: { tr: 'Masa oyunu', en: 'Board game' },
   mobile: { tr: 'Mobil uyumlu', en: 'Mobile friendly' },
+  'co-op': { tr: '2 kişilik', en: '2 players' },
 };
 
 /** Oyun yokken gösterilen örnek etiket chip'leri (§8.7). */

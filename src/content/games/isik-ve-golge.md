@@ -16,14 +16,16 @@ controls:
     action: { tr: "Gölge: zıpla", en: "Shadow: jump" }
   - keys: ["R"]
     action: { tr: "Bölümü yeniden başlat", en: "Restart level" }
+  - keys: ["B"]
+    action: { tr: "Bölüm seçimi", en: "Level select" }
   - keys: ["P"]
     action: { tr: "Duraklat", en: "Pause" }
 cover: ./covers/isik-ve-golge.png
-tags: [puzzle, platformer]
+tags: [puzzle, platformer, co-op]
 releaseDate: 2026-10-14
 featured: true
 aspectRatio: "16/9"
-sizeMB: 0.2
+sizeMB: 0.5
 mobile: false
 achievements:
   - id: first-light

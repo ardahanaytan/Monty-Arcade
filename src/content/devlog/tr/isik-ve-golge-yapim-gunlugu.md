@@ -116,6 +116,10 @@ Finalde ise **tam tutulma**: ay güneşin önünden geçer, gökyüzü kararır 
 
 Oyuncunun kaçıncı bölümde olduğunu hep görmesi gerekiyordu; ekranın üstünde artık "BÖLÜM 12 / 20" yazıyor. Başlıkta ya da duraklatma menüsünde **B** tuşu 20 kartlık bir bölüm seçim ekranını açıyor. Biten bölümlerde süre, yıldız tozu ve gece tüyü sayıları görünüyor. Bölümler **sırayla açılıyor**: sıradakini oynamak için öncekini bitirmek gerekiyor. Test etmek isteyenler için `?unlock=1` hepsini açıyor.
 
+## Başarımlar
+
+Oyunda 12 başarım var: ilerleme (1., 5., 10., 15. bölümü bitirmek ve finali izlemek), toplama (bir bölümün tüm yıldız tozları, tüm gece tüyleri, ikisi birden, 20 bölümün hepsinde hepsi), beceri (bir bölümü hiç ölmeden bitirmek, kıvılcım fırlatması gereken iki bölümü bitirmek) ve **bir tane gizli**. Gizli olanın adını söylemeyeceğim; yalnız şunu ekleyeyim: Sis Kralı misafirperver biridir. Başarımlar bölümü linkle atlayarak (`?level=` gibi) açan oyunlarda verilmiyor, çünkü hile sayılıyor. Sitenin diğer oyunlarındaki gibi, kalıcı olarak yalnızca üyelerde kaydediliyor.
+
 ## Sayılarla
 
 - 20 bölüm, 4 bölge, 2 oyuncu, 1 klavye.

@@ -116,6 +116,10 @@ Both are drawn entirely in code (no image files), contain no dialogue and can be
 
 The player always needed to see which level they're on; the top of the screen now says "LEVEL 12 / 20". The **B** key on the title screen or in the pause menu opens a 20-card level select. Finished levels show time, stardust and night feathers. Levels **unlock in order**: you must finish the previous level to play the next. For testers, `?unlock=1` opens all of them.
 
+## Achievements
+
+The game has 12 achievements: progress (finishing levels 1, 5, 10 and 15, and watching the ending), collecting (all the stardust in a level, all the night feathers, both together, everything in all 20 levels), skill (finishing a level without dying, finishing the two levels that need a spark launch) and **one hidden one**. I won't tell you its name; I'll only say that the Fog King is a hospitable man. Achievements aren't awarded when a level is opened by skipping through a link (such as `?level=`), because that counts as cheating. As with the other games on the site, they're saved permanently only for members.
+
 ## By the numbers
 
 - 20 levels, 4 regions, 2 players, 1 keyboard.
