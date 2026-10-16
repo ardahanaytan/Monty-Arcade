@@ -44,6 +44,7 @@
       selHelp: 'OKLAR / WASD: SEÇ    ENTER: OYNA    ESC: GERİ',
       region: { dungeon: 'ZİNDAN', courtyard: 'AVLU', sur: 'SUR', ozgurluk: 'ÖZGÜRLÜK' },
       doneMark: 'TAMAM',
+      locked: 'Önceki bölümü bitirince açılır.',
     },
     en: {
       title: 'LIGHT & SHADOW',
@@ -74,6 +75,7 @@
       selHelp: 'ARROWS / WASD: PICK    ENTER: PLAY    ESC: BACK',
       region: { dungeon: 'DUNGEON', courtyard: 'COURTYARD', sur: 'RAMPART', ozgurluk: 'FREEDOM' },
       doneMark: 'DONE',
+      locked: 'Opens after you finish the previous level.',
     },
   };
   const T = STR[kit.lang];
@@ -112,6 +114,7 @@
     sceneCue: 0,
     sel: 0,
     selFrom: 'title',
+    lockShake: 0,
     t: 0,
     levelIndex: 0,
     world: null,
@@ -136,6 +139,18 @@
   // --- Bölüm seçimi ---
   const SEL = { cols: 5, cw: 210, ch: 112, gap: 16, x0: 83, y0: 138 };
   const REGION_COL = { dungeon: '#6a78d8', courtyard: '#8a96ee', sur: '#c08ad8', ozgurluk: '#f0c0e8' };
+  // Bölüm i, öncekini bitirince açılır (?unlock=1 ile hepsi açık: test için)
+  const q0 = new URLSearchParams(location.search);
+  const UNLOCK_ALL = !!q0.get('unlock');
+  const isOpen = (i) => UNLOCK_ALL || i === 0 || !!save.done[LEVELS[i - 1].id];
+  function tryStart(i) {
+    if (isOpen(i)) {
+      startLevel(i);
+      return;
+    }
+    G.lockShake = 0.35;
+    sound.tone(150, 0, 0.12, 'square', 0.05, 100);
+  }
   function openSelect(from) {
     G.selFrom = from;
     G.sel = Math.max(0, Math.min(LEVELS.length - 1, G.levelIndex));
@@ -172,7 +187,7 @@
     }
     if (G.mode !== 'select') return;
     const i = hitCard(toWorld(e));
-    if (i >= 0) startLevel(i);
+    if (i >= 0) tryStart(i);
   });
 
   // --- Sahneler (açılış / kapanış) ---
@@ -229,7 +244,7 @@
       else if (code === 'ArrowRight' || code === 'KeyD') G.sel = Math.min(n - 1, G.sel + 1);
       else if (code === 'ArrowUp' || code === 'KeyW') G.sel = G.sel - COLS >= 0 ? G.sel - COLS : G.sel;
       else if (code === 'ArrowDown' || code === 'KeyS') G.sel = G.sel + COLS < n ? G.sel + COLS : G.sel;
-      else if (code === 'Enter' || code === 'Space') startLevel(G.sel);
+      else if (code === 'Enter' || code === 'Space') tryStart(G.sel);
       else if (code === 'Escape' || code === 'Backspace' || code === 'KeyB') {
         if (G.selFrom === 'play' && G.world) {
           G.mode = 'play';
@@ -343,6 +358,7 @@
   let acc = 0;
   function update(dt) {
     G.t += dt;
+    G.lockShake = Math.max(0, G.lockShake - dt);
     G.shake = Math.max(0, G.shake - dt * 30);
     for (const p of G.parts) {
       p.x += p.vx * dt;
@@ -534,9 +550,12 @@
       const c = selRect(i);
       const d = save.done[lv.id];
       const sel = i === G.sel;
+      const open = isOpen(i);
       const cur = G.selFrom === 'play' && i === G.levelIndex;
       const col = REGION_COL[lv.region] || '#8a96ee';
       ctx.save();
+      if (!open) ctx.globalAlpha = 0.55;
+      if (sel && !open && G.lockShake > 0) ctx.translate(Math.sin(G.lockShake * 70) * 5, 0);
       ctx.fillStyle = sel ? 'rgba(40,46,90,.95)' : 'rgba(16,20,44,.85)';
       R.rr(ctx, c.x, c.y, c.w, c.h, 12);
       ctx.fill();
@@ -563,7 +582,23 @@
         text(`★ ${d.stars}/${ts}   ✦ ${d.feathers}/${tf}`, c.x + 16, c.y + c.h - 11, 11, { font: 'mono', align: 'left', color: 'rgba(243,234,216,.6)' });
       }
       if (cur) text('▶', c.x + c.w - 14, c.y + 22, 12, { font: 'mono', align: 'right', color: '#ffd27a' });
+      if (!open) {
+        // asma kilit
+        const lx = c.x + c.w - 30;
+        const ly = c.y + 40;
+        ctx.save();
+        ctx.strokeStyle = 'rgba(243,234,216,.75)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(lx, ly - 3, 7, Math.PI, 0);
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(243,234,216,.75)';
+        R.rr(ctx, lx - 11, ly - 3, 22, 17, 3);
+        ctx.fill();
+        ctx.restore();
+      }
     }
+    if (!isOpen(G.sel)) text(T.locked, VW / 2, VH - 54, 14, { font: 'mono', color: '#ffb36a' });
     text(T.selHelp, VW / 2, VH - 28, 13, { font: 'mono', color: 'rgba(243,234,216,.65)' });
   }
 

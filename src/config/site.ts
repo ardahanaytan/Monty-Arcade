@@ -15,7 +15,7 @@ export const site = {
     accounts: true, // v2: giriş butonu, başarım paneli, kart rozet sayısı
     weeklyBox: true, // ana sayfa yan sütunu: "YAKINDA — Her cuma yeni oyun" kutusu
   },
-  newBadgeDays: 30, // "YENİ" etiketi kaç gün görünür
+  newBadgeDays: 7, // "YENİ" etiketi kaç gün görünür
 };
 
 export type Site = typeof site;

@@ -18,7 +18,7 @@ controls:
 cover: ./covers/monty-satranc.png
 tags: [board, casual, mobile]
 releaseDate: 2026-10-07
-featured: true
+featured: false
 aspectRatio: "16/9"
 sizeMB: 0.5
 mobile: true

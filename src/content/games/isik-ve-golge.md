@@ -21,7 +21,7 @@ controls:
 cover: ./covers/isik-ve-golge.png
 tags: [puzzle, platformer]
 releaseDate: 2026-10-14
-featured: false
+featured: true
 aspectRatio: "16/9"
 sizeMB: 0.2
 mobile: false
