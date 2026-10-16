@@ -9,6 +9,7 @@
   const { World, TILE } = IVGWorld;
   const { LEVELS } = IVGLevels;
   const R = IVGRender;
+  const SC = IVGScenes;
   const { VW, VH } = R;
   const sound = kit.sound;
   const STEP = 1 / 120;
@@ -30,13 +31,14 @@
       feathers: 'GECE TÜYÜ',
       next: 'ENTER: SIRADAKİ BÖLÜM',
       toTitle: 'ENTER: BAŞLIĞA DÖN',
-      soon: 'Yeni bölümler yolda.',
+      final: 'ENTER: FİNAL',
       paused: 'DURAKLATILDI',
       resume: 'ENTER: DEVAM',
       restart: 'R: BÖLÜMÜ YENİDEN BAŞLAT',
       menu: 'ESC: BAŞLIK',
       best: 'EN İYİ',
       hintEnd: 'Her ikisi de kendi kapısında durunca bölüm biter.',
+      skip: 'ENTER: GEÇ',
     },
     en: {
       title: 'LIGHT & SHADOW',
@@ -54,13 +56,14 @@
       feathers: 'NIGHT FEATHERS',
       next: 'ENTER: NEXT LEVEL',
       toTitle: 'ENTER: BACK TO TITLE',
-      soon: 'More levels are on the way.',
+      final: 'ENTER: FINALE',
       paused: 'PAUSED',
       resume: 'ENTER: RESUME',
       restart: 'R: RESTART LEVEL',
       menu: 'ESC: TITLE',
       best: 'BEST',
       hintEnd: 'The level ends when both stand at their own doors.',
+      skip: 'ENTER: SKIP',
     },
   };
   const T = STR[kit.lang];
@@ -94,7 +97,9 @@
 
   // --- Durum ---
   const G = {
-    mode: 'title', // title | play | complete
+    mode: 'title', // title | intro | play | complete | outro
+    sceneT: 0,
+    sceneCue: 0,
     t: 0,
     levelIndex: 0,
     world: null,
@@ -114,6 +119,31 @@
     G.lvT = 0;
     G.paused = false;
     G.mode = 'play';
+  }
+
+  // --- Sahneler (açılış / kapanış) ---
+  function startScene(kind) {
+    G.mode = kind; // 'intro' | 'outro'
+    G.sceneT = 0;
+    G.sceneCue = 0;
+    G.parts = [];
+  }
+  function sceneUpdate(dt) {
+    const sc = SC[G.mode];
+    G.sceneT += dt;
+    while (G.sceneCue < sc.cues.length && G.sceneT >= sc.cues[G.sceneCue].t) {
+      sc.cues[G.sceneCue].f(sound);
+      G.sceneCue++;
+    }
+    if (G.mode === 'intro' && G.sceneT >= sc.dur) startLevel(0);
+  }
+  function drawScene() {
+    SC[G.mode].draw(ctx, G.sceneT, { VW, VH, R, text, lang: kit.lang });
+    const sc = SC[G.mode];
+    const done = G.sceneT >= sc.dur;
+    if (G.mode === 'intro' || done || G.sceneT > 3) {
+      text(done ? T.toTitle : T.skip, VW - 24, VH - 20, 13, { font: 'mono', align: 'right', color: '#ffd27a', alpha: done ? 0.6 + 0.4 * Math.sin(G.t * 4) : 0.5 });
+    }
   }
 
   // --- Giriş ---
@@ -136,7 +166,11 @@
   function onKey(code) {
     if (code === 'KeyM') sound.setUserMuted(!sound.userMuted);
     if (G.mode === 'title') {
-      if (code === 'Enter' || code === 'Space') startLevel(0);
+      if (code === 'Enter' || code === 'Space') startScene('intro');
+    } else if (G.mode === 'intro') {
+      if (code === 'Enter' || code === 'Space' || code === 'Escape') startLevel(0);
+    } else if (G.mode === 'outro') {
+      if ((code === 'Enter' || code === 'Space' || code === 'Escape') && G.sceneT > 1.5) G.mode = 'title';
     } else if (G.mode === 'play') {
       if (code === 'Escape' || code === 'KeyP') G.paused = !G.paused;
       else if (G.paused && code === 'Enter') G.paused = false;
@@ -145,7 +179,7 @@
     } else if (G.mode === 'complete' && G.completeT > 0.8) {
       if (code === 'Enter' || code === 'Space') {
         if (G.levelIndex + 1 < LEVELS.length) startLevel(G.levelIndex + 1);
-        else G.mode = 'title';
+        else startScene('outro');
       }
     }
   }
@@ -248,6 +282,10 @@
     }
     G.parts = G.parts.filter((p) => p.life > 0);
     if (G.mode === 'complete') G.completeT += dt;
+    if (G.mode === 'intro' || G.mode === 'outro') {
+      sceneUpdate(dt);
+      return;
+    }
     if (G.mode !== 'play') return;
     const w = G.world;
     if (!G.paused) {
@@ -419,8 +457,7 @@
     text(`${T.stars}  ${r.stars}/${w.total.star}`, VW / 2 - 170, 360, 18, { font: 'mono', color: '#ffe9a8', alpha: a });
     text(`${T.feathers}  ${r.feathers}/${w.total.feather}`, VW / 2 + 170, 360, 18, { font: 'mono', color: '#c8b0ff', alpha: a });
     const next = G.levelIndex + 1 < LEVELS.length;
-    text(next ? T.next : T.toTitle, VW / 2, 470, 18, { font: 'mono', color: '#ffd27a', alpha: G.completeT > 0.8 ? 0.6 + 0.4 * Math.sin(G.t * 4) : 0 });
-    if (!next) text(T.soon, VW / 2, 508, 14, { font: 'mono', color: 'rgba(243,234,216,.65)', alpha: a });
+    text(next ? T.next : T.final, VW / 2, 470, 18, { font: 'mono', color: '#ffd27a', alpha: G.completeT > 0.8 ? 0.6 + 0.4 * Math.sin(G.t * 4) : 0 });
   }
 
   const FPS = { on: false, n: 0, t0: performance.now(), fps: 0 };
@@ -433,6 +470,7 @@
     ctx.rect(0, 0, VW, VH);
     ctx.clip();
     if (G.mode === 'title') drawTitle();
+    else if (G.mode === 'intro' || G.mode === 'outro') drawScene();
     else if (G.mode === 'complete') drawComplete();
     else drawPlay();
     if (FPS.on) {
@@ -461,6 +499,7 @@
   kit.fontsReady().then(() => {
     const lv = parseInt(q.get('level') || '', 10);
     if (lv >= 1 && lv <= LEVELS.length) startLevel(lv - 1);
+    else if (q.get('scene') === 'intro' || q.get('scene') === 'outro') startScene(q.get('scene'));
     last = performance.now();
     requestAnimationFrame(frame);
     kit.ready();
