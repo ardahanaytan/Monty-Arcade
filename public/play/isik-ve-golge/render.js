@@ -75,31 +75,15 @@
   function solidAt(w, c, r) {
     return w.tileAt(c, r) === '#';
   }
-  function drawTiles(ctx, w, t) {
+  /** Duvar karoları (sabit): her bölüm ve ölçek için bir kez ekran dışı tuvale çizilir (kare başına ~3000 çizim çağrısını tasarruf eder). */
+  const BRICK_LAYERS = new WeakMap();
+  function drawBricks(ctx, w) {
     const R = REGIONS[w.level.region] || REGIONS.dungeon;
     for (let r = 0; r < w.rows; r++) {
       for (let c = 0; c < w.cols; c++) {
         const ch = w.tiles[r][c];
         const x = c * TILE;
         const y = r * TILE;
-        if (ch === 'm' || ch === 'n') {
-          const mc = w.mirrorAt(c, r);
-          // ayna bloğu: koyu çerçeve + çapraz parlak yüz (m: /, n: \)
-          ctx.fillStyle = '#10152e';
-          ctx.fillRect(x, y, TILE, TILE);
-          ctx.fillStyle = R.brick;
-          ctx.fillRect(x + 2, y + 2, TILE - 4, TILE - 4);
-          ctx.strokeStyle = 'rgba(214,232,255,.95)';
-          ctx.lineWidth = 4;
-          ctx.beginPath();
-          if (mc === 'm') (ctx.moveTo(x + 4, y + TILE - 4), ctx.lineTo(x + TILE - 4, y + 4));
-          else (ctx.moveTo(x + 4, y + 4), ctx.lineTo(x + TILE - 4, y + TILE - 4));
-          ctx.stroke();
-          ctx.strokeStyle = `rgba(255,255,255,${0.4 + 0.3 * Math.sin(t * 3 + c)})`;
-          ctx.lineWidth = 1;
-          ctx.stroke();
-          continue;
-        }
         if (ch === '#') {
           const v = rnd(c * 31 + r * 17);
           ctx.fillStyle = R.brick;
@@ -120,6 +104,58 @@
             ctx.fillStyle = 'rgba(0,0,0,.35)';
             ctx.fillRect(x, y + TILE - 3, TILE, 3);
           }
+        }
+      }
+    }
+  }
+  function brickLayer(ctx, w) {
+    if (typeof document === 'undefined' || !ctx.getTransform) return null;
+    const sc = ctx.getTransform().a;
+    let e = BRICK_LAYERS.get(w.level);
+    if (!e || Math.abs(e.sc - sc) > 1e-6) {
+      const cv = document.createElement('canvas');
+      cv.width = Math.ceil(VW * sc);
+      cv.height = Math.ceil(VH * sc);
+      const c2 = cv.getContext('2d');
+      c2.scale(sc, sc);
+      drawBricks(c2, w);
+      e = { cv, sc };
+      BRICK_LAYERS.set(w.level, e);
+    }
+    return e;
+  }
+  function drawTiles(ctx, w, t) {
+    const R = REGIONS[w.level.region] || REGIONS.dungeon;
+    const L = brickLayer(ctx, w);
+    if (L) {
+      ctx.save();
+      ctx.scale(1 / L.sc, 1 / L.sc);
+      ctx.drawImage(L.cv, 0, 0);
+      ctx.restore();
+    } else drawBricks(ctx, w);
+    for (let r = 0; r < w.rows; r++) {
+      for (let c = 0; c < w.cols; c++) {
+        const ch = w.tiles[r][c];
+        if (ch !== 'm' && ch !== 'n') continue;
+        const x = c * TILE;
+        const y = r * TILE;
+        if (ch === 'm' || ch === 'n') {
+          const mc = w.mirrorAt(c, r);
+          // ayna bloğu: koyu çerçeve + çapraz parlak yüz (m: /, n: \)
+          ctx.fillStyle = '#10152e';
+          ctx.fillRect(x, y, TILE, TILE);
+          ctx.fillStyle = R.brick;
+          ctx.fillRect(x + 2, y + 2, TILE - 4, TILE - 4);
+          ctx.strokeStyle = 'rgba(214,232,255,.95)';
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          if (mc === 'm') (ctx.moveTo(x + 4, y + TILE - 4), ctx.lineTo(x + TILE - 4, y + 4));
+          else (ctx.moveTo(x + 4, y + 4), ctx.lineTo(x + TILE - 4, y + TILE - 4));
+          ctx.stroke();
+          ctx.strokeStyle = `rgba(255,255,255,${0.4 + 0.3 * Math.sin(t * 3 + c)})`;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+          continue;
         }
       }
     }

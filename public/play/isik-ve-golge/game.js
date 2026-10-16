@@ -81,8 +81,10 @@
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const w = window.innerWidth;
     const h = window.innerHeight;
-    canvas.width = Math.round(w * dpr);
-    canvas.height = Math.round(h * dpr);
+    // çok büyük/yüksek DPI ekranlarda arka tampon boyutunu sınırla (dolgu maliyeti piksel sayısıyla artar); CSS tuvali yine tam ekrana gerer
+    const k = Math.min(1, 2000 / (w * dpr));
+    canvas.width = Math.round(w * dpr * k);
+    canvas.height = Math.round(h * dpr * k);
     scale = Math.min(canvas.width / VW, canvas.height / VH);
     ox = (canvas.width - VW * scale) / 2;
     oy = (canvas.height - VH * scale) / 2;
@@ -421,6 +423,7 @@
     if (!next) text(T.soon, VW / 2, 508, 14, { font: 'mono', color: 'rgba(243,234,216,.65)', alpha: a });
   }
 
+  const FPS = { on: false, n: 0, t0: performance.now(), fps: 0 };
   function draw() {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.fillStyle = '#0d1328';
@@ -432,10 +435,21 @@
     if (G.mode === 'title') drawTitle();
     else if (G.mode === 'complete') drawComplete();
     else drawPlay();
+    if (FPS.on) {
+      // ?fps=1 : performans teşhisi (kare/sn, ort. kare süresi, bölüm, parçacık, canvas boyutu)
+      FPS.n++;
+      if (performance.now() - FPS.t0 >= 500) {
+        FPS.fps = (FPS.n * 1000) / (performance.now() - FPS.t0);
+        FPS.n = 0;
+        FPS.t0 = performance.now();
+      }
+      text(`${FPS.fps.toFixed(0)} fps · B${G.levelIndex + 1} · parçacık ${G.parts.length} · ${canvas.width}×${canvas.height}`, 12, VH - 8, 12, { font: 'mono', align: 'left', color: '#7dff9a' });
+    }
   }
 
   // --- Döngü ---
   const q = new URLSearchParams(location.search);
+  FPS.on = !!q.get('fps');
   let last = performance.now();
   function frame(now) {
     const dt = Math.min(0.1, (now - last) / 1000);
