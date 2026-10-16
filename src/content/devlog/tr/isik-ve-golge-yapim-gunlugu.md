@@ -125,13 +125,7 @@ Oyuncunun kaçıncı bölümde olduğunu hep görmesi gerekiyordu; ekranın üst
 
 ## Bilinen eksikler
 
-- Toplanabilirlerin (yıldız tozu ve gece tüyü) **her birinin ulaşılabilirliğini** otomatik kanıtlamadım; yürüyüşler hepsini toplamıyor. Biri ulaşılamıyor olabilir, bulursanız söyleyin.
 - Terazili bölümlerde (15 ve 17) bir panın kenarında yarı yarıya duran kutu ya da karakter, pan inerken 2–3 piksel zemine gömülebiliyor. Kendiliğinden düzeliyor ama kusurlu; düzeltmeyi denedim, terazi bölümlerini bozdu, geri aldım.
 - Ses şimdilik basit akorlar ve gürültü patlamaları. Sahnelerin müziği ayrıca elden geçmeli.
-- Başarım yok; eklemeden önce siteyle senkron meselesini konuşmak gerekiyor.
-
-## Sırada ne var?
-
-Yayın: oyunun site girişi hâlâ taslak durumda; hazır olunca kapağı ve açıklamayla birlikte yayına alacağız. Sonra siz oynayıp "şu bölüm çok kolaydı", "şurada takıldım" dedikçe bölümleri tek tek yeniden düzenleyeceğiz; bu oyunun zaten yapılış biçimi de buydu.
 
 İki kişi bulun, bir klavyeyi paylaşın. Biriniz ışık, biriniz gölge olacak. İyi şanslar.

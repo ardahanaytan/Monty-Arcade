@@ -125,13 +125,7 @@ The player always needed to see which level they're on; the top of the screen no
 
 ## Known gaps
 
-- I did **not** automatically prove that every collectible (stardust and night feather) is reachable; the walkthroughs don't collect all of them. One may be unreachable, so tell me if you find it.
 - In the scale levels (15 and 17), a box or character standing half on a pan's edge can sink 2–3 pixels into the floor when the pan descends. It corrects itself but it's a flaw; I tried a fix, it broke the scale levels, and I reverted it.
 - The sound is simple chords and noise bursts for now. The music of the scenes needs another pass.
-- There are no achievements; before adding them we need to talk about syncing them with the site.
-
-## What's next?
-
-Release: the game's site entry is still a draft; when it's ready we'll publish it with its cover and description. After that, as you play and say "this level was too easy" or "I got stuck here", we'll rework the levels one by one; that's how this game was made in the first place.
 
 Find a friend and share a keyboard. One of you is the light, the other the shadow. Good luck.

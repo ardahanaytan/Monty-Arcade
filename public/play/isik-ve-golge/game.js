@@ -85,6 +85,45 @@
   /** { done: { [levelId]: { time, stars, feathers } } } */
   const save = kit.store.get('save', { done: {} });
   const persist = () => kit.store.set('save', save);
+  // Başarımlar: bölümü ?level= / ?unlock= / ?scene= ile atlayarak açılan oyunlarda verilmez (hile sayılır)
+  const _q = new URLSearchParams(location.search);
+  const CHEAT = !!(_q.get('unlock') || _q.get('level') || _q.get('scene'));
+  const ach = (id) => {
+    if (CHEAT) return;
+    if (_q.get('debug')) (window.__ach = window.__ach || []).push(id); // test: hangi başarımlar tetiklendi
+    kit.unlock(id);
+  };
+  const totals = (lv) => ({
+    star: lv.items.filter((it) => it.kind === 'star').length,
+    feather: lv.items.filter((it) => it.kind === 'feather').length,
+  });
+  /** Bir bölüm bitince ilerleme başarımlarını değerlendirir. */
+  function checkLevelAchievements(i, res, w) {
+    const n = i + 1;
+    if (n === 1) ach('first-light');
+    if (n === 5) ach('dungeon-out');
+    if (n === 10) ach('courtyard-beyond');
+    if (n === 15) ach('on-ramparts');
+    const t = w.total;
+    const allStars = t.star > 0 && res.stars === t.star;
+    const allFeathers = t.feather > 0 && res.feathers === t.feather;
+    if (allStars) ach('stardust-hunter');
+    if (allFeathers) ach('feather-hunter');
+    if (allStars && allFeathers) ach('perfect');
+    if (G.deaths === 0) ach('no-death');
+    if (save.done['zindan-sinavi'] && save.done['uzun-sicrayis']) ach('spark-master');
+    // tüm bölümlerde her şey toplanmış mı (en iyi kayıtlardan)
+    let all = true;
+    for (const lv of LEVELS) {
+      const d = save.done[lv.id];
+      const tt = totals(lv);
+      if (!d || d.stars < tt.star || d.feathers < tt.feather) {
+        all = false;
+        break;
+      }
+    }
+    if (all) ach('collector');
+  }
 
   // --- Tuval ---
   const canvas = document.getElementById('c');
@@ -115,6 +154,7 @@
     sel: 0,
     selFrom: 'title',
     lockShake: 0,
+    deaths: 0, // bu bölüm girişindeki ölüm sayısı (başarım: hiç ölmeden bitir)
     t: 0,
     levelIndex: 0,
     world: null,
@@ -126,6 +166,11 @@
     result: null,
   };
 
+  /** Bölüme dışarıdan girmek (seçim, sonraki bölüm, açılış): bölümün ölüm sayacı sıfırlanır. */
+  function enterLevel(i) {
+    G.deaths = 0;
+    startLevel(i);
+  }
   function startLevel(i) {
     G.levelIndex = i;
     G.world = new World(LEVELS[i]);
@@ -145,7 +190,7 @@
   const isOpen = (i) => UNLOCK_ALL || i === 0 || !!save.done[LEVELS[i - 1].id];
   function tryStart(i) {
     if (isOpen(i)) {
-      startLevel(i);
+      enterLevel(i);
       return;
     }
     G.lockShake = 0.35;
@@ -204,7 +249,8 @@
       sc.cues[G.sceneCue].f(sound);
       G.sceneCue++;
     }
-    if (G.mode === 'intro' && G.sceneT >= sc.dur) startLevel(0);
+    if (G.mode === 'intro' && G.sceneT >= sc.dur) enterLevel(0);
+    if (G.mode === 'outro' && G.fromFinal && G.sceneT >= 18.4) ach('freedom');
   }
   function drawScene() {
     SC[G.mode].draw(ctx, G.sceneT, { VW, VH, R, text, lang: kit.lang });
@@ -252,9 +298,12 @@
         } else G.mode = 'title';
       }
     } else if (G.mode === 'intro') {
-      if (code === 'Enter' || code === 'Space' || code === 'Escape') startLevel(0);
+      if (code === 'Enter' || code === 'Space' || code === 'Escape') enterLevel(0);
     } else if (G.mode === 'outro') {
-      if ((code === 'Enter' || code === 'Space' || code === 'Escape') && G.sceneT > 1.5) G.mode = 'title';
+      if ((code === 'Enter' || code === 'Space' || code === 'Escape') && G.sceneT > 1.5) {
+        G.mode = 'title';
+        G.fromFinal = false;
+      }
     } else if (G.mode === 'play') {
       if (code === 'Escape' || code === 'KeyP') G.paused = !G.paused;
       else if (G.paused && code === 'Enter') G.paused = false;
@@ -263,8 +312,11 @@
       else if (G.paused && (code === 'KeyB' || code === 'KeyL')) openSelect('play');
     } else if (G.mode === 'complete' && G.completeT > 0.8) {
       if (code === 'Enter' || code === 'Space') {
-        if (G.levelIndex + 1 < LEVELS.length) startLevel(G.levelIndex + 1);
-        else startScene('outro');
+        if (G.levelIndex + 1 < LEVELS.length) enterLevel(G.levelIndex + 1);
+        else {
+          G.fromFinal = true;
+          startScene('outro');
+        }
       }
     }
   }
@@ -306,6 +358,10 @@
         burst(e.x, e.y, 10, e.ch === 'l' ? 'rgba(255,214,130,.9)' : 'rgba(150,100,255,.9)', 90, 0.5, 2);
         sound.tone(120, 0, 0.14, 'sine', 0.07, 70);
       } else if (e.type === 'death') {
+        G.deaths++;
+        save.deaths = (save.deaths || 0) + 1;
+        persist();
+        if (save.deaths >= 50) ach('fog-kings-guest');
         const light = e.kind === 'light';
         burst(e.x, e.y, 30, light ? '#9aa4d8' : '#b79bff', 160, 1.0, 3, 40);
         if (light) {
@@ -350,6 +406,7 @@
     G.result = { ...res, bestTime: prev ? Math.min(prev.time, res.time) : res.time, newBest: !prev || res.time < prev.time };
     save.done[id] = { time: G.result.bestTime, stars: Math.max(prev ? prev.stars : 0, res.stars), feathers: Math.max(prev ? prev.feathers : 0, res.feathers) };
     persist();
+    checkLevelAchievements(G.levelIndex, res, w);
     G.mode = 'complete';
     G.completeT = 0;
   }
@@ -655,7 +712,7 @@
   }
   kit.fontsReady().then(() => {
     const lv = parseInt(q.get('level') || '', 10);
-    if (lv >= 1 && lv <= LEVELS.length) startLevel(lv - 1);
+    if (lv >= 1 && lv <= LEVELS.length) enterLevel(lv - 1);
     else if (q.get('scene') === 'intro' || q.get('scene') === 'outro') startScene(q.get('scene'));
     last = performance.now();
     requestAnimationFrame(frame);
